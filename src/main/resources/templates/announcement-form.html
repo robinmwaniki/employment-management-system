@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Announcement')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-4">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+
+                <h4
+                        th:text="${announcementId != null}
+? 'Edit Announcement'
+: 'Create Announcement'">
+                </h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <form
+
+                        th:action="${announcementId != null}
+? @{/announcements/update/{id}(id=${announcementId})}
+: @{/announcements/save}"
+
+                        th:object="${announcement}"
+
+                        method="post">
+
+                    <div class="mb-3">
+
+                        <label>
+
+                            Title
+
+                        </label>
+
+                        <input
+                                class="form-control"
+
+                                th:field="*{title}"
+
+                                required>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label>
+
+                            Message
+
+                        </label>
+
+                        <textarea
+
+                                rows="8"
+
+                                class="form-control"
+
+                                th:field="*{message}"
+
+                                required>
+
+</textarea>
+
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-md-6">
+
+                            <label>
+
+                                Publish Date
+
+                            </label>
+
+                            <input
+
+                                    type="date"
+
+                                    class="form-control"
+
+                                    th:field="*{publishDate}">
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <label>
+
+                                Expiry Date
+
+                            </label>
+
+                            <input
+
+                                    type="date"
+
+                                    class="form-control"
+
+                                    th:field="*{expiryDate}">
+
+                        </div>
+
+                    </div>
+
+                    <br>
+
+                    <button
+                            class="btn btn-success">
+
+                        Save
+
+                    </button>
+
+                    <a
+                            th:href="@{/announcements}"
+
+                            class="btn btn-secondary">
+
+                        Cancel
+
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

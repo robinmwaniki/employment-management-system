@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<div th:fragment="sidebar">
+
+    <div class="sidebar">
+
+        <h3 class="text-center mt-4">
+
+            EMS
+
+        </h3>
+
+        <hr>
+
+        <a th:href="@{/dashboard}">
+            <i class="bi bi-speedometer2"></i>
+            Dashboard
+        </a>
+
+        <a th:href="@{/employees}">
+            <i class="bi bi-people"></i>
+            Employees
+        </a>
+
+        <a th:href="@{/departments}">
+            <i class="bi bi-building"></i>
+            Departments
+        </a>
+
+        <a th:href="@{/attendance}">
+            <i class="bi bi-calendar-check"></i>
+            Attendance
+        </a>
+
+        <a th:href="@{/leave}">
+            <i class="bi bi-airplane"></i>
+            Leave
+        </a>
+
+        <a th:href="@{/payroll}">
+            <i class="bi bi-cash-stack"></i>
+            Payroll
+        </a>
+
+        <a th:href="@{/performance}">
+            <i class="bi bi-graph-up"></i>
+            Performance
+        </a>
+
+        <li class="nav-item">
+
+            <a class="nav-link"
+               th:href="@{/reports}">
+
+                <i class="bi bi-graph-up"></i>
+
+                Reports
+
+            </a>
+
+        </li>
+
+        <li class="nav-item">
+
+            <a class="nav-link"
+               th:href="@{/announcements}">
+
+                <i class="bi bi-megaphone-fill"></i>
+
+                Announcements
+
+            </a>
+
+        </li>
+
+        <li class="nav-item">
+
+            <a class="nav-link"
+               th:href="@{/users}">
+
+                <i class="bi bi-people-fill"></i>
+
+                Users
+
+            </a>
+
+        </li>
+
+        <a th:href="@{/profile}">
+            <i class="bi bi-person-circle"></i>
+            Profile
+        </a>
+
+        <a th:href="@{/logout}">
+            <i class="bi bi-box-arrow-right"></i>
+            Logout
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

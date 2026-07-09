@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Leave Requests')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">Leave Requests</h2>
+
+            <a th:href="@{/leave/new}"
+               class="btn btn-primary">
+
+                <i class="bi bi-plus-circle"></i>
+                Apply Leave
+
+            </a>
+
+        </div>
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+
+                <h5 class="mb-0">
+                    Leave Requests
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>Employee</th>
+                            <th>Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="leave : ${leaves.content}">
+
+                            <td th:text="${leave.employeeName}"></td>
+
+                            <td th:text="${leave.leaveType}"></td>
+
+                            <td th:text="${leave.startDate}"></td>
+
+                            <td th:text="${leave.endDate}"></td>
+
+                            <td>
+
+<span class="badge bg-warning"
+      th:if="${leave.status.name() == 'PENDING'}">
+    Pending
+</span>
+
+                                <span class="badge bg-success"
+                                      th:if="${leave.status.name() == 'APPROVED'}">
+    Approved
+</span>
+
+                                <span class="badge bg-danger"
+                                      th:if="${leave.status.name() == 'REJECTED'}">
+    Rejected
+</span>
+
+                                <span class="badge bg-secondary"
+                                      th:if="${leave.status.name() == 'CANCELLED'}">
+    Cancelled
+</span>
+
+                            </td>
+
+                            <td>
+
+                                <a th:href="@{/leave/approve/{id}(id=${leave.id})}"
+                                   class="btn btn-success btn-sm">
+
+                                    ✔
+
+                                </a>
+
+                                <a th:href="@{/leave/reject/{id}(id=${leave.id})}"
+                                   class="btn btn-danger btn-sm">
+
+                                    ✖
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+</body>
+
+</html>

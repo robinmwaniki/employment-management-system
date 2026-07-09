@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('My Attendance')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/employee-sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">
+
+                My Attendance
+
+            </h2>
+
+            <div>
+
+                <form th:action="@{/employee/check-in}"
+                      method="post"
+                      class="d-inline">
+
+                    <button class="btn btn-success">
+
+                        Check In
+
+                    </button>
+
+                </form>
+
+                <form th:action="@{/employee/check-out}"
+                      method="post"
+                      class="d-inline">
+
+                    <button class="btn btn-danger">
+
+                        Check Out
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+
+                <h5 class="mb-0">
+
+                    Attendance History
+
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>Date</th>
+
+                            <th>Check In</th>
+
+                            <th>Check Out</th>
+
+                            <th>Hours Worked</th>
+
+                            <th>Late</th>
+
+                            <th>Overtime</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="attendance : ${attendance.content}">
+
+                            <td th:text="${attendance.attendanceDate}"></td>
+
+                            <td th:text="${attendance.checkInTime}"></td>
+
+                            <td th:text="${attendance.checkOutTime}"></td>
+
+                            <td th:text="${attendance.workingHours}"></td>
+
+                            <td>
+
+                                <span
+                                        th:if="${attendance.late}"
+                                        class="badge bg-warning">
+
+                                    Late
+
+                                </span>
+
+                                <span
+                                        th:unless="${attendance.late}"
+                                        class="badge bg-success">
+
+                                    On Time
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span
+                                        th:if="${attendance.overtime}"
+                                        class="badge bg-info">
+
+                                    Yes
+
+                                </span>
+
+                                <span
+                                        th:unless="${attendance.overtime}"
+                                        class="badge bg-secondary">
+
+                                    No
+
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+                        <tr th:if="${attendance.content.isEmpty()}">
+
+                            <td colspan="6"
+                                class="text-center text-muted">
+
+                                No attendance records found.
+
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

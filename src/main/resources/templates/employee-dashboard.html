@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Employee Dashboard')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/employee-sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="card shadow border-0">
+
+            <div class="card-body">
+
+                <h2>
+
+                    Welcome,
+
+                    <span th:text="${username}"></span>
+
+                </h2>
+
+                <p>
+
+                    Employee Self Service Portal
+
+                </p>
+
+            </div>
+
+        </div>
+
+        <br>
+
+        <div class="row">
+
+            <div class="col-md-4">
+
+                <div class="card shadow">
+
+                    <div class="card-body">
+
+                        <h5>
+
+                            Attendance
+
+                        </h5>
+
+                        <a
+                                class="btn btn-primary"
+
+                                th:href="@{/employee/attendance}">
+
+                            View
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="card shadow">
+
+                    <div class="card-body">
+
+                        <h5>
+
+                            Leave Requests
+
+                        </h5>
+
+                        <a
+                                class="btn btn-success"
+
+                                th:href="@{/employee/leave}">
+
+                            View
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="card shadow">
+
+                    <div class="card-body">
+
+                        <h5>
+
+                            Payroll
+
+                        </h5>
+
+                        <a
+                                class="btn btn-warning"
+
+                                th:href="@{/employee/payroll}">
+
+                            View
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <br>
+
+        <div class="card shadow">
+
+            <div class="card-header">
+
+                Latest Announcements
+
+            </div>
+            <div class="col-md-4">
+
+                <div class="card shadow">
+
+                    <div class="card-body">
+
+                        <h5>My Profile</h5>
+
+                        <a class="btn btn-info"
+                           th:href="@{/employee/profile}">
+
+                            Open Profile
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card-body">
+
+                <div
+                        th:each="announcement : ${announcements}">
+
+                    <h5
+                            th:text="${announcement.title}">
+                    </h5>
+
+                    <p
+                            th:text="${announcement.message}">
+                    </p>
+
+                    <hr>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

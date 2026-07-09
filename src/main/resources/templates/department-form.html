@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Department')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-5">
+
+        <div class="row justify-content-center">
+
+            <div class="col-md-6">
+
+                <div class="card shadow">
+
+                    <div class="card-header bg-primary text-white">
+
+                        <h4>
+
+                            <span th:if="${departmentId == null}">
+                                Add Department
+                            </span>
+
+                            <span th:unless="${departmentId == null}">
+                                Edit Department
+                            </span>
+
+                        </h4>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <form
+                                th:action="${departmentId == null}
+                                ? @{/departments/save}
+                                : @{/departments/update/{id}(id=${departmentId})}"
+                                th:object="${department}"
+                                method="post">
+
+                            <!-- Department Name -->
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+
+                                    Department Name
+
+                                </label>
+
+                                <input
+                                        type="text"
+                                        class="form-control"
+                                        th:field="*{name}"
+                                        placeholder="Human Resources"
+                                        required>
+
+                            </div>
+
+                            <!-- Department Code -->
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+
+                                    Department Code
+
+                                </label>
+
+                                <input
+                                        type="text"
+                                        class="form-control"
+                                        th:field="*{code}"
+                                        placeholder="HR, IT, FIN"
+                                        maxlength="20"
+                                        required>
+
+                            </div>
+
+                            <button class="btn btn-success">
+
+                                Save
+
+                            </button>
+
+                            <a th:href="@{/departments}"
+                               class="btn btn-secondary">
+
+                                Cancel
+
+                            </a>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

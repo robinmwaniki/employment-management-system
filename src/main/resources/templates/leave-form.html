@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Apply Leave')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-5">
+
+        <div class="row justify-content-center">
+
+            <div class="col-md-6">
+
+                <div class="card shadow">
+
+                    <div class="card-header bg-primary text-white">
+
+                        <h4>Apply Leave</h4>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <form
+                                th:action="@{/leave/save}"
+                                th:object="${leave}"
+                                method="post">
+
+                            <div class="mb-3">
+
+                                <label>Employee</label>
+
+                                <select
+                                        class="form-select"
+                                        th:field="*{employeeId}"
+                                        required>
+
+                                    <option value="">Select Employee</option>
+
+                                    <option
+                                            th:each="employee : ${employees}"
+                                            th:value="${employee.id}"
+                                            th:text="${employee.firstName + ' ' + employee.lastName}">
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label>Leave Type</label>
+
+                                <select
+                                        class="form-select"
+                                        th:field="*{leaveType}"
+                                        required>
+
+                                    <option value="">Select Type</option>
+
+                                    <option
+                                            th:each="type : ${T(com.ems.entity.LeaveType).values()}"
+                                            th:value="${type}"
+                                            th:text="${type}">
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label>Start Date</label>
+
+                                <input
+                                        type="date"
+                                        class="form-control"
+                                        th:field="*{startDate}"
+                                        required>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label>End Date</label>
+
+                                <input
+                                        type="date"
+                                        class="form-control"
+                                        th:field="*{endDate}"
+                                        required>
+
+                            </div>
+
+                            <div class="mb-3">
+
+                                <label>Reason</label>
+
+                                <textarea
+                                        class="form-control"
+                                        rows="4"
+                                        th:field="*{reason}">
+</textarea>
+
+                            </div>
+
+                            <button class="btn btn-success">
+
+                                Submit Leave Request
+
+                            </button>
+
+                            <a th:href="@{/leave}"
+                               class="btn btn-secondary">
+
+                                Cancel
+
+                            </a>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

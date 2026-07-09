@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('User Account')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-4">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+
+                <h4
+                        th:text="${userId != null}
+? 'Edit User'
+: 'Create User'">
+                </h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <form
+
+                        th:action="${userId != null}
+? @{/users/update/{id}(id=${userId})}
+: @{/users/save}"
+
+                        th:object="${user}"
+
+                        method="post">
+
+                    <div class="mb-3">
+
+                        <label>
+
+                            Employee
+
+                        </label>
+
+                        <select
+                                class="form-select"
+
+                                th:field="*{employeeId}"
+
+                                required>
+
+                            <option value="">
+
+                                Select Employee
+
+                            </option>
+
+                            <option
+                                    th:each="employee : ${employees}"
+
+                                    th:value="${employee.id}"
+
+                                    th:text="${employee.firstName + ' ' + employee.lastName}">
+
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label>
+
+                            Username
+
+                        </label>
+
+                        <input
+                                class="form-control"
+
+                                th:field="*{username}"
+
+                                required>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label>
+
+                            Password</label>
+
+                        <input
+                                type="password"
+
+                                class="form-control"
+
+                                th:field="*{password}"
+
+                                placeholder="Leave blank to keep existing password">
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label>
+
+                            Role
+
+                        </label>
+
+                        <select
+                                class="form-select"
+
+                                th:field="*{role}">
+
+                            <option value="ROLE_ADMIN">
+
+                                Administrator
+
+                            </option>
+
+                            <option value="ROLE_HR_MANAGER">
+
+                                HR Manager
+
+                            </option>
+
+                            <option value="ROLE_EMPLOYEE">
+
+                                Employee
+
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <button
+                            class="btn btn-success">
+
+                        Save User
+
+                    </button>
+
+                    <a
+                            th:href="@{/users}"
+
+                            class="btn btn-secondary">
+
+                        Cancel
+
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

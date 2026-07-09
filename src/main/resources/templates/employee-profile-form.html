@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Edit Profile')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/employee-sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-4">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-primary text-white">
+
+                <h4>Edit Profile</h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <form th:action="@{/employee/profile/update}"
+                      th:object="${employee}"
+                      method="post">
+
+                    <div class="mb-3">
+
+                        <label>First Name</label>
+
+                        <input
+                                type="text"
+                                class="form-control"
+                                th:field="*{firstName}">
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label>Last Name</label>
+
+                        <input
+                                type="text"
+                                class="form-control"
+                                th:field="*{lastName}">
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label>Email</label>
+
+                        <input
+                                type="email"
+                                class="form-control"
+                                th:field="*{email}">
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label>Phone Number</label>
+
+                        <input
+                                type="text"
+                                class="form-control"
+                                th:field="*{phoneNumber}">
+
+                    </div>
+
+                    <div class="d-grid">
+
+                        <button
+                                class="btn btn-success">
+
+                            Save Changes
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

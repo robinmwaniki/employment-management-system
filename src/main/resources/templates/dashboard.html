@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Dashboard')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <h2 class="mb-4">
+            Dashboard
+        </h2>
+
+        <div class="row g-4">
+
+            <div class="col-lg-3 col-md-6">
+
+                <div class="card text-bg-primary shadow">
+
+                    <div class="card-body">
+
+                        <h6>Total Employees</h6>
+
+                        <h2 th:text="${employees}"></h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+
+                <div class="card text-bg-success shadow">
+
+                    <div class="card-body">
+
+                        <h6>Departments</h6>
+
+                        <h2 th:text="${departments}"></h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+
+                <div class="card text-bg-warning shadow">
+
+                    <div class="card-body">
+
+                        <h6>Leave Requests</h6>
+
+                        <h2 th:text="${leaves}"></h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+
+                <div class="card text-bg-danger shadow">
+
+                    <div class="card-body">
+
+                        <h6>Payroll Records</h6>
+
+                        <h2 th:text="${payrolls}"></h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card shadow mt-5">
+
+            <div class="card-header">
+
+                Employee Growth
+
+            </div>
+
+            <div class="card-body">
+
+                <canvas id="employeeChart" height="120"></canvas>
+
+            </div>
+
+        </div>
+
+        <div class="card shadow mt-5">
+
+            <div class="card-header">
+
+                Recent Employees
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>ID</th>
+
+                            <th>Name</th>
+
+                            <th>Email</th>
+
+                            <th>Department</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="employee : ${recentEmployees}">
+
+                            <td th:text="${employee.id}"></td>
+
+                            <td>
+                                <strong th:text="${employee.firstName + ' ' + employee.lastName}"></strong>
+                            </td>
+
+                            <td th:text="${employee.email}"></td>
+
+                            <td th:text="${employee.department.name}"></td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script th:src="@{/js/dashboard.js}"></script>
+
+</body>
+
+</html>

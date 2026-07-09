@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Reports')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <h2 class="fw-bold mb-4">
+
+            Reports Dashboard
+
+        </h2>
+
+        <div class="row g-4">
+
+            <div class="col-md-4">
+
+                <div class="card shadow border-0">
+
+                    <div class="card-body text-center">
+
+                        <h5>Total Employees</h5>
+
+                        <h1 class="text-primary"
+                            th:text="${employeeCount}"></h1>
+
+                        <a th:href="@{/reports/employees}"
+                           class="btn btn-primary mt-3">
+
+                            View Report
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="card shadow border-0">
+
+                    <div class="card-body text-center">
+
+                        <h5>Attendance Records</h5>
+
+                        <h1 class="text-success"
+                            th:text="${attendanceCount}"></h1>
+
+                        <a th:href="@{/reports/attendance}"
+                           class="btn btn-success mt-3">
+
+                            View Report
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="card shadow border-0">
+
+                    <div class="card-body text-center">
+
+                        <h5>Leave Requests</h5>
+
+                        <h1 class="text-warning"
+                            th:text="${leaveCount}"></h1>
+
+                        <a th:href="@{/reports/leaves}"
+                           class="btn btn-warning mt-3">
+
+                            View Report
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="card shadow border-0">
+
+                    <div class="card-body text-center">
+
+                        <h5>Payroll Records</h5>
+
+                        <h1 class="text-danger"
+                            th:text="${payrollCount}"></h1>
+
+                        <a th:href="@{/reports/payroll}"
+                           class="btn btn-danger mt-3">
+
+                            View Report
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-6">
+
+                <div class="card shadow border-0">
+
+                    <div class="card-body text-center">
+
+                        <h5>Departments</h5>
+
+                        <h1 class="text-info"
+                            th:text="${departmentCount}"></h1>
+
+                        <a th:href="@{/reports/departments}"
+                           class="btn btn-info mt-3">
+
+                            View Report
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

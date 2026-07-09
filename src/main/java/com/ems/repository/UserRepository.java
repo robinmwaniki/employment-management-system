@@ -1,0 +1,17 @@
+package com.ems.repository;
+
+import com.ems.entity.Employee;
+import com.ems.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    Optional<User> findByUsername(String username);
+
+    boolean existsByUsername(String username);
+
+    boolean existsByEmployee(Employee employee);
+
+}

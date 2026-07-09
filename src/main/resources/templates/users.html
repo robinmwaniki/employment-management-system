@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('System Users')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">
+
+                System Users
+
+            </h2>
+
+            <a th:href="@{/users/new}"
+               class="btn btn-primary">
+
+                Create User
+
+            </a>
+
+        </div>
+
+        <div class="card shadow">
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-hover">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>ID</th>
+                            <th>Employee</th>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="user : ${users.content}">
+
+                            <td th:text="${user.id}"></td>
+
+                            <td th:text="${user.employeeName}"></td>
+
+                            <td th:text="${user.username}"></td>
+
+                            <td>
+
+                                <span class="badge bg-success"
+                                      th:text="${user.role}"></span>
+
+                            </td>
+
+                            <td>
+
+                                <a th:href="@{/users/edit/{id}(id=${user.id})}"
+                                   class="btn btn-warning btn-sm">
+
+                                    Edit
+
+                                </a>
+
+                                <a th:href="@{/users/delete/{id}(id=${user.id})}"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Delete this user account?');">
+
+                                    Delete
+
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        <tr th:if="${users.content.isEmpty()}">
+
+                            <td colspan="5"
+                                class="text-center text-muted">
+
+                                No user accounts found.
+
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

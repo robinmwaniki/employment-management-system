@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Announcements')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">
+
+                Company Announcements
+
+            </h2>
+
+            <a th:href="@{/announcements/new}"
+               class="btn btn-primary">
+
+                New Announcement
+
+            </a>
+
+        </div>
+
+        <div class="card shadow">
+
+            <div class="card-body">
+
+                <table class="table table-hover">
+
+                    <thead class="table-dark">
+
+                    <tr>
+
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Publish Date</th>
+                        <th>Expiry Date</th>
+                        <th>Actions</th>
+
+                    </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    <tr th:each="announcement : ${announcements.content}">
+
+                        <td th:text="${announcement.id}"></td>
+
+                        <td th:text="${announcement.title}"></td>
+
+                        <td th:text="${announcement.publishDate}"></td>
+
+                        <td th:text="${announcement.expiryDate}"></td>
+
+                        <td>
+
+                            <a th:href="@{/announcements/edit/{id}(id=${announcement.id})}"
+                               class="btn btn-warning btn-sm">
+
+                                Edit
+
+                            </a>
+
+                            <a th:href="@{/announcements/delete/{id}(id=${announcement.id})}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Delete this announcement?');">
+
+                                Delete
+
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Payslip')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-4">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-success text-white">
+
+                <h3 class="mb-0">
+
+                    Employee Payslip
+
+                </h3>
+
+            </div>
+
+            <div class="card-body">
+
+                <table class="table table-bordered">
+
+                    <tr>
+                        <th>Payroll ID</th>
+                        <td th:text="${payroll.id}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Employee</th>
+                        <td th:text="${payroll.employeeName}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Payroll Month</th>
+                        <td th:text="${payroll.payrollMonth}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Basic Salary</th>
+                        <td th:text="${payroll.basicSalary}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>House Allowance</th>
+                        <td th:text="${payroll.houseAllowance}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Transport Allowance</th>
+                        <td th:text="${payroll.transportAllowance}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Bonus</th>
+                        <td th:text="${payroll.bonus}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Deductions</th>
+                        <td th:text="${payroll.deductions}"></td>
+                    </tr>
+
+                    <tr>
+                        <th>Tax</th>
+                        <td th:text="${payroll.tax}"></td>
+                    </tr>
+
+                    <tr class="table-success">
+
+                        <th>Net Salary</th>
+
+                        <td>
+
+                            <strong th:text="${payroll.netSalary}"></strong>
+
+                        </td>
+
+                    </tr>
+
+                </table>
+
+                <a th:href="@{/payroll}"
+                   class="btn btn-secondary">
+
+                    Back
+
+                </a>
+
+                <button
+                        onclick="window.print()"
+                        class="btn btn-primary">
+
+                    Print Payslip
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,21 @@
+body{
+
+    background:#f5f7fb;
+
+    font-family:Arial,Helvetica,sans-serif;
+
+}
+
+.card{
+
+    border:none;
+
+    border-radius:15px;
+
+}
+
+.btn-primary{
+
+    padding:10px;
+
+}

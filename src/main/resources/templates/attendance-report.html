@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Attendance Report')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">
+
+                Attendance Report
+
+            </h2>
+
+            <div>
+
+                <button class="btn btn-danger">
+
+                    Export PDF
+
+                </button>
+
+                <button class="btn btn-success">
+
+                    Export Excel
+
+                </button>
+
+                <button
+                        onclick="window.print()"
+                        class="btn btn-primary">
+
+                    Print
+
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="card shadow">
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>ID</th>
+
+                            <th>Employee</th>
+
+                            <th>Date</th>
+
+                            <th>Check In</th>
+
+                            <th>Check Out</th>
+
+                            <th>Working Hours</th>
+
+                            <th>Status</th>
+
+                            <th>Overtime</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="attendance : ${attendance.content}">
+
+                            <td th:text="${attendance.id}"></td>
+
+                            <td th:text="${attendance.employeeName}"></td>
+
+                            <td th:text="${attendance.attendanceDate}"></td>
+
+                            <td th:text="${attendance.checkInTime}"></td>
+
+                            <td th:text="${attendance.checkOutTime ?: '-'}"></td>
+
+                            <td th:text="${attendance.workingHours ?: '-'}"></td>
+
+                            <td>
+
+                                <span
+                                        th:if="${attendance.status.name() == 'PRESENT'}"
+                                        class="badge bg-success">
+
+                                    Present
+
+                                </span>
+
+                                <span
+                                        th:if="${attendance.status.name() == 'LATE'}"
+                                        class="badge bg-warning text-dark">
+
+                                    Late
+
+                                </span>
+
+                                <span
+                                        th:if="${attendance.status.name() == 'CHECKED_IN'}"
+                                        class="badge bg-primary">
+
+                                    Checked In
+
+                                </span>
+
+                                <span
+                                        th:if="${attendance.status.name() == 'ABSENT'}"
+                                        class="badge bg-danger">
+
+                                    Absent
+
+                                </span>
+
+                                <span
+                                        th:if="${attendance.status.name() == 'ON_LEAVE'}"
+                                        class="badge bg-info">
+
+                                    On Leave
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                <span
+                                        th:if="${attendance.overtime}"
+                                        class="badge bg-success">
+
+                                    Yes
+
+                                </span>
+
+                                <span
+                                        th:unless="${attendance.overtime}"
+                                        class="badge bg-secondary">
+
+                                    No
+
+                                </span>
+
+                            </td>
+
+                        </tr>
+
+                        <tr th:if="${attendance.content.isEmpty()}">
+
+                            <td colspan="8"
+                                class="text-center">
+
+                                No attendance records found.
+
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <nav class="mt-4">
+
+            <ul class="pagination justify-content-center">
+
+                <li class="page-item"
+                    th:classappend="${attendance.first}? 'disabled'">
+
+                    <a class="page-link"
+                       th:href="@{/reports/attendance(page=${attendance.number-1},size=${attendance.size})}">
+
+                        Previous
+
+                    </a>
+
+                </li>
+
+                <li class="page-item disabled">
+
+                    <span class="page-link">
+
+                        Page
+                        <span th:text="${attendance.number+1}"></span>
+                        of
+                        <span th:text="${attendance.totalPages}"></span>
+
+                    </span>
+
+                </li>
+
+                <li class="page-item"
+                    th:classappend="${attendance.last}? 'disabled'">
+
+                    <a class="page-link"
+                       th:href="@{/reports/attendance(page=${attendance.number+1},size=${attendance.size})}">
+
+                        Next
+
+                    </a>
+
+                </li>
+
+            </ul>
+
+        </nav>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>
