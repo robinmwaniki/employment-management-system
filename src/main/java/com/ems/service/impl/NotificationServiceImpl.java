@@ -8,26 +8,21 @@ import com.ems.service.interfaces.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class NotificationServiceImpl
-        implements NotificationService {
+public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
 
     @Override
-    public NotificationResponse create(
-            String title,
-            String message) {
+    public NotificationResponse create(String title, String message) {
 
         Notification notification = Notification.builder()
                 .title(title)
                 .message(message)
-                .read(false)
-                .createdAt(LocalDateTime.now())
+                .isRead(false)
                 .build();
 
         return NotificationMapper.toResponse(
@@ -47,16 +42,15 @@ public class NotificationServiceImpl
     @Override
     public long getUnreadCount() {
 
-        return notificationRepository.countByReadFalse();
+        return notificationRepository.countByIsReadFalse();
     }
 
     @Override
     public void markAsRead(Long id) {
 
-        Notification notification =
-                notificationRepository.findById(id)
-                        .orElseThrow(() ->
-                                new RuntimeException("Notification not found"));
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Notification not found"));
 
         notification.setRead(true);
 
@@ -66,14 +60,9 @@ public class NotificationServiceImpl
     @Override
     public void markAllAsRead() {
 
-        notificationRepository.findAll()
-                .forEach(notification -> {
-
-                    notification.setRead(true);
-
-                    notificationRepository.save(notification);
-
-                });
+        notificationRepository.findAll().forEach(notification -> {
+            notification.setRead(true);
+            notificationRepository.save(notification);
+        });
     }
-
 }

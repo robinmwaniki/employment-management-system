@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Notifications')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/employee-sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/employee-navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">
+                🔔 Notifications
+            </h2>
+
+            <div>
+
+                <span class="badge bg-danger fs-6">
+                    Unread:
+                    <span th:text="${unreadCount}"></span>
+                </span>
+
+                <a class="btn btn-primary ms-2"
+                   th:href="@{/employee/notifications/read-all}">
+                    Mark All Read
+                </a>
+
+            </div>
+
+        </div>
+
+        <div class="card shadow">
+
+            <div class="card-body">
+
+                <div th:if="${#lists.isEmpty(notifications)}">
+
+                    <div class="alert alert-info">
+                        No notifications available.
+                    </div>
+
+                </div>
+
+                <div class="list-group"
+                     th:unless="${#lists.isEmpty(notifications)}">
+
+                    <div class="list-group-item"
+                         th:each="notification : ${notifications}">
+
+                        <div class="d-flex justify-content-between align-items-start">
+
+                            <div>
+
+                                <h5 class="mb-1">
+
+                                    <span th:text="${notification.title}"></span>
+
+                                    <span class="badge bg-danger ms-2"
+                                          th:if="${!notification.read}">
+                                        New
+                                    </span>
+
+                                </h5>
+
+                                <p class="mb-1"
+                                   th:text="${notification.message}">
+                                </p>
+
+                                <small class="text-muted"
+                                       th:text="${#temporals.format(notification.createdAt,'dd MMM yyyy HH:mm')}">
+                                </small>
+
+                            </div>
+
+                            <div>
+
+                                <a class="btn btn-success btn-sm"
+                                   th:if="${!notification.read}"
+                                   th:href="@{'/employee/notifications/read/' + ${notification.id}}">
+                                    Mark Read
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

@@ -10,6 +10,6 @@ public interface NotificationRepository
 
     List<Notification> findTop10ByOrderByCreatedAtDesc();
 
-    long countByReadFalse();
+    long countByIsReadFalse();
 
 }

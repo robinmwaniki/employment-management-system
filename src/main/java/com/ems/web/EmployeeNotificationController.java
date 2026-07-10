@@ -8,13 +8,12 @@ import org.springframework.web.bind.annotation.*;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/notifications")
-public class NotificationController {
+public class EmployeeNotificationController {
 
     private final NotificationService notificationService;
 
-    @GetMapping
-    public String notifications(Model model) {
+    @GetMapping("/employee/notifications")
+    public String employeeNotifications(Model model) {
 
         model.addAttribute(
                 "notifications",
@@ -24,23 +23,23 @@ public class NotificationController {
                 "unreadCount",
                 notificationService.getUnreadCount());
 
-        return "notifications";
+        return "employee-notifications";
     }
 
-    @GetMapping("/read/{id}")
+    @GetMapping("/employee/notifications/read/{id}")
     public String markAsRead(@PathVariable Long id) {
 
         notificationService.markAsRead(id);
 
-        return "redirect:/notifications";
+        return "redirect:/employee/notifications";
     }
 
-    @GetMapping("/read-all")
-    public String readAll() {
+    @GetMapping("/employee/notifications/read-all")
+    public String markAllAsRead() {
 
         notificationService.markAllAsRead();
 
-        return "redirect:/notifications";
+        return "redirect:/employee/notifications";
     }
 
 }

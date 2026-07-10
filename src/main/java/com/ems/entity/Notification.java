@@ -24,10 +24,9 @@ public class Notification extends BaseEntity {
     @Column(length = 1000)
     private String message;
 
-    @Column(nullable = false)
-    private boolean read;
+    @Column(name = "is_read", nullable = false)
+    private boolean isRead;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
+
 
 }
