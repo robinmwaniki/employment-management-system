@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/head :: head('Dashboard')}"></head>
+<head th:replace="~{fragments/head :: head('HR Dashboard')}"></head>
 
 <body>
 
@@ -13,21 +13,31 @@
 
     <div class="container-fluid mt-4">
 
-        <h2 class="mb-4">
-            Dashboard
-        </h2>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">
+                HR Dashboard
+            </h2>
+
+            <span class="text-muted">
+                Welcome to the Employee Management System
+            </span>
+
+        </div>
+
+        <!-- Statistics Cards -->
 
         <div class="row g-4">
 
-            <div class="col-lg-3 col-md-6">
+            <div class="col-xl-3 col-md-6">
 
-                <div class="card text-bg-primary shadow">
+                <div class="card border-0 shadow text-bg-primary">
 
                     <div class="card-body">
 
                         <h6>Total Employees</h6>
 
-                        <h2 th:text="${employees}"></h2>
+                        <h2 th:text="${employees}">0</h2>
 
                     </div>
 
@@ -35,15 +45,15 @@
 
             </div>
 
-            <div class="col-lg-3 col-md-6">
+            <div class="col-xl-3 col-md-6">
 
-                <div class="card text-bg-success shadow">
+                <div class="card border-0 shadow text-bg-success">
 
                     <div class="card-body">
 
                         <h6>Departments</h6>
 
-                        <h2 th:text="${departments}"></h2>
+                        <h2 th:text="${departments}">0</h2>
 
                     </div>
 
@@ -51,15 +61,15 @@
 
             </div>
 
-            <div class="col-lg-3 col-md-6">
+            <div class="col-xl-3 col-md-6">
 
-                <div class="card text-bg-warning shadow">
+                <div class="card border-0 shadow text-bg-info">
 
                     <div class="card-body">
 
-                        <h6>Leave Requests</h6>
+                        <h6>Present Today</h6>
 
-                        <h2 th:text="${leaves}"></h2>
+                        <h2 th:text="${presentToday}">0</h2>
 
                     </div>
 
@@ -67,15 +77,79 @@
 
             </div>
 
-            <div class="col-lg-3 col-md-6">
+            <div class="col-xl-3 col-md-6">
 
-                <div class="card text-bg-danger shadow">
+                <div class="card border-0 shadow text-bg-warning">
+
+                    <div class="card-body">
+
+                        <h6>Late Today</h6>
+
+                        <h2 th:text="${lateToday}">0</h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+
+                <div class="card border-0 shadow text-bg-danger">
+
+                    <div class="card-body">
+
+                        <h6>Pending Leave Requests</h6>
+
+                        <h2 th:text="${pendingLeaves}">0</h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+
+                <div class="card border-0 shadow bg-dark text-white">
 
                     <div class="card-body">
 
                         <h6>Payroll Records</h6>
 
-                        <h2 th:text="${payrolls}"></h2>
+                        <h2 th:text="${payrolls}">0</h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+
+                <div class="card border-0 shadow">
+
+                    <div class="card-body">
+
+                        <h6>Total Payroll</h6>
+
+                        <h3 th:text="${totalPayroll}">0</h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+
+                <div class="card border-0 shadow">
+
+                    <div class="card-body">
+
+                        <h6>Average Salary</h6>
+
+                        <h3 th:text="${averageSalary}">0</h3>
 
                     </div>
 
@@ -85,25 +159,101 @@
 
         </div>
 
-        <div class="card shadow mt-5">
+        <!-- Charts -->
 
-            <div class="card-header">
+        <div class="row mt-5">
 
-                Employee Growth
+            <div class="col-lg-6">
+
+                <div class="card shadow">
+
+                    <div class="card-header">
+
+                        Employee Growth
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <canvas id="employeeChart"></canvas>
+
+                    </div>
+
+                </div>
 
             </div>
 
-            <div class="card-body">
+            <div class="col-lg-6">
 
-                <canvas id="employeeChart" height="120"></canvas>
+                <div class="card shadow">
+
+                    <div class="card-header">
+
+                        Attendance Overview
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <canvas id="attendanceChart"></canvas>
+
+                    </div>
+
+                </div>
 
             </div>
 
         </div>
 
+        <div class="row mt-4">
+
+            <div class="col-lg-6">
+
+                <div class="card shadow">
+
+                    <div class="card-header">
+
+                        Leave Requests
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <canvas id="leaveChart"></canvas>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-6">
+
+                <div class="card shadow">
+
+                    <div class="card-header">
+
+                        Payroll Overview
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <canvas id="payrollChart"></canvas>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Recent Employees -->
+
         <div class="card shadow mt-5">
 
-            <div class="card-header">
+            <div class="card-header bg-primary text-white">
 
                 Recent Employees
 
@@ -137,9 +287,7 @@
 
                             <td th:text="${employee.id}"></td>
 
-                            <td>
-                                <strong th:text="${employee.firstName + ' ' + employee.lastName}"></strong>
-                            </td>
+                            <td th:text="${employee.firstName + ' ' + employee.lastName}"></td>
 
                             <td th:text="${employee.email}"></td>
 
@@ -164,6 +312,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <script th:src="@{/js/dashboard.js}"></script>
 
 </body>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Payroll Report')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+  <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+  <div class="container-fluid mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+      <h2 class="fw-bold">
+        Payroll Report
+      </h2>
+
+      <div>
+
+        <button class="btn btn-danger">
+          Export PDF
+        </button>
+
+        <button class="btn btn-success">
+          Export Excel
+        </button>
+
+        <button
+                onclick="window.print()"
+                class="btn btn-primary">
+
+          Print
+
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="card shadow">
+
+      <div class="card-body">
+
+        <div class="table-responsive">
+
+          <table class="table table-bordered table-hover">
+
+            <thead class="table-dark">
+
+            <tr>
+
+              <th>ID</th>
+              <th>Employee</th>
+              <th>Month</th>
+              <th>Basic Salary</th>
+              <th>House Allowance</th>
+              <th>Transport</th>
+              <th>Bonus</th>
+              <th>Deductions</th>
+              <th>Tax</th>
+              <th>Net Salary</th>
+
+            </tr>
+
+            </thead>
+
+            <tbody>
+
+            <tr th:each="payroll : ${payrolls.content}">
+
+              <td th:text="${payroll.id}"></td>
+
+              <td th:text="${payroll.employeeName}"></td>
+
+              <td th:text="${payroll.payrollMonth}"></td>
+
+              <td th:text="${payroll.basicSalary}"></td>
+
+              <td th:text="${payroll.houseAllowance}"></td>
+
+              <td th:text="${payroll.transportAllowance}"></td>
+
+              <td th:text="${payroll.bonus}"></td>
+
+              <td th:text="${payroll.deductions}"></td>
+
+              <td th:text="${payroll.tax}"></td>
+
+              <td class="fw-bold text-success"
+                  th:text="${payroll.netSalary}"></td>
+
+            </tr>
+
+            <tr th:if="${payrolls.content.isEmpty()}">
+
+              <td colspan="10"
+                  class="text-center">
+
+                No payroll records found.
+
+              </td>
+
+            </tr>
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <nav class="mt-4">
+
+      <ul class="pagination justify-content-center">
+
+        <li class="page-item"
+            th:classappend="${payrolls.first}? 'disabled'">
+
+          <a class="page-link"
+             th:href="@{/reports/payroll(page=${payrolls.number-1},size=${payrolls.size})}">
+
+            Previous
+
+          </a>
+
+        </li>
+
+        <li class="page-item disabled">
+
+                    <span class="page-link">
+
+                        Page
+                        <span th:text="${payrolls.number+1}"></span>
+                        of
+                        <span th:text="${payrolls.totalPages}"></span>
+
+                    </span>
+
+        </li>
+
+        <li class="page-item"
+            th:classappend="${payrolls.last}? 'disabled'">
+
+          <a class="page-link"
+             th:href="@{/reports/payroll(page=${payrolls.number+1},size=${payrolls.size})}">
+
+            Next
+
+          </a>
+
+        </li>
+
+      </ul>
+
+    </nav>
+
+  </div>
+
+</div>
+
+</body>
+
+</html>

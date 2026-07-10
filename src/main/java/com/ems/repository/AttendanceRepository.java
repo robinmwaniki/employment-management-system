@@ -17,6 +17,10 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
     );
 
     Page<Attendance> findByEmployee(Employee employee, Pageable pageable);
+    long countByAttendanceDate(LocalDate attendanceDate);
 
+    long countByAttendanceDateAndLate(
+            LocalDate attendanceDate,
+            boolean late);
 
 }
