@@ -3,12 +3,10 @@ package com.ems.controller;
 import com.ems.dto.request.PerformanceRequest;
 import com.ems.dto.response.PerformanceResponse;
 import com.ems.service.interfaces.PerformanceService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/performance")
@@ -19,23 +17,56 @@ public class PerformanceController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PerformanceResponse addReview(
-            @Valid @RequestBody PerformanceRequest request) {
+    public PerformanceResponse createReview(
+            @RequestBody PerformanceRequest request) {
 
-        return performanceService.addReview(request);
+        return performanceService.createReview(request);
     }
 
     @GetMapping("/{id}")
     public PerformanceResponse getReview(
             @PathVariable Long id) {
 
-        return performanceService.getReview(id);
+        return performanceService.getReviewById(id);
+    }
+
+    @GetMapping
+    public Page<PerformanceResponse> getAllReviews(
+
+            @RequestParam(defaultValue = "0") int page,
+
+            @RequestParam(defaultValue = "10") int size) {
+
+        return performanceService.getAllReviews(page, size);
     }
 
     @GetMapping("/employee/{employeeId}")
-    public List<PerformanceResponse> getEmployeeReviews(
-            @PathVariable Long employeeId) {
+    public Page<PerformanceResponse> getEmployeeReviews(
 
-        return performanceService.getEmployeeReviews(employeeId);
+            @PathVariable Long employeeId,
+
+            @RequestParam(defaultValue = "0") int page,
+
+            @RequestParam(defaultValue = "10") int size) {
+
+        return performanceService.getEmployeeReviews(
+                employeeId,
+                page,
+                size);
+    }
+
+    @PutMapping("/{id}")
+    public PerformanceResponse updateReview(
+            @PathVariable Long id,
+            @RequestBody PerformanceRequest request) {
+
+        return performanceService.updateReview(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteReview(
+            @PathVariable Long id) {
+
+        performanceService.deleteReview(id);
     }
 }

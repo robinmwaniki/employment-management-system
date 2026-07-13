@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AnnouncementServiceImpl implements AnnouncementService {
@@ -21,16 +23,17 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Override
     public AnnouncementResponse createAnnouncement(AnnouncementRequest request) {
 
-        Announcement announcement =
-                AnnouncementMapper.toEntity(request);
+        Announcement announcement = AnnouncementMapper.toEntity(request);
 
         return AnnouncementMapper.toResponse(
-                repository.save(announcement));
+                repository.save(announcement)
+        );
     }
 
     @Override
-    public AnnouncementResponse updateAnnouncement(Long id,
-                                                   AnnouncementRequest request) {
+    public AnnouncementResponse updateAnnouncement(
+            Long id,
+            AnnouncementRequest request) {
 
         Announcement announcement = repository.findById(id)
                 .orElseThrow(() ->
@@ -42,7 +45,8 @@ public class AnnouncementServiceImpl implements AnnouncementService {
         announcement.setExpiryDate(request.getExpiryDate());
 
         return AnnouncementMapper.toResponse(
-                repository.save(announcement));
+                repository.save(announcement)
+        );
     }
 
     @Override
@@ -56,8 +60,9 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     }
 
     @Override
-    public Page<AnnouncementResponse> getAllAnnouncements(int page,
-                                                          int size) {
+    public Page<AnnouncementResponse> getAllAnnouncements(
+            int page,
+            int size) {
 
         return repository.findAll(PageRequest.of(page, size))
                 .map(AnnouncementMapper::toResponse);
@@ -66,7 +71,20 @@ public class AnnouncementServiceImpl implements AnnouncementService {
     @Override
     public void deleteAnnouncement(Long id) {
 
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Announcement not found");
+        }
+
         repository.deleteById(id);
     }
 
+    @Override
+    public List<AnnouncementResponse> getLatestAnnouncements() {
+
+        return repository
+                .findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(AnnouncementMapper::toResponse)
+                .toList();
+    }
 }

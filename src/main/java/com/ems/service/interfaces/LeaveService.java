@@ -9,7 +9,10 @@ public interface LeaveService {
     LeaveResponse applyLeave(LeaveRequest request);
 
     Page<LeaveResponse> getAllLeaves(int page, int size);
-
+    Page<LeaveResponse> getEmployeeLeaves(
+            Long employeeId,
+            int page,
+            int size);
     LeaveResponse getLeaveById(Long id);
 
     LeaveResponse approveLeave(Long id);

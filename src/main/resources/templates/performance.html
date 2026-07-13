@@ -1,10 +1,104 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Performance Reviews')}"></head>
+
 <body>
 
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <h2 class="fw-bold">
+                Performance Reviews
+            </h2>
+
+            <a class="btn btn-primary"
+               th:href="@{/performance/new}">
+                Add Review
+            </a>
+
+        </div>
+
+        <div class="card shadow">
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>ID</th>
+                            <th>Employee</th>
+                            <th>Review Date</th>
+                            <th>Reviewer</th>
+                            <th>Rating</th>
+                            <th>Actions</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="review : ${reviews.content}">
+
+                            <td th:text="${review.id}"></td>
+
+                            <td th:text="${review.employeeName}"></td>
+
+                            <td th:text="${review.reviewDate}"></td>
+
+                            <td th:text="${review.reviewer}"></td>
+
+                            <td>
+
+                                <span class="badge bg-success"
+                                      th:text="${review.rating + '/5'}"></span>
+
+                            </td>
+
+                            <td>
+
+                                <a class="btn btn-warning btn-sm"
+                                   th:href="@{'/performance/edit/' + ${review.id}}">
+                                    Edit
+                                </a>
+
+                                <a class="btn btn-danger btn-sm"
+                                   onclick="return confirm('Delete this review?')"
+                                   th:href="@{'/performance/delete/' + ${review.id}}">
+                                    Delete
+                                </a>
+
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
 </body>
+
 </html>

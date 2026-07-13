@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('My Performance')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/employee-sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/employee-navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <h2 class="fw-bold mb-4">
+
+            My Performance Reviews
+
+        </h2>
+
+        <div class="card shadow">
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>Review Date</th>
+                            <th>Reviewer</th>
+                            <th>Rating</th>
+                            <th>Comments</th>
+                            <th>Goals</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="review : ${reviews.content}">
+
+                            <td th:text="${review.reviewDate}"></td>
+
+                            <td th:text="${review.reviewer}"></td>
+
+                            <td>
+
+<span class="badge bg-success"
+      th:text="${review.rating + '/5'}"></span>
+
+                            </td>
+
+                            <td th:text="${review.comments}"></td>
+
+                            <td th:text="${review.goals}"></td>
+
+                        </tr>
+
+                        <tr th:if="${#lists.isEmpty(reviews.content)}">
+
+                            <td colspan="5"
+                                class="text-center">
+
+                                No performance reviews available.
+
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

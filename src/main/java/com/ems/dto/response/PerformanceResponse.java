@@ -17,10 +17,12 @@ public class PerformanceResponse {
 
     private LocalDate reviewDate;
 
-    private Integer score;
+    private String reviewer;
 
-    private String managerComments;
+    private Integer rating;
 
-    private String employeeComments;
+    private String comments;
+
+    private String goals;
 
 }

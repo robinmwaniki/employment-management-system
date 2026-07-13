@@ -1,13 +1,18 @@
 package com.ems.repository;
 
 import com.ems.entity.Employee;
-import com.ems.entity.Performance;
+import com.ems.entity.PerformanceReview;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+public interface PerformanceRepository
+        extends JpaRepository<PerformanceReview, Long> {
 
-public interface PerformanceRepository extends JpaRepository<Performance, Long> {
+    Page<PerformanceReview> findAll(Pageable pageable);
 
-    List<Performance> findByEmployee(Employee employee);
+    Page<PerformanceReview> findByEmployee(
+            Employee employee,
+            Pageable pageable);
 
 }

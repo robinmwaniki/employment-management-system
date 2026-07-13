@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Performance Review')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container mt-4">
+
+        <div class="card shadow">
+
+            <div class="card-header">
+
+                <h4>Performance Review</h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <form th:action="@{/performance/save}"
+                      th:object="${review}"
+                      method="post">
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Employee
+                        </label>
+
+                        <select class="form-select"
+                                th:field="*{employeeId}"
+                                required>
+
+                            <option value="">
+                                Select Employee
+                            </option>
+
+                            <option
+                                    th:each="employee : ${employees}"
+                                    th:value="${employee.id}"
+                                    th:text="${employee.firstName + ' ' + employee.lastName}">
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Review Date
+                        </label>
+
+                        <input type="date"
+                               class="form-control"
+                               th:field="*{reviewDate}"
+                               required>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Reviewer
+                        </label>
+
+                        <input class="form-control"
+                               th:field="*{reviewer}"
+                               required>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Rating
+                        </label>
+
+                        <select class="form-select"
+                                th:field="*{rating}">
+
+                            <option value="1">1 - Poor</option>
+                            <option value="2">2 - Fair</option>
+                            <option value="3">3 - Good</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="5">5 - Excellent</option>
+
+                        </select>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Comments
+                        </label>
+
+                        <textarea class="form-control"
+                                  rows="4"
+                                  th:field="*{comments}">
+</textarea>
+
+                    </div>
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            Goals
+                        </label>
+
+                        <textarea class="form-control"
+                                  rows="3"
+                                  th:field="*{goals}">
+</textarea>
+
+                    </div>
+
+                    <button class="btn btn-success">
+                        Save Review
+                    </button>
+
+                    <a class="btn btn-secondary"
+                       th:href="@{/performance}">
+                        Cancel
+                    </a>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

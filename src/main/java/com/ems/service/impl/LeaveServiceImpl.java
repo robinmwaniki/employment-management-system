@@ -121,4 +121,21 @@ public class LeaveServiceImpl implements LeaveService {
                 leaveRepository.save(leave)
         );
     }
+    @Override
+    public Page<LeaveResponse> getEmployeeLeaves(
+            Long employeeId,
+            int page,
+            int size) {
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee not found with id: " + employeeId));
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return leaveRepository
+                .findByEmployee(employee, pageable)
+                .map(LeaveMapper::toResponse);
+    }
 }

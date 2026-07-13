@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Apply Leave')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/employee-sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/employee-navbar :: navbar}"></div>
+
+    <div class="container mt-5">
+
+        <div class="row justify-content-center">
+
+            <div class="col-lg-8">
+
+                <div class="card shadow">
+
+                    <div class="card-header bg-primary text-white">
+
+                        <h4 class="mb-0">
+
+                            Apply for Leave
+
+                        </h4>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <form th:action="@{/employee/leave/save}"
+                              th:object="${leave}"
+                              method="post">
+
+                            <div class="mb-3">
+
+                                <label class="form-label">
+
+                                    Leave Type
+
+                                </label>
+
+                                <select
+                                        class="form-select"
+                                        th:field="*{leaveType}"
+                                        required>
+
+                                    <option value="">
+                                        Select Leave Type
+                                    </option>
+
+                                    <option
+                                            th:each="type : ${T(com.ems.entity.LeaveType).values()}"
+                                            th:value="${type}"
+                                            th:text="${type}">
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            <div class="row">
+
+                                <div class="col-md-6">
+
+                                    <div class="mb-3">
+
+                                        <label class="form-label">
+
+                                            Start Date
+
+                                        </label>
+
+                                        <input
+                                                type="date"
+                                                class="form-control"
+                                                th:field="*{startDate}"
+                                                required>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-6">
+
+                                    <div class="mb-3">
+
+                                        <label class="form-label">
+
+                                            End Date
+
+                                        </label>
+
+                                        <input
+                                                type="date"
+                                                class="form-control"
+                                                th:field="*{endDate}"
+                                                required>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <div class="mb-4">
+
+                                <label class="form-label">
+
+                                    Reason
+
+                                </label>
+
+                                <textarea
+                                        class="form-control"
+                                        rows="5"
+                                        th:field="*{reason}"
+                                        placeholder="Explain why you are requesting leave..."
+                                        required>
+
+                                </textarea>
+
+                            </div>
+
+                            <button
+                                    type="submit"
+                                    class="btn btn-success">
+
+                                Submit Request
+
+                            </button>
+
+                            <a
+                                    th:href="@{/employee/leave}"
+                                    class="btn btn-secondary">
+
+                                Cancel
+
+                            </a>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

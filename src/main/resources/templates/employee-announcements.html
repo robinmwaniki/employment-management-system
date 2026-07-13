@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('Announcements')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/employee-sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/employee-navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <h2 class="fw-bold mb-4">
+
+            Company Announcements
+
+        </h2>
+
+        <div th:if="${#lists.isEmpty(announcements)}">
+
+            <div class="alert alert-info">
+
+                No announcements available.
+
+            </div>
+
+        </div>
+
+        <div class="card shadow mb-4"
+             th:each="announcement : ${announcements}">
+
+            <div class="card-header bg-primary text-white">
+
+                <h5 class="mb-0"
+                    th:text="${announcement.title}"></h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <p th:text="${announcement.message}"></p>
+
+                <hr>
+
+                <small class="text-muted"
+                       th:text="${#temporals.format(
+            announcement.publishDate,
+            'dd MMM yyyy')}">
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

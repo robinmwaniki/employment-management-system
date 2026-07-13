@@ -1,27 +1,29 @@
 package com.ems.mapper;
 
 import com.ems.dto.response.PerformanceResponse;
-import com.ems.entity.Performance;
+import com.ems.entity.PerformanceReview;
 
 public class PerformanceMapper {
 
     private PerformanceMapper() {
     }
 
-    public static PerformanceResponse toResponse(Performance performance) {
+    public static PerformanceResponse toResponse(
+            PerformanceReview review) {
 
         return PerformanceResponse.builder()
-                .id(performance.getId())
-                .employeeId(performance.getEmployee().getId())
+                .id(review.getId())
+                .employeeId(review.getEmployee().getId())
                 .employeeName(
-                        performance.getEmployee().getFirstName()
+                        review.getEmployee().getFirstName()
                                 + " "
-                                + performance.getEmployee().getLastName()
-                )
-                .reviewDate(performance.getReviewDate())
-                .score(performance.getScore())
-                .managerComments(performance.getManagerComments())
-                .employeeComments(performance.getEmployeeComments())
+                                + review.getEmployee().getLastName())
+                .reviewDate(review.getReviewDate())
+                .reviewer(review.getReviewer())
+                .rating(review.getRating())
+                .comments(review.getComments())
+                .goals(review.getGoals())
                 .build();
     }
+
 }

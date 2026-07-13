@@ -1,25 +1,22 @@
 package com.ems.dto.request;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
+import java.time.LocalDate;
 
 @Data
 public class PerformanceRequest {
 
-    @NotNull
     private Long employeeId;
 
-    @NotNull
-    @Min(1)
-    @Max(5)
-    private Integer score;
+    private LocalDate reviewDate;
 
-    @NotBlank
-    private String managerComments;
+    private String reviewer;
 
-    private String employeeComments;
+    private Integer rating;
+
+    private String comments;
+
+    private String goals;
 
 }
