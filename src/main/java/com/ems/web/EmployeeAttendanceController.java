@@ -4,11 +4,12 @@ import com.ems.dto.request.AttendanceRequest;
 import com.ems.entity.User;
 import com.ems.repository.UserRepository;
 import com.ems.service.interfaces.AttendanceService;
+import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -18,6 +19,7 @@ public class EmployeeAttendanceController {
 
     private final AttendanceService attendanceService;
     private final UserRepository userRepository;
+    private final SystemLogService systemLogService;
 
     @GetMapping("/employee/attendance")
     public String attendance(
@@ -25,7 +27,8 @@ public class EmployeeAttendanceController {
             Model model) {
 
         User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
 
         Long employeeId = user.getEmployee().getId();
 
@@ -37,6 +40,12 @@ public class EmployeeAttendanceController {
 
         model.addAttribute("attendance", attendance);
 
+        systemLogService.saveLog(
+                user.getUsername(),
+                "EMPLOYEE",
+                "VIEW ATTENDANCE",
+                "Viewed personal attendance history");
+
         return "employee-attendance";
     }
 
@@ -44,7 +53,8 @@ public class EmployeeAttendanceController {
     public String checkIn(Authentication authentication) {
 
         User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
 
         AttendanceRequest request = new AttendanceRequest();
 
@@ -59,7 +69,8 @@ public class EmployeeAttendanceController {
     public String checkOut(Authentication authentication) {
 
         User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
 
         attendanceService.checkOut(user.getEmployee().getId());
 

@@ -10,6 +10,7 @@ import com.ems.repository.DepartmentRepository;
 import com.ems.repository.EmployeeRepository;
 import com.ems.service.interfaces.EmployeeService;
 import com.ems.service.interfaces.FileStorageService;
+import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -31,6 +32,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final FileStorageService fileStorageService;
+    private final SystemLogService systemLogService;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -62,6 +64,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee savedEmployee = employeeRepository.save(employee);
 
+        systemLogService.saveLog(
+                "HR Admin",
+                "ADMIN",
+                "CREATE EMPLOYEE",
+                "Created employee "
+                        + savedEmployee.getFirstName()
+                        + " "
+                        + savedEmployee.getLastName());
+
         return EmployeeMapper.toResponse(savedEmployee);
     }
 
@@ -83,8 +94,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
                         keyword,
                         keyword,
-                        pageable
-                )
+                        pageable)
                 .map(EmployeeMapper::toResponse);
     }
 
@@ -122,6 +132,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         Employee updatedEmployee = employeeRepository.save(employee);
 
+        systemLogService.saveLog(
+                "HR Admin",
+                "ADMIN",
+                "UPDATE EMPLOYEE",
+                "Updated employee "
+                        + updatedEmployee.getFirstName()
+                        + " "
+                        + updatedEmployee.getLastName());
+
         return EmployeeMapper.toResponse(updatedEmployee);
     }
 
@@ -132,6 +151,15 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Employee not found with id: " + id));
+
+        systemLogService.saveLog(
+                "HR Admin",
+                "ADMIN",
+                "DELETE EMPLOYEE",
+                "Deleted employee "
+                        + employee.getFirstName()
+                        + " "
+                        + employee.getLastName());
 
         employeeRepository.delete(employee);
     }

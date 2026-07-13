@@ -9,6 +9,7 @@ import com.ems.mapper.AttendanceMapper;
 import com.ems.repository.AttendanceRepository;
 import com.ems.repository.EmployeeRepository;
 import com.ems.service.interfaces.AttendanceService;
+import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +27,7 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     private final AttendanceRepository attendanceRepository;
     private final EmployeeRepository employeeRepository;
+    private final SystemLogService systemLogService;
 
     @Override
     public AttendanceResponse checkIn(AttendanceRequest request) {
@@ -57,8 +59,14 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .overtime(false)
                 .build();
 
-        Attendance savedAttendance =
-                attendanceRepository.save(attendance);
+        Attendance savedAttendance = attendanceRepository.save(attendance);
+
+        // ===== System Log =====
+        systemLogService.saveLog(
+                employee.getFirstName() + " " + employee.getLastName(),
+                "EMPLOYEE",
+                "CHECK IN",
+                "Checked in at " + savedAttendance.getCheckInTime());
 
         return AttendanceMapper.toResponse(savedAttendance);
     }
@@ -102,6 +110,13 @@ public class AttendanceServiceImpl implements AttendanceService {
 
         Attendance updatedAttendance =
                 attendanceRepository.save(attendance);
+
+        // ===== System Log =====
+        systemLogService.saveLog(
+                employee.getFirstName() + " " + employee.getLastName(),
+                "EMPLOYEE",
+                "CHECK OUT",
+                "Checked out at " + updatedAttendance.getCheckOutTime());
 
         return AttendanceMapper.toResponse(updatedAttendance);
     }

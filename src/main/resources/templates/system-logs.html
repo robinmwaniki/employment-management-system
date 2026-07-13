@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{fragments/head :: head('System Logs')}"></head>
+
+<body>
+
+<div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+<div class="content">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container-fluid mt-4">
+
+        <div class="card shadow">
+
+            <div class="card-header bg-dark text-white">
+
+                <h4 class="mb-0">
+
+                    📋 System Logs
+
+                </h4>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover align-middle">
+
+                        <thead class="table-dark">
+
+                        <tr>
+
+                            <th>ID</th>
+
+                            <th>User</th>
+
+                            <th>Role</th>
+
+                            <th>Action</th>
+
+                            <th>Description</th>
+
+                            <th>Date & Time</th>
+
+                        </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                        <tr th:each="log : ${logs.content}">
+
+                            <td th:text="${log.id}"></td>
+
+                            <td th:text="${log.username}"></td>
+
+                            <td th:text="${log.role}"></td>
+
+                            <td>
+
+                                <span class="badge bg-primary"
+                                      th:text="${log.action}">
+                                </span>
+
+                            </td>
+
+                            <td th:text="${log.description}"></td>
+
+                            <td th:text="${#temporals.format(log.createdAt,'dd MMM yyyy HH:mm')}"></td>
+
+                        </tr>
+
+                        <tr th:if="${logs.totalElements == 0}">
+
+                            <td colspan="6"
+                                class="text-center">
+
+                                No system logs found.
+
+                            </td>
+
+                        </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>
