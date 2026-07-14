@@ -8,38 +8,43 @@ import com.ems.exception.ResourceNotFoundException;
 import com.ems.mapper.PayrollMapper;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.PayrollRepository;
+import com.ems.service.interfaces.EmailService;
 import com.ems.service.interfaces.PayrollService;
+import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+
 @Service
 @RequiredArgsConstructor
 public class PayrollServiceImpl implements PayrollService {
 
     private final PayrollRepository payrollRepository;
     private final EmployeeRepository employeeRepository;
+    private final SystemLogService systemLogService;
+    private final EmailService emailService;
 
     @Override
     public PayrollResponse generatePayroll(PayrollRequest request) {
 
         Employee employee = employeeRepository.findById(request.getEmployeeId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Employee not found with id: " + request.getEmployeeId()));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee not found with id: " + request.getEmployeeId()));
 
         payrollRepository.findByEmployeeAndPayrollMonth(
-                employee,
-                request.getPayrollMonth()
-        ).ifPresent(p -> {
-            throw new IllegalArgumentException(
-                    "Payroll has already been generated for this employee and month."
-            );
-        });
+                        employee,
+                        request.getPayrollMonth())
+                .ifPresent(p -> {
+                    throw new IllegalArgumentException(
+                            "Payroll has already been generated for this employee and month.");
+                });
 
         BigDecimal basicSalary = employee.getSalary();
 
@@ -64,6 +69,27 @@ public class PayrollServiceImpl implements PayrollService {
 
         Payroll savedPayroll = payrollRepository.save(payroll);
 
+        systemLogService.saveLog(
+                "HR Admin",
+                "ADMIN",
+                "GENERATE PAYROLL",
+                "Generated payroll for "
+                        + employee.getFirstName()
+                        + " "
+                        + employee.getLastName());
+
+        emailService.sendEmail(
+                employee.getEmail(),
+                "Payroll Generated",
+                "Dear "
+                        + employee.getFirstName()
+                        + ",\n\n"
+                        + "Your payroll for "
+                        + request.getPayrollMonth()
+                        + " has been generated.\n\n"
+                        + "Net Salary: "
+                        + netSalary);
+
         return PayrollMapper.toResponse(savedPayroll);
     }
 
@@ -71,8 +97,9 @@ public class PayrollServiceImpl implements PayrollService {
     public PayrollResponse getPayroll(Long id) {
 
         Payroll payroll = payrollRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Payroll not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Payroll not found with id: " + id));
 
         return PayrollMapper.toResponse(payroll);
     }
@@ -81,8 +108,9 @@ public class PayrollServiceImpl implements PayrollService {
     public List<PayrollResponse> getEmployeePayrolls(Long employeeId) {
 
         Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Employee not found with id: " + employeeId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee not found with id: " + employeeId));
 
         return payrollRepository.findByEmployee(employee)
                 .stream()
@@ -104,11 +132,13 @@ public class PayrollServiceImpl implements PayrollService {
 
         Payroll payroll = payrollRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Payroll not found"));
+                        new ResourceNotFoundException(
+                                "Payroll not found"));
 
         Employee employee = employeeRepository.findById(request.getEmployeeId())
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Employee not found"));
+                        new ResourceNotFoundException(
+                                "Employee not found"));
 
         BigDecimal basicSalary = employee.getSalary();
 
@@ -132,16 +162,78 @@ public class PayrollServiceImpl implements PayrollService {
 
         Payroll updatedPayroll = payrollRepository.save(payroll);
 
+        systemLogService.saveLog(
+                "HR Admin",
+                "ADMIN",
+                "UPDATE PAYROLL",
+                "Updated payroll for "
+                        + employee.getFirstName()
+                        + " "
+                        + employee.getLastName());
+
+        emailService.sendEmail(
+                employee.getEmail(),
+                "Payroll Updated",
+                "Dear "
+                        + employee.getFirstName()
+                        + ",\n\n"
+                        + "Your payroll has been updated.\n\n"
+                        + "New Net Salary: "
+                        + netSalary);
+
         return PayrollMapper.toResponse(updatedPayroll);
     }
+
     @Override
-    public void deletePayroll(Long id){
+    public void deletePayroll(Long id) {
 
         Payroll payroll = payrollRepository.findById(id)
-                .orElseThrow(()->
+                .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Payroll not found"));
 
+        systemLogService.saveLog(
+                "HR Admin",
+                "ADMIN",
+                "DELETE PAYROLL",
+                "Deleted payroll for "
+                        + payroll.getEmployee().getFirstName()
+                        + " "
+                        + payroll.getEmployee().getLastName());
+
+        emailService.sendEmail(
+                payroll.getEmployee().getEmail(),
+                "Payroll Deleted",
+                "Dear "
+                        + payroll.getEmployee().getFirstName()
+                        + ",\n\n"
+                        + "Your payroll record for "
+                        + payroll.getPayrollMonth()
+                        + " has been removed by HR.");
+
         payrollRepository.delete(payroll);
     }
+
+    @Override
+    public PayrollResponse getEmployeePayroll(Long employeeId, Long payrollId) {
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee not found with id: " + employeeId));
+
+        Payroll payroll = payrollRepository.findById(payrollId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Payroll not found with id: " + payrollId));
+
+        if (!payroll.getEmployee().getId().equals(employee.getId())) {
+            throw new ResourceNotFoundException(
+                    "Payroll does not belong to this employee.");
+        }
+
+        return PayrollMapper.toResponse(payroll);
+    }
+
+
 }

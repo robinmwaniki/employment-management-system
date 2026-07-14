@@ -8,6 +8,7 @@ import com.ems.exception.ResourceNotFoundException;
 import com.ems.mapper.DepartmentMapper;
 import com.ems.repository.DepartmentRepository;
 import com.ems.service.interfaces.DepartmentService;
+import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,21 +19,32 @@ import java.util.List;
 public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
+    private final SystemLogService systemLogService;
 
     @Override
     public DepartmentResponse createDepartment(DepartmentRequest request) {
 
         if (departmentRepository.existsByName(request.getName())) {
-            throw new DuplicateResourceException("Department name already exists.");
+            throw new DuplicateResourceException(
+                    "Department name already exists.");
         }
 
         if (departmentRepository.existsByCode(request.getCode())) {
-            throw new DuplicateResourceException("Department code already exists.");
+            throw new DuplicateResourceException(
+                    "Department code already exists.");
         }
 
-        Department department = DepartmentMapper.toEntity(request);
+        Department department =
+                DepartmentMapper.toEntity(request);
 
-        Department savedDepartment = departmentRepository.save(department);
+        Department savedDepartment =
+                departmentRepository.save(department);
+
+        systemLogService.saveLog(
+                "Administrator",
+                "ADMIN",
+                "CREATE DEPARTMENT",
+                "Created department: " + savedDepartment.getName());
 
         return DepartmentMapper.toResponse(savedDepartment);
     }
@@ -49,24 +61,37 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     public DepartmentResponse getDepartmentById(Long id) {
 
-        Department department = departmentRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Department not found with id: " + id));
+        Department department =
+                departmentRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Department not found with id: " + id));
 
         return DepartmentMapper.toResponse(department);
     }
 
     @Override
-    public DepartmentResponse updateDepartment(Long id, DepartmentRequest request) {
+    public DepartmentResponse updateDepartment(
+            Long id,
+            DepartmentRequest request) {
 
-        Department department = departmentRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Department not found with id: " + id));
+        Department department =
+                departmentRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Department not found with id: " + id));
 
         department.setName(request.getName());
         department.setCode(request.getCode());
 
-        Department updatedDepartment = departmentRepository.save(department);
+        Department updatedDepartment =
+                departmentRepository.save(department);
+
+        systemLogService.saveLog(
+                "Administrator",
+                "ADMIN",
+                "UPDATE DEPARTMENT",
+                "Updated department: " + updatedDepartment.getName());
 
         return DepartmentMapper.toResponse(updatedDepartment);
     }
@@ -74,10 +99,20 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     public void deleteDepartment(Long id) {
 
-        Department department = departmentRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Department not found with id: " + id));
+        Department department =
+                departmentRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Department not found with id: " + id));
+
+        String departmentName = department.getName();
 
         departmentRepository.delete(department);
+
+        systemLogService.saveLog(
+                "Administrator",
+                "ADMIN",
+                "DELETE DEPARTMENT",
+                "Deleted department: " + departmentName);
     }
 }
