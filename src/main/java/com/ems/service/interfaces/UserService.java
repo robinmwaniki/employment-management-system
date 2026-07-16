@@ -14,7 +14,10 @@ public interface UserService {
 
     Page<UserResponse> getAllUsers(int page, int size);
 
-    void deleteUser(Long id);
+    UserResponse enableUser(Long id);
 
+    UserResponse disableUser(Long id);
+
+    void deleteUser(Long id);
 
 }

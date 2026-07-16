@@ -9,6 +9,7 @@ import com.ems.exception.ResourceNotFoundException;
 import com.ems.mapper.LeaveMapper;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.LeaveRepository;
+import com.ems.service.interfaces.EmailService;
 import com.ems.service.interfaces.LeaveService;
 import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class LeaveServiceImpl implements LeaveService {
     private final LeaveRepository leaveRepository;
     private final EmployeeRepository employeeRepository;
     private final SystemLogService systemLogService;
+    private final EmailService emailService;
 
     @Override
     public LeaveResponse applyLeave(LeaveRequest request) {
@@ -67,6 +69,20 @@ public class LeaveServiceImpl implements LeaveService {
                 "EMPLOYEE",
                 "APPLY LEAVE",
                 "Applied for " + request.getLeaveType() + " leave");
+
+        emailService.sendEmail(
+                employee.getEmail(),
+                "Leave Request Submitted",
+                "Dear "
+                        + employee.getFirstName()
+                        + ",\n\n"
+                        + "Your "
+                        + request.getLeaveType()
+                        + " leave request has been submitted successfully.\n\n"
+                        + "Status: PENDING\n"
+                        + "Start Date: " + request.getStartDate()
+                        + "\nEnd Date: " + request.getEndDate()
+                        + "\n\nHR will review your request.");
 
         return LeaveMapper.toResponse(savedLeave);
     }
@@ -112,6 +128,16 @@ public class LeaveServiceImpl implements LeaveService {
                         + " "
                         + leave.getEmployee().getLastName());
 
+        emailService.sendEmail(
+                leave.getEmployee().getEmail(),
+                "Leave Approved",
+                "Congratulations "
+                        + leave.getEmployee().getFirstName()
+                        + ",\n\n"
+                        + "Your leave request has been APPROVED.\n\n"
+                        + "Start Date: " + leave.getStartDate()
+                        + "\nEnd Date: " + leave.getEndDate());
+
         return LeaveMapper.toResponse(saved);
     }
 
@@ -136,6 +162,15 @@ public class LeaveServiceImpl implements LeaveService {
                         + " "
                         + leave.getEmployee().getLastName());
 
+        emailService.sendEmail(
+                leave.getEmployee().getEmail(),
+                "Leave Rejected",
+                "Dear "
+                        + leave.getEmployee().getFirstName()
+                        + ",\n\n"
+                        + "Unfortunately your leave request has been REJECTED.\n\n"
+                        + "Please contact HR for more information.");
+
         return LeaveMapper.toResponse(saved);
     }
 
@@ -158,6 +193,14 @@ public class LeaveServiceImpl implements LeaveService {
                 "EMPLOYEE",
                 "CANCEL LEAVE",
                 "Cancelled leave request");
+
+        emailService.sendEmail(
+                leave.getEmployee().getEmail(),
+                "Leave Cancelled",
+                "Dear "
+                        + leave.getEmployee().getFirstName()
+                        + ",\n\n"
+                        + "Your leave request has been cancelled successfully.");
 
         return LeaveMapper.toResponse(saved);
     }

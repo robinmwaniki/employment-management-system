@@ -46,6 +46,7 @@
                             <th>Employee</th>
                             <th>Username</th>
                             <th>Role</th>
+                            <th>Status</th>
                             <th>Actions</th>
 
                         </tr>
@@ -64,8 +65,27 @@
 
                             <td>
 
-                                <span class="badge bg-success"
-                                      th:text="${user.role}"></span>
+    <span class="badge bg-success"
+          th:text="${user.role}">
+    </span>
+
+                            </td>
+
+                            <td>
+
+    <span th:if="${user.enabled}"
+          class="badge bg-success">
+
+        Enabled
+
+    </span>
+
+                                <span th:unless="${user.enabled}"
+                                      class="badge bg-danger">
+
+        Disabled
+
+    </span>
 
                             </td>
 
@@ -75,6 +95,22 @@
                                    class="btn btn-warning btn-sm">
 
                                     Edit
+
+                                </a>
+
+                                <a th:if="${user.enabled}"
+                                   th:href="@{/users/disable/{id}(id=${user.id})}"
+                                   class="btn btn-secondary btn-sm">
+
+                                    Disable
+
+                                </a>
+
+                                <a th:unless="${user.enabled}"
+                                   th:href="@{/users/enable/{id}(id=${user.id})}"
+                                   class="btn btn-success btn-sm">
+
+                                    Enable
 
                                 </a>
 

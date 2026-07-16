@@ -44,6 +44,7 @@ public class SystemUserServiceImpl implements UserService {
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
+                .enabled(true)
                 .build();
 
         return UserMapper.toResponse(
@@ -104,6 +105,32 @@ public class SystemUserServiceImpl implements UserService {
                         new ResourceNotFoundException("User not found"));
 
         userRepository.delete(user);
+    }
+
+    @Override
+    public UserResponse enableUser(Long id) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        user.setEnabled(true);
+
+        return UserMapper.toResponse(
+                userRepository.save(user));
+    }
+
+    @Override
+    public UserResponse disableUser(Long id) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        user.setEnabled(false);
+
+        return UserMapper.toResponse(
+                userRepository.save(user));
     }
 
 }

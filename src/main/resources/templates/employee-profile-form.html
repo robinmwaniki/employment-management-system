@@ -9,30 +9,39 @@
 
 <div class="content">
 
-    <div th:replace="~{fragments/employee-navbar :: navbar}"></div>
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
 
     <div class="container mt-4">
 
         <div class="card shadow">
 
-            <div class="card-header bg-primary text-white">
+            <div class="card-header bg-success text-white">
 
-                <h4>Edit Profile</h4>
+                <h3>Edit Profile</h3>
 
             </div>
 
             <div class="card-body">
 
-                <form th:action="@{/employee/profile/update}"
-                      th:object="${employee}"
-                      method="post">
+                <form
+                        th:action="@{/employee/profile/update}"
+                        th:object="${employee}"
+                        method="post">
+
+                    <input type="hidden"
+                           th:field="*{departmentId}"/>
+
+                    <input type="hidden"
+                           th:field="*{hireDate}"/>
+
+                    <input type="hidden"
+                           th:field="*{salary}"/>
 
                     <div class="mb-3">
 
                         <label>First Name</label>
 
                         <input
-                                type="text"
                                 class="form-control"
                                 th:field="*{firstName}">
 
@@ -43,7 +52,6 @@
                         <label>Last Name</label>
 
                         <input
-                                type="text"
                                 class="form-control"
                                 th:field="*{lastName}">
 
@@ -54,7 +62,6 @@
                         <label>Email</label>
 
                         <input
-                                type="email"
                                 class="form-control"
                                 th:field="*{email}">
 
@@ -62,25 +69,26 @@
 
                     <div class="mb-3">
 
-                        <label>Phone Number</label>
+                        <label>Phone</label>
 
                         <input
-                                type="text"
                                 class="form-control"
                                 th:field="*{phoneNumber}">
 
                     </div>
 
-                    <div class="d-grid">
+                    <button class="btn btn-success">
 
-                        <button
-                                class="btn btn-success">
+                        Save Changes
 
-                            Save Changes
+                    </button>
 
-                        </button>
+                    <a class="btn btn-secondary"
+                       th:href="@{/employee/profile}">
 
-                    </div>
+                        Cancel
+
+                    </a>
 
                 </form>
 

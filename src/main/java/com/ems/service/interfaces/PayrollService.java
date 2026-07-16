@@ -17,7 +17,7 @@ public interface PayrollService {
     Page<PayrollResponse> getAllPayrolls(int page,int size);
 
     PayrollResponse updatePayroll(Long id, PayrollRequest request);
-
+    PayrollResponse getEmployeePayroll(Long employeeId, Long payrollId);
     void deletePayroll(Long id);
 
 }
