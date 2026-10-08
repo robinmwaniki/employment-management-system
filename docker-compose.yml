@@ -1,0 +1,38 @@
+# Local run of the full stack: docker compose up --build
+# Copy .env.example to .env and fill in the values first.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ems_db
+      POSTGRES_USER: ${DB_USERNAME:-ems}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      # Plain-HTTP local run: the prod profile sets secure-only cookies, which
+      # browsers will not send over http://localhost.
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://db:5432/ems_db
+    ports:
+      - "8080:8080"
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  pgdata:
+  uploads:

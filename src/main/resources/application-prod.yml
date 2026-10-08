@@ -1,0 +1,24 @@
+# Production. Every secret and connection value must come from the environment.
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: false
+
+server:
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        secure: true
+        http-only: true
+        same-site: lax
+
+logging:
+  level:
+    root: INFO
+    com.ems: INFO

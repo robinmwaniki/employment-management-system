@@ -27,7 +27,7 @@ public class NotificationController {
         return "notifications";
     }
 
-    @GetMapping("/read/{id}")
+    @PostMapping("/read/{id}")
     public String markAsRead(@PathVariable Long id) {
 
         notificationService.markAsRead(id);
@@ -35,7 +35,7 @@ public class NotificationController {
         return "redirect:/notifications";
     }
 
-    @GetMapping("/read-all")
+    @PostMapping("/read-all")
     public String readAll() {
 
         notificationService.markAllAsRead();

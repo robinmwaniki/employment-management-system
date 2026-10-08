@@ -8,6 +8,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Staff leave management pages (restricted to ADMIN and HR_MANAGER in SecurityConfig).
+ */
 @Controller
 @RequiredArgsConstructor
 public class LeavePageController {
@@ -50,7 +53,7 @@ public class LeavePageController {
         return "redirect:/leave";
     }
 
-    @GetMapping("/leave/approve/{id}")
+    @PostMapping("/leave/approve/{id}")
     public String approveLeave(
             @PathVariable Long id) {
 
@@ -59,20 +62,11 @@ public class LeavePageController {
         return "redirect:/leave";
     }
 
-    @GetMapping("/leave/reject/{id}")
+    @PostMapping("/leave/reject/{id}")
     public String rejectLeave(
             @PathVariable Long id) {
 
         leaveService.rejectLeave(id);
-
-        return "redirect:/leave";
-    }
-
-    @GetMapping("/leave/cancel/{id}")
-    public String cancelLeave(
-            @PathVariable Long id) {
-
-        leaveService.cancelLeave(id);
 
         return "redirect:/leave";
     }

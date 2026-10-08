@@ -11,98 +11,81 @@
 
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container-fluid mt-4">
+    <div class="page">
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header">
 
-            <h2 class="fw-bold">Departments</h2>
+            <div>
+                <h1 class="page-title">Departments</h1>
+                <p class="page-subtitle">Organise your company into teams.</p>
+            </div>
 
             <a th:href="@{/departments/new}"
                class="btn btn-primary">
-
-                <i class="bi bi-plus-circle"></i>
+                <i class="bi bi-plus-lg"></i>
                 Add Department
-
             </a>
 
         </div>
 
-        <div class="card shadow border-0">
+        <div class="card">
 
-            <div class="card-header bg-primary text-white">
+            <div class="table-responsive">
 
-                <h5 class="mb-0">
+                <table class="table table-hover align-middle">
 
-                    Department List
+                    <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
 
-                </h5>
+                    <tbody>
+
+                    <tr th:each="department : ${departments}">
+
+                        <td th:text="${department.id}"></td>
+
+                        <td class="fw-semibold" th:text="${department.name}"></td>
+
+                        <td>
+
+                            <div class="row-actions">
+
+                                <a th:href="@{/departments/edit/{id}(id=${department.id})}"
+                                   class="btn btn-warning btn-sm"
+                                   title="Edit">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+
+                                <form th:action="@{/departments/delete/{id}(id=${department.id})}"
+                                      method="post"
+                                      onsubmit="return confirm('Delete this department?');">
+                                    <button type="submit"
+                                            class="btn btn-danger btn-sm"
+                                            title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                    </tbody>
+
+                </table>
 
             </div>
 
-            <div class="card-body">
-
-                <div class="table-responsive">
-
-                    <table class="table table-hover align-middle">
-
-                        <thead class="table-dark">
-
-                        <tr>
-
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Actions</th>
-
-                        </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                        <tr th:each="department : ${departments}">
-
-                            <td th:text="${department.id}"></td>
-
-                            <td th:text="${department.name}"></td>
-
-                            <td>
-
-                                <a th:href="@{/departments/edit/{id}(id=${department.id})}"
-                                   class="btn btn-warning btn-sm">
-
-                                    <i class="bi bi-pencil-square"></i>
-
-                                </a>
-
-                                <a th:href="@{/departments/delete/{id}(id=${department.id})}"
-                                   class="btn btn-danger btn-sm"
-                                   onclick="return confirm('Delete this department?');">
-
-                                    <i class="bi bi-trash"></i>
-
-                                </a>
-
-                            </td>
-
-                        </tr>
-
-                        <tr th:if="${#lists.isEmpty(departments)}">
-
-                            <td colspan="3"
-                                class="text-center text-muted">
-
-                                No departments found.
-
-                            </td>
-
-                        </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+            <div class="empty-state"
+                 th:if="${#lists.isEmpty(departments)}">
+                <i class="bi bi-building"></i>
+                No departments found.
             </div>
 
         </div>
@@ -110,9 +93,6 @@
     </div>
 
 </div>
-
-<link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 </body>
 

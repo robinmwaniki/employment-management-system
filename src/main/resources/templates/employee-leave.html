@@ -11,140 +11,103 @@
 
     <div th:replace="~{fragments/employee-navbar :: navbar}"></div>
 
-    <div class="container-fluid mt-4">
+    <div class="page">
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header">
 
-            <h2 class="fw-bold">
-
-                My Leave Requests
-
-            </h2>
+            <div>
+                <h1 class="page-title">My Leave Requests</h1>
+                <p class="page-subtitle">Track your requests and apply for time off.</p>
+            </div>
 
             <a class="btn btn-primary"
                th:href="@{/employee/leave/apply}">
-
-                <i class="bi bi-plus-circle"></i>
-
+                <i class="bi bi-plus-lg"></i>
                 Apply Leave
-
             </a>
 
         </div>
 
-        <div class="card shadow">
+        <div class="card">
 
-            <div class="card-body">
+            <div class="table-responsive">
 
-                <div class="table-responsive">
+                <table class="table table-hover align-middle">
 
-                    <table class="table table-hover">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>Type</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
 
-                        <thead class="table-dark">
+                    <tbody>
 
-                        <tr>
+                    <tr th:each="leave : ${leaves.content}">
 
-                            <th>Type</th>
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Reason</th>
-                            <th>Status</th>
-                            <th>Action</th>
+                        <td class="fw-semibold" th:text="${leave.leaveType}"></td>
 
-                        </tr>
+                        <td th:text="${leave.startDate}"></td>
 
-                        </thead>
+                        <td th:text="${leave.endDate}"></td>
 
-                        <tbody>
+                        <td th:text="${leave.reason}"></td>
 
-                        <tr th:each="leave : ${leaves.content}">
+                        <td>
 
-                            <td th:text="${leave.leaveType}"></td>
+                            <span class="badge bg-warning"
+                                  th:if="${leave.status.name()=='PENDING'}">Pending</span>
 
-                            <td th:text="${leave.startDate}"></td>
+                            <span class="badge bg-success"
+                                  th:if="${leave.status.name()=='APPROVED'}">Approved</span>
 
-                            <td th:text="${leave.endDate}"></td>
+                            <span class="badge bg-danger"
+                                  th:if="${leave.status.name()=='REJECTED'}">Rejected</span>
 
-                            <td th:text="${leave.reason}"></td>
+                            <span class="badge bg-secondary"
+                                  th:if="${leave.status.name()=='CANCELLED'}">Cancelled</span>
 
-                            <td>
+                        </td>
 
-                                <span
-                                        class="badge bg-warning"
-                                        th:if="${leave.status.name()=='PENDING'}">
+                        <td>
 
-                                    Pending
-
-                                </span>
-
-                                <span
-                                        class="badge bg-success"
-                                        th:if="${leave.status.name()=='APPROVED'}">
-
-                                    Approved
-
-                                </span>
-
-                                <span
-                                        class="badge bg-danger"
-                                        th:if="${leave.status.name()=='REJECTED'}">
-
-                                    Rejected
-
-                                </span>
-
-                                <span
-                                        class="badge bg-secondary"
-                                        th:if="${leave.status.name()=='CANCELLED'}">
-
-                                    Cancelled
-
-                                </span>
-
-                            </td>
-
-                            <td>
-
-                                <a
-                                        th:if="${leave.status.name()=='PENDING'}"
-                                        th:href="@{/leave/cancel/{id}(id=${leave.id})}"
-                                        class="btn btn-danger btn-sm">
-
+                            <form th:if="${leave.status.name()=='PENDING'}"
+                                  th:action="@{/employee/leave/cancel/{id}(id=${leave.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Cancel this leave request?');">
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="bi bi-x-circle"></i>
                                     Cancel
+                                </button>
+                            </form>
 
-                                </a>
+                        </td>
 
-                            </td>
+                    </tr>
 
-                        </tr>
+                    </tbody>
 
-                        <tr th:if="${#lists.isEmpty(leaves.content)}">
+                </table>
 
-                            <td colspan="6"
-                                class="text-center">
+            </div>
 
-                                No leave requests found.
-
-                            </td>
-
-                        </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+            <div class="empty-state"
+                 th:if="${#lists.isEmpty(leaves.content)}">
+                <i class="bi bi-airplane"></i>
+                No leave requests found.
             </div>
 
         </div>
 
+        <div th:replace="~{fragments/pager :: pager(${leaves}, '/employee/leave')}"></div>
+
     </div>
 
 </div>
-
-<link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 </body>
 

@@ -9,225 +9,168 @@
 
 <div class="content">
 
-    <div th:replace="~{fragments/employee-navbar :: navbar}"></div>
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container-fluid mt-4">
+    <div class="page">
 
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+        <div class="page-header">
 
-            <h2 class="fw-bold">
-                Employees
-            </h2>
+            <div>
+                <h1 class="page-title">Employees</h1>
+                <p class="page-subtitle">Everyone who works at the company.</p>
+            </div>
 
-            <form class="d-flex"
-                  th:action="@{/employees}"
-                  method="get">
+            <div class="d-flex flex-wrap gap-2">
 
-                <input
-                        class="form-control me-2"
-                        type="search"
-                        name="keyword"
-                        th:value="${keyword}"
-                        placeholder="Search employee...">
+                <form class="d-flex gap-2"
+                      th:action="@{/employees}"
+                      method="get">
 
-                <button class="btn btn-outline-primary">
-                    <i class="bi bi-search"></i>
-                    Search
-                </button>
+                    <input class="form-control"
+                           type="search"
+                           name="keyword"
+                           th:value="${keyword}"
+                           placeholder="Search employee...">
 
-            </form>
+                    <button class="btn btn-outline-primary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
 
-            <a th:href="@{/employees/new}"
-               class="btn btn-primary">
+                </form>
 
-                <i class="bi bi-person-plus-fill"></i>
-                Add Employee
-
-            </a>
-
-        </div>
-
-        <!-- Employee Table -->
-
-        <div class="card shadow border-0">
-
-            <div class="card-header bg-primary text-white">
-
-                <h5 class="mb-0">
-
-                    Employee List
-
-                </h5>
+                <a th:href="@{/employees/new}"
+                   class="btn btn-primary">
+                    <i class="bi bi-person-plus-fill"></i>
+                    Add Employee
+                </a>
 
             </div>
 
-            <div class="card-body">
+        </div>
 
-                <div class="table-responsive">
+        <div class="card">
 
-                    <table class="table table-hover align-middle">
+            <div class="table-responsive">
 
-                        <thead class="table-dark">
+                <table class="table table-hover align-middle">
 
-                        <tr>
+                    <thead class="table-dark">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Phone</th>
+                        <th>Department</th>
+                        <th>Salary</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
 
-                            <th>ID</th>
+                    <tbody>
 
-                            <th>Photo</th>
+                    <tr th:each="employee : ${employees.content}">
 
-                            <th>Name</th>
+                        <td>
 
-                            <th>Email</th>
+                            <div class="d-flex align-items-center gap-3">
 
-                            <th>Phone</th>
+                                <img th:if="${employee.profilePhoto != null and !employee.profilePhoto.isEmpty()}"
+                                     th:src="@{/uploads/{photo}(photo=${employee.profilePhoto})}"
+                                     class="avatar"
+                                     alt="">
 
-                            <th>Department</th>
+                                <span th:unless="${employee.profilePhoto != null and !employee.profilePhoto.isEmpty()}"
+                                      class="avatar"
+                                      th:text="${employee.firstName != null and !employee.firstName.isEmpty() ? employee.firstName.substring(0,1).toUpperCase() : '?'}">?</span>
 
-                            <th>Salary</th>
+                                <div>
+                                    <div class="fw-semibold"
+                                         th:text="${employee.firstName + ' ' + employee.lastName}">Name</div>
+                                    <div class="text-muted small"
+                                         th:text="${employee.email}">email</div>
+                                </div>
 
-                            <th width="220">Actions</th>
+                            </div>
 
-                        </tr>
+                        </td>
 
-                        </thead>
+                        <td th:text="${employee.phoneNumber}"></td>
 
-                        <tbody>
+                        <td>
+                            <span class="badge bg-primary"
+                                  th:if="${employee.departmentName != null}"
+                                  th:text="${employee.departmentName}"></span>
+                        </td>
 
-                        <tr th:each="employee : ${employees.content}">
+                        <td th:text="${employee.salary}"></td>
 
-                            <td th:text="${employee.id}"></td>
+                        <td>
 
-                            <td>
-
-                                <img
-                                        th:src="${employee.profilePhoto != null && !employee.profilePhoto.isEmpty()}
-                                        ? @{/uploads/{photo}(photo=${employee.profilePhoto})}
-                                        : @{/images/default-user.png}"
-                                        width="55"
-                                        height="55"
-                                        class="rounded-circle border shadow-sm"
-                                        style="object-fit: cover;">
-
-                            </td>
-
-                            <td>
-
-                                <strong
-                                        th:text="${employee.firstName + ' ' + employee.lastName}">
-                                </strong>
-
-                            </td>
-
-                            <td th:text="${employee.email}"></td>
-
-                            <td th:text="${employee.phoneNumber}"></td>
-
-                            <td th:text="${employee.departmentName}"></td>
-
-                            <td th:text="${employee.salary}"></td>
-
-                            <td>
-
-                                <!-- Edit -->
+                            <div class="row-actions">
 
                                 <a th:href="@{/employees/edit/{id}(id=${employee.id})}"
                                    class="btn btn-warning btn-sm"
                                    title="Edit">
-
                                     <i class="bi bi-pencil-square"></i>
-
                                 </a>
-
-                                <!-- Upload Photo -->
 
                                 <a th:href="@{/employees/photo/{id}(id=${employee.id})}"
-                                   class="btn btn-info btn-sm text-white"
+                                   class="btn btn-info btn-sm"
                                    title="Upload Photo">
-
                                     <i class="bi bi-camera-fill"></i>
-
                                 </a>
 
-                                <!-- Delete -->
+                                <form th:action="@{/employees/delete/{id}(id=${employee.id})}"
+                                      method="post"
+                                      onsubmit="return confirm('Are you sure you want to delete this employee?');">
+                                    <button type="submit"
+                                            class="btn btn-danger btn-sm"
+                                            title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
 
-                                <a th:href="@{/employees/delete/{id}(id=${employee.id})}"
-                                   class="btn btn-danger btn-sm"
-                                   onclick="return confirm('Are you sure you want to delete this employee?');"
-                                   title="Delete">
+                            </div>
 
-                                    <i class="bi bi-trash"></i>
+                        </td>
 
-                                </a>
+                    </tr>
 
-                            </td>
+                    </tbody>
 
-                        </tr>
+                </table>
 
-                        <tr th:if="${employees.content.isEmpty()}">
+            </div>
 
-                            <td colspan="8"
-                                class="text-center text-muted py-4">
-
-                                No employees found.
-
-                            </td>
-
-                        </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+            <div class="empty-state"
+                 th:if="${employees.content.isEmpty()}">
+                <i class="bi bi-people"></i>
+                No employees found.
             </div>
 
         </div>
 
-        <!-- Pagination -->
+        <nav class="pager" th:if="${employees.totalPages > 1}">
 
-        <nav class="mt-4">
-
-            <ul class="pagination justify-content-center">
+            <ul class="pagination justify-content-center mb-0">
 
                 <li class="page-item"
                     th:classappend="${employees.first} ? 'disabled'">
-
                     <a class="page-link"
-                       th:href="@{/employees(page=${employees.number-1},keyword=${keyword})}">
-
-                        Previous
-
-                    </a>
-
+                       th:href="@{/employees(page=${employees.number-1},keyword=${keyword})}">Previous</a>
                 </li>
 
                 <li class="page-item disabled">
-
                     <span class="page-link">
-
                         Page
-                        <span th:text="${employees.number + 1}"></span>
-
+                        <span th:text="${employees.number + 1}">1</span>
                         of
-
-                        <span th:text="${employees.totalPages}"></span>
-
+                        <span th:text="${employees.totalPages}">1</span>
                     </span>
-
                 </li>
 
                 <li class="page-item"
                     th:classappend="${employees.last} ? 'disabled'">
-
                     <a class="page-link"
-                       th:href="@{/employees(page=${employees.number+1},keyword=${keyword})}">
-
-                        Next
-
-                    </a>
-
+                       th:href="@{/employees(page=${employees.number+1},keyword=${keyword})}">Next</a>
                 </li>
 
             </ul>
@@ -237,11 +180,6 @@
     </div>
 
 </div>
-
-<!-- Bootstrap Icons -->
-
-<link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
 </body>
 

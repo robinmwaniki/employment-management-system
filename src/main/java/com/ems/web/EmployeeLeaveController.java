@@ -1,6 +1,7 @@
 package com.ems.web;
 
 import com.ems.dto.request.LeaveRequest;
+import com.ems.exception.ResourceNotFoundException;
 import com.ems.repository.UserRepository;
 import com.ems.service.interfaces.LeaveService;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +10,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+/**
+ * Leave self-service for the signed-in employee. The employee is always taken
+ * from the authenticated account, never from the request.
+ */
 @Controller
 @RequiredArgsConstructor
 public class EmployeeLeaveController {
@@ -28,23 +34,16 @@ public class EmployeeLeaveController {
 
             Model model) {
 
-        String username = authentication.getName();
-
-        var user = userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
-
-        Long employeeId = user.getEmployee().getId();
-
         model.addAttribute(
                 "leaves",
                 leaveService.getEmployeeLeaves(
-                        employeeId,
+                        currentEmployeeId(authentication),
                         page,
                         10));
 
         return "employee-leave";
     }
+
     @GetMapping("/employee/leave/apply")
     public String applyLeaveForm(Model model) {
 
@@ -62,18 +61,39 @@ public class EmployeeLeaveController {
 
             @ModelAttribute LeaveRequest request) {
 
-        String username = authentication.getName();
-
-        var user = userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
-
-        request.setEmployeeId(
-                user.getEmployee().getId());
+        request.setEmployeeId(currentEmployeeId(authentication));
 
         leaveService.applyLeave(request);
 
         return "redirect:/employee/leave";
     }
 
+    @PostMapping("/employee/leave/cancel/{id}")
+    public String cancelLeave(
+
+            Authentication authentication,
+
+            @PathVariable Long id) {
+
+        leaveService.cancelOwnLeave(id, currentEmployeeId(authentication));
+
+        return "redirect:/employee/leave";
+    }
+
+    /**
+     * Resolves the employee profile linked to the signed-in account.
+     */
+    private Long currentEmployeeId(Authentication authentication) {
+
+        var user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        if (user.getEmployee() == null) {
+            throw new ResourceNotFoundException(
+                    "No employee profile is linked to this account.");
+        }
+
+        return user.getEmployee().getId();
+    }
 }

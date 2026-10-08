@@ -78,7 +78,7 @@ public class AnnouncementPageController {
         return "redirect:/announcements";
     }
 
-    @GetMapping("/announcements/delete/{id}")
+    @PostMapping("/announcements/delete/{id}")
     public String deleteAnnouncement(
             @PathVariable Long id) {
 

@@ -11,43 +11,37 @@
 
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container-fluid mt-4">
+    <div class="page">
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header">
 
-            <h2 class="fw-bold">
-
-                Company Announcements
-
-            </h2>
+            <div>
+                <h1 class="page-title">Company Announcements</h1>
+                <p class="page-subtitle">Share news and updates with every employee.</p>
+            </div>
 
             <a th:href="@{/announcements/new}"
                class="btn btn-primary">
-
+                <i class="bi bi-plus-lg"></i>
                 New Announcement
-
             </a>
 
         </div>
 
-        <div class="card shadow">
+        <div class="card">
 
-            <div class="card-body">
+            <div class="table-responsive">
 
-                <table class="table table-hover">
+                <table class="table table-hover align-middle">
 
                     <thead class="table-dark">
-
                     <tr>
-
                         <th>ID</th>
                         <th>Title</th>
                         <th>Publish Date</th>
                         <th>Expiry Date</th>
                         <th>Actions</th>
-
                     </tr>
-
                     </thead>
 
                     <tbody>
@@ -56,7 +50,7 @@
 
                         <td th:text="${announcement.id}"></td>
 
-                        <td th:text="${announcement.title}"></td>
+                        <td class="fw-semibold" th:text="${announcement.title}"></td>
 
                         <td th:text="${announcement.publishDate}"></td>
 
@@ -64,20 +58,24 @@
 
                         <td>
 
-                            <a th:href="@{/announcements/edit/{id}(id=${announcement.id})}"
-                               class="btn btn-warning btn-sm">
+                            <div class="row-actions">
 
-                                Edit
+                                <a th:href="@{/announcements/edit/{id}(id=${announcement.id})}"
+                                   class="btn btn-warning btn-sm">
+                                    <i class="bi bi-pencil-square"></i>
+                                    Edit
+                                </a>
 
-                            </a>
+                                <form th:action="@{/announcements/delete/{id}(id=${announcement.id})}"
+                                      method="post"
+                                      onsubmit="return confirm('Delete this announcement?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                        Delete
+                                    </button>
+                                </form>
 
-                            <a th:href="@{/announcements/delete/{id}(id=${announcement.id})}"
-                               class="btn btn-danger btn-sm"
-                               onclick="return confirm('Delete this announcement?');">
-
-                                Delete
-
-                            </a>
+                            </div>
 
                         </td>
 
@@ -89,7 +87,15 @@
 
             </div>
 
+            <div class="empty-state"
+                 th:if="${announcements.content.isEmpty()}">
+                <i class="bi bi-megaphone"></i>
+                No announcements yet.
+            </div>
+
         </div>
+
+        <div th:replace="~{fragments/pager :: pager(${announcements}, '/announcements')}"></div>
 
     </div>
 

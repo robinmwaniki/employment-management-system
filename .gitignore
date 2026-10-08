@@ -1,8 +1,21 @@
 HELP.md
 target/
-.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+
+### Secrets and local environment ###
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.jks
+
+### Runtime data (employee photos and other uploads are personal data) ###
+/uploads/
+src/main/resources/static/uploads/
+*.log
 
 ### STS ###
 .apt_generated
@@ -31,3 +44,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### OS ###
+.DS_Store
+Thumbs.db

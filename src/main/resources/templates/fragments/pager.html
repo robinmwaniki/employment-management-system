@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+
+<nav th:fragment="pager(page, url)"
+     th:if="${page.totalPages > 1}"
+     class="pager"
+     aria-label="Pagination">
+
+    <ul class="pagination justify-content-center mb-0">
+
+        <li class="page-item"
+            th:classappend="${page.first} ? 'disabled'">
+            <a class="page-link"
+               th:href="@{${url}(page=${page.number - 1})}">Previous</a>
+        </li>
+
+        <li class="page-item disabled">
+            <span class="page-link">
+                Page
+                <span th:text="${page.number + 1}">1</span>
+                of
+                <span th:text="${page.totalPages}">1</span>
+            </span>
+        </li>
+
+        <li class="page-item"
+            th:classappend="${page.last} ? 'disabled'">
+            <a class="page-link"
+               th:href="@{${url}(page=${page.number + 1})}">Next</a>
+        </li>
+
+    </ul>
+
+</nav>
+
+</body>
+
+</html>

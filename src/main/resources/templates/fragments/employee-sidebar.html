@@ -1,100 +1,78 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 
+<body>
+
 <div th:fragment="sidebar">
 
-    <div class="bg-dark text-white vh-100 position-fixed"
-         style="width:260px;">
+    <aside class="sidebar" id="sidebar">
 
-        <div class="p-3">
+        <a class="sidebar-brand" th:href="@{/employee/dashboard}">
+            <span class="brand-mark"><i class="bi bi-people-fill"></i></span>
+            <span>EMS</span>
+        </a>
 
-            <h3 class="text-center">
-                EMS Employee
-            </h3>
+        <div class="sidebar-section">My Workspace</div>
+        <nav class="sidebar-nav">
+            <a class="nav-link-item" th:href="@{/employee/dashboard}">
+                <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/employee/profile}">
+                <i class="bi bi-person"></i><span>My Profile</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/employee/attendance}">
+                <i class="bi bi-clock-history"></i><span>My Attendance</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/employee/leave}">
+                <i class="bi bi-airplane"></i><span>My Leave</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/employee/payroll}">
+                <i class="bi bi-cash-stack"></i><span>My Payroll</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/employee/performance}">
+                <i class="bi bi-graph-up-arrow"></i><span>My Performance</span>
+            </a>
+        </nav>
 
-            <hr>
+        <div class="sidebar-section">Company</div>
+        <nav class="sidebar-nav">
+            <a class="nav-link-item" th:href="@{/employee/notifications}">
+                <i class="bi bi-bell"></i><span>Notifications</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/employee/announcements}">
+                <i class="bi bi-megaphone"></i><span>Announcements</span>
+            </a>
+        </nav>
 
-            <ul class="nav flex-column">
+        <div class="sidebar-section">Account</div>
+        <nav class="sidebar-nav">
+            <a class="nav-link-item" th:href="@{/employee/change-password}">
+                <i class="bi bi-shield-lock"></i><span>Change Password</span>
+            </a>
+        </nav>
 
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/dashboard}">
-                        🏠 Dashboard
-                    </a>
-                </li>
+        <div class="sidebar-footer">
 
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/profile}">
-                        👤 My Profile
-                    </a>
-                </li>
+            <div class="sidebar-user">
+                <span class="avatar avatar-sm"
+                      th:text="${currentUsername != null and !currentUsername.isEmpty() ? currentUsername.substring(0,1).toUpperCase() : 'U'}">U</span>
+                <span th:text="${currentUsername}">employee</span>
+            </div>
 
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/attendance}">
-                        🕒 My Attendance
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/leave}">
-                        🌴 My Leave
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/payroll}">
-                        💰 My Payroll
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/notifications}">
-                        🔔 Notifications
-                    </a>
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/announcements}">
-                        📢 Announcements
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
-
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/performance}">
-
-                        ⭐ My Performance
-
-                    </a>
-
-                </li>
-
-                <li class="nav-item mb-2">
-                    <a class="nav-link text-white"
-                       th:href="@{/employee/change-password}">
-                        🔒 Change Password
-                    </a>
-                </li>
-
-                <li class="nav-item mt-4">
-                    <a class="btn btn-danger w-100"
-                       th:href="@{/logout}">
-                        Logout
-                    </a>
-                </li>
-
-            </ul>
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="nav-link-item sidebar-logout">
+                    <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+                </button>
+            </form>
 
         </div>
 
-    </div>
+    </aside>
+
+    <div class="sidebar-backdrop"></div>
 
 </div>
+
+</body>
 
 </html>

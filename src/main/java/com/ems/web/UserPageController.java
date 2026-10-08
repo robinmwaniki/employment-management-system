@@ -80,7 +80,7 @@ public class UserPageController {
         return "redirect:/users";
     }
 
-    @GetMapping("/users/delete/{id}")
+    @PostMapping("/users/delete/{id}")
     public String deleteUser(
             @PathVariable Long id) {
 
@@ -89,7 +89,7 @@ public class UserPageController {
         return "redirect:/users";
     }
 
-    @GetMapping("/users/enable/{id}")
+    @PostMapping("/users/enable/{id}")
     public String enableUser(@PathVariable Long id) {
 
         userService.enableUser(id);
@@ -97,7 +97,7 @@ public class UserPageController {
         return "redirect:/users";
     }
 
-    @GetMapping("/users/disable/{id}")
+    @PostMapping("/users/disable/{id}")
     public String disableUser(@PathVariable Long id) {
 
         userService.disableUser(id);

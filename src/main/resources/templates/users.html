@@ -11,141 +11,124 @@
 
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container-fluid mt-4">
+    <div class="page">
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="page-header">
 
-            <h2 class="fw-bold">
-
-                System Users
-
-            </h2>
+            <div>
+                <h1 class="page-title">System Users</h1>
+                <p class="page-subtitle">Manage who can sign in and what they can do.</p>
+            </div>
 
             <a th:href="@{/users/new}"
                class="btn btn-primary">
-
+                <i class="bi bi-person-plus"></i>
                 Create User
-
             </a>
 
         </div>
 
-        <div class="card shadow">
+        <div class="card">
 
-            <div class="card-body">
+            <div class="table-responsive">
 
-                <div class="table-responsive">
+                <table class="table table-hover align-middle">
 
-                    <table class="table table-hover">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Employee</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
 
-                        <thead class="table-dark">
+                    <tbody>
 
-                        <tr>
+                    <tr th:each="user : ${users.content}">
 
-                            <th>ID</th>
-                            <th>Employee</th>
-                            <th>Username</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                        <td th:text="${user.id}"></td>
 
-                        </tr>
+                        <td th:text="${user.employeeName}"></td>
 
-                        </thead>
+                        <td class="fw-semibold" th:text="${user.username}"></td>
 
-                        <tbody>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${#strings.contains(user.role, 'ADMIN')} ? 'bg-primary' : (${#strings.contains(user.role, 'HR')} ? 'bg-info' : 'bg-secondary')"
+                                  th:text="${#strings.replace(user.role, 'ROLE_', '')}"></span>
+                        </td>
 
-                        <tr th:each="user : ${users.content}">
+                        <td>
 
-                            <td th:text="${user.id}"></td>
+                            <span th:if="${user.enabled}"
+                                  class="badge bg-success">Enabled</span>
 
-                            <td th:text="${user.employeeName}"></td>
+                            <span th:unless="${user.enabled}"
+                                  class="badge bg-danger">Disabled</span>
 
-                            <td th:text="${user.username}"></td>
+                        </td>
 
-                            <td>
+                        <td>
 
-    <span class="badge bg-success"
-          th:text="${user.role}">
-    </span>
-
-                            </td>
-
-                            <td>
-
-    <span th:if="${user.enabled}"
-          class="badge bg-success">
-
-        Enabled
-
-    </span>
-
-                                <span th:unless="${user.enabled}"
-                                      class="badge bg-danger">
-
-        Disabled
-
-    </span>
-
-                            </td>
-
-                            <td>
+                            <div class="row-actions">
 
                                 <a th:href="@{/users/edit/{id}(id=${user.id})}"
                                    class="btn btn-warning btn-sm">
-
+                                    <i class="bi bi-pencil-square"></i>
                                     Edit
-
                                 </a>
 
-                                <a th:if="${user.enabled}"
-                                   th:href="@{/users/disable/{id}(id=${user.id})}"
-                                   class="btn btn-secondary btn-sm">
+                                <form th:if="${user.enabled}"
+                                      th:action="@{/users/disable/{id}(id=${user.id})}"
+                                      method="post">
+                                    <button type="submit" class="btn btn-secondary btn-sm">
+                                        <i class="bi bi-slash-circle"></i>
+                                        Disable
+                                    </button>
+                                </form>
 
-                                    Disable
+                                <form th:unless="${user.enabled}"
+                                      th:action="@{/users/enable/{id}(id=${user.id})}"
+                                      method="post">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="bi bi-check-circle"></i>
+                                        Enable
+                                    </button>
+                                </form>
 
-                                </a>
+                                <form th:action="@{/users/delete/{id}(id=${user.id})}"
+                                      method="post"
+                                      onsubmit="return confirm('Delete this user account?');">
+                                    <button type="submit" class="btn btn-danger btn-sm">
+                                        <i class="bi bi-trash"></i>
+                                        Delete
+                                    </button>
+                                </form>
 
-                                <a th:unless="${user.enabled}"
-                                   th:href="@{/users/enable/{id}(id=${user.id})}"
-                                   class="btn btn-success btn-sm">
+                            </div>
 
-                                    Enable
+                        </td>
 
-                                </a>
+                    </tr>
 
-                                <a th:href="@{/users/delete/{id}(id=${user.id})}"
-                                   class="btn btn-danger btn-sm"
-                                   onclick="return confirm('Delete this user account?');">
+                    </tbody>
 
-                                    Delete
-
-                                </a>
-
-                            </td>
-
-                        </tr>
-
-                        <tr th:if="${users.content.isEmpty()}">
-
-                            <td colspan="5"
-                                class="text-center text-muted">
-
-                                No user accounts found.
-
-                            </td>
-
-                        </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
+                </table>
 
             </div>
 
+            <div class="empty-state"
+                 th:if="${users.content.isEmpty()}">
+                <i class="bi bi-person-x"></i>
+                No user accounts found.
+            </div>
+
         </div>
+
+        <div th:replace="~{fragments/pager :: pager(${users}, '/users')}"></div>
 
     </div>
 

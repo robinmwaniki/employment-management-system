@@ -5,111 +5,87 @@
 
 <div th:fragment="sidebar">
 
-    <div class="sidebar">
+    <aside class="sidebar" id="sidebar">
 
-        <h3 class="text-center mt-4">
-
-            EMS
-
-        </h3>
-
-        <hr>
-
-        <a th:href="@{/dashboard}">
-            <i class="bi bi-speedometer2"></i>
-            Dashboard
+        <a class="sidebar-brand" th:href="@{/dashboard}">
+            <span class="brand-mark"><i class="bi bi-people-fill"></i></span>
+            <span>EMS</span>
         </a>
 
-        <a th:href="@{/employees}">
-            <i class="bi bi-people"></i>
-            Employees
-        </a>
+        <div class="sidebar-section">Overview</div>
+        <nav class="sidebar-nav">
+            <a class="nav-link-item" th:href="@{/dashboard}">
+                <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+            </a>
+        </nav>
 
-        <a th:href="@{/departments}">
-            <i class="bi bi-building"></i>
-            Departments
-        </a>
+        <div class="sidebar-section">People</div>
+        <nav class="sidebar-nav">
+            <a class="nav-link-item" th:href="@{/employees}">
+                <i class="bi bi-people"></i><span>Employees</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/departments}">
+                <i class="bi bi-building"></i><span>Departments</span>
+            </a>
+        </nav>
 
-        <a th:href="@{/attendance}">
-            <i class="bi bi-calendar-check"></i>
-            Attendance
-        </a>
+        <div class="sidebar-section">Operations</div>
+        <nav class="sidebar-nav">
+            <a class="nav-link-item" th:href="@{/attendance}">
+                <i class="bi bi-calendar-check"></i><span>Attendance</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/leave}">
+                <i class="bi bi-airplane"></i><span>Leave</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/payroll}">
+                <i class="bi bi-cash-stack"></i><span>Payroll</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/performance}">
+                <i class="bi bi-graph-up-arrow"></i><span>Performance</span>
+            </a>
+        </nav>
 
-        <a th:href="@{/leave}">
-            <i class="bi bi-airplane"></i>
-            Leave
-        </a>
+        <div class="sidebar-section">Insights</div>
+        <nav class="sidebar-nav">
+            <a class="nav-link-item" th:href="@{/reports}">
+                <i class="bi bi-bar-chart-line"></i><span>Reports</span>
+            </a>
+            <a class="nav-link-item" th:href="@{/announcements}">
+                <i class="bi bi-megaphone"></i><span>Announcements</span>
+            </a>
+        </nav>
 
-        <a th:href="@{/payroll}">
-            <i class="bi bi-cash-stack"></i>
-            Payroll
-        </a>
+        <div th:if="${isAdmin}">
+            <div class="sidebar-section">Administration</div>
+            <nav class="sidebar-nav">
+                <a class="nav-link-item" th:href="@{/users}">
+                    <i class="bi bi-person-gear"></i><span>Users</span>
+                </a>
+                <a class="nav-link-item" th:href="@{/system-logs}">
+                    <i class="bi bi-journal-text"></i><span>System Logs</span>
+                </a>
+            </nav>
+        </div>
 
-        <a th:href="@{/performance}">
-            <i class="bi bi-graph-up"></i>
-            Performance
-        </a>
+        <div class="sidebar-footer">
 
-        <li class="nav-item">
-
-            <a class="nav-link"
-               th:href="@{/reports}">
-
-                <i class="bi bi-graph-up"></i>
-
-                Reports
-
+            <a class="sidebar-user" th:href="@{/profile}">
+                <span class="avatar avatar-sm"
+                      th:text="${currentUsername != null and !currentUsername.isEmpty() ? currentUsername.substring(0,1).toUpperCase() : 'U'}">U</span>
+                <span th:text="${currentUsername}">admin</span>
             </a>
 
-        </li>
-        <li class="nav-item mb-2">
+            <form th:action="@{/logout}" method="post" class="m-0">
+                <button type="submit" class="nav-link-item sidebar-logout">
+                    <i class="bi bi-box-arrow-right"></i><span>Logout</span>
+                </button>
+            </form>
 
-            <a class="nav-link text-white"
-               th:href="@{/system-logs}">
+        </div>
 
-                📋 System Logs
+    </aside>
 
-            </a>
-
-        </li>
-
-        <li class="nav-item">
-
-            <a class="nav-link"
-               th:href="@{/announcements}">
-
-                <i class="bi bi-megaphone-fill"></i>
-
-                Announcements
-
-            </a>
-
-        </li>
-
-        <li class="nav-item">
-
-            <a class="nav-link"
-               th:href="@{/users}">
-
-                <i class="bi bi-people-fill"></i>
-
-                Users
-
-            </a>
-
-        </li>
-
-        <a th:href="@{/profile}">
-            <i class="bi bi-person-circle"></i>
-            Profile
-        </a>
-
-        <a th:href="@{/logout}">
-            <i class="bi bi-box-arrow-right"></i>
-            Logout
-        </a>
-
-    </div>
+    <div class="sidebar-backdrop"></div>
 
 </div>
 

@@ -14,6 +14,9 @@ public class CustomUserDetails implements UserDetails {
 
     private final User user;
 
+    /** True while the account is temporarily locked after failed logins. */
+    private final boolean locked;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
 
@@ -39,7 +42,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !locked;
     }
 
     @Override

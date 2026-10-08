@@ -122,7 +122,7 @@ public class PayrollPageController {
         return "payroll-view";
     }
 
-    @GetMapping("/payroll/delete/{id}")
+    @PostMapping("/payroll/delete/{id}")
     public String deletePayroll(
             @PathVariable Long id) {
 

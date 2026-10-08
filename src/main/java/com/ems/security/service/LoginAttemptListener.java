@@ -1,0 +1,28 @@
+package com.ems.security.service;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
+import org.springframework.security.authentication.event.AuthenticationFailureBadCredentialsEvent;
+import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
+import org.springframework.stereotype.Component;
+
+/**
+ * Feeds Spring Security's authentication events into {@link LoginAttemptService}.
+ * Covers both the web form login and the REST login endpoint.
+ */
+@Component
+@RequiredArgsConstructor
+public class LoginAttemptListener {
+
+    private final LoginAttemptService loginAttemptService;
+
+    @EventListener
+    public void onFailure(AuthenticationFailureBadCredentialsEvent event) {
+        loginAttemptService.loginFailed(event.getAuthentication().getName());
+    }
+
+    @EventListener
+    public void onSuccess(AuthenticationSuccessEvent event) {
+        loginAttemptService.loginSucceeded(event.getAuthentication().getName());
+    }
+}

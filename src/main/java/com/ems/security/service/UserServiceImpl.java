@@ -6,10 +6,13 @@ import com.ems.dto.response.AuthResponse;
 import com.ems.entity.Role;
 import com.ems.entity.User;
 import com.ems.exception.DuplicateResourceException;
+import com.ems.exception.ResourceNotFoundException;
 import com.ems.repository.UserRepository;
 import com.ems.security.jwt.JwtService;
+import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final SystemLogService systemLogService;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -65,6 +69,13 @@ public class UserServiceImpl implements UserService {
                 .tokenType("Bearer")
                 .build();
     }
+
+    /**
+     * Changes the password of the given user after verifying the current one.
+     *
+     * @throws BadCredentialsException  when the current password is wrong
+     * @throws IllegalArgumentException when the new password equals the current one
+     */
     @Override
     public void changePassword(
             String username,
@@ -73,14 +84,25 @@ public class UserServiceImpl implements UserService {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new ResourceNotFoundException("User not found"));
 
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new RuntimeException("Current password is incorrect");
+            throw new BadCredentialsException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException(
+                    "The new password must be different from the current one");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
 
         userRepository.save(user);
+
+        systemLogService.saveLog(
+                username,
+                "USER",
+                "CHANGE PASSWORD",
+                "Password changed");
     }
 }

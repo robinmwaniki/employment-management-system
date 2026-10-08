@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final LoginAttemptService loginAttemptService;
 
     @Override
     public UserDetails loadUserByUsername(String username)
@@ -23,6 +24,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                         new UsernameNotFoundException(
                                 "User not found: " + username));
 
-        return new CustomUserDetails(user);
+        return new CustomUserDetails(
+                user,
+                loginAttemptService.isLocked(username));
     }
 }

@@ -99,7 +99,7 @@ public class DepartmentPageController {
         return "redirect:/departments";
     }
 
-    @GetMapping("/departments/delete/{id}")
+    @PostMapping("/departments/delete/{id}")
     public String deleteDepartment(
             @PathVariable Long id) {
 

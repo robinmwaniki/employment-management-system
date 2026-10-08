@@ -3,39 +3,46 @@
 
 <body>
 
-<nav th:fragment="navbar"
-     class="navbar navbar-light bg-white shadow-sm">
+<header th:fragment="navbar" class="topbar">
 
-    <div class="container-fluid">
+    <button type="button"
+            id="sidebarToggle"
+            class="topbar-toggle d-lg-none"
+            aria-label="Toggle navigation">
+        <i class="bi bi-list"></i>
+    </button>
 
-        <span class="navbar-brand">
-            Employee Management System
-        </span>
+    <span class="topbar-title d-none d-sm-inline">
+        Employee Management System
+    </span>
 
-        <div class="d-flex align-items-center">
+    <div class="topbar-actions">
 
-            <a class="nav-link position-relative me-3"
-               th:href="@{/employee/notifications}">
+        <a class="icon-btn"
+           th:href="@{/employee/notifications}"
+           aria-label="Notifications">
 
-                <i class="bi bi-bell-fill"></i>
+            <i class="bi bi-bell"></i>
 
-                <span
-                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                        th:text="${unreadCount}">
+            <span class="icon-badge"
+                  th:if="${unreadCount != null and unreadCount > 0}"
+                  th:text="${unreadCount}">0</span>
 
-                    0
+        </a>
 
-                </span>
+        <a class="user-chip" th:href="@{/employee/profile}">
 
-            </a>
+            <span class="avatar avatar-sm"
+                  th:text="${currentUsername != null and !currentUsername.isEmpty() ? currentUsername.substring(0,1).toUpperCase() : 'U'}">U</span>
 
-            <i class="bi bi-person-circle fs-4"></i>
+            <span class="d-none d-md-inline"
+                  th:text="${currentUsername}">employee</span>
 
-        </div>
+        </a>
 
     </div>
 
-</nav>
+</header>
 
 </body>
 

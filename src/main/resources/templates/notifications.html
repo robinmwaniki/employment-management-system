@@ -11,97 +11,63 @@
 
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container-fluid mt-4">
+    <div class="page">
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
-
-            <h2 class="fw-bold">
-
-                Notifications
-
-            </h2>
+        <div class="page-header">
 
             <div>
-
-                <span class="badge bg-danger fs-6">
-
-                    Unread:
-                    <span th:text="${unreadCount}"></span>
-
-                </span>
-
-                <a th:href="@{/notifications/read-all}"
-                   class="btn btn-primary ms-2">
-
-                    Mark All Read
-
-                </a>
-
+                <h1 class="page-title">Notifications</h1>
+                <p class="page-subtitle">
+                    <span th:text="${unreadCount}">0</span> unread
+                </p>
             </div>
+
+            <form th:action="@{/notifications/read-all}" method="post">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check2-all"></i>
+                    Mark All Read
+                </button>
+            </form>
 
         </div>
 
-        <div class="card shadow">
+        <div class="card">
 
-            <div class="card-body">
+            <div class="empty-state"
+                 th:if="${#lists.isEmpty(notifications)}">
+                <i class="bi bi-bell-slash"></i>
+                No notifications available.
+            </div>
 
-                <div th:if="${#lists.isEmpty(notifications)}">
+            <div th:unless="${#lists.isEmpty(notifications)}">
 
-                    <div class="alert alert-info">
+                <div class="notice"
+                     th:each="notification : ${notifications}"
+                     th:classappend="${!notification.read} ? 'is-unread'">
 
-                        No notifications available.
+                    <div>
 
-                    </div>
+                        <h5 class="notice-title">
+                            <span th:text="${notification.title}"></span>
+                            <span class="badge bg-danger ms-2"
+                                  th:if="${!notification.read}">New</span>
+                        </h5>
 
-                </div>
+                        <p class="mb-1"
+                           th:text="${notification.message}"></p>
 
-                <div class="list-group"
-                     th:unless="${#lists.isEmpty(notifications)}">
-
-                    <div class="list-group-item"
-                         th:each="notification : ${notifications}">
-
-                        <div class="d-flex justify-content-between">
-
-                            <div>
-
-                                <h5>
-
-                                    <span th:text="${notification.title}"></span>
-
-                                    <span
-                                            th:if="${!notification.read}"
-                                            class="badge bg-danger">
-
-                                        New
-
-                                    </span>
-
-                                </h5>
-
-                                <p class="mb-1"
-                                   th:text="${notification.message}"></p>
-
-                                <small class="text-muted"
-                                       th:text="${#temporals.format(notification.createdAt,'dd MMM yyyy HH:mm')}"></small>
-
-                            </div>
-
-                            <div>
-
-                                <a class="btn btn-success btn-sm"
-                                   th:if="${!notification.read}"
-                                   th:href="@{'/notifications/read/' + ${notification.id}}">
-
-                                    Mark Read
-
-                                </a>
-
-                            </div>
-
-                        </div>
+                        <span class="notice-time"
+                              th:text="${#temporals.format(notification.createdAt,'dd MMM yyyy HH:mm')}"></span>
 
                     </div>
+
+                    <form th:if="${!notification.read}"
+                          th:action="@{/notifications/read/{id}(id=${notification.id})}"
+                          method="post">
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            Mark Read
+                        </button>
+                    </form>
 
                 </div>
 

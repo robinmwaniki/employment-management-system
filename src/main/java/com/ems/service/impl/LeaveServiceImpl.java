@@ -99,21 +99,15 @@ public class LeaveServiceImpl implements LeaveService {
     @Override
     public LeaveResponse getLeaveById(Long id) {
 
-        LeaveRequestEntity leave = leaveRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Leave request not found with id: " + id));
-
-        return LeaveMapper.toResponse(leave);
+        return LeaveMapper.toResponse(findLeave(id));
     }
 
     @Override
     public LeaveResponse approveLeave(Long id) {
 
-        LeaveRequestEntity leave = leaveRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Leave request not found with id: " + id));
+        LeaveRequestEntity leave = findLeave(id);
+
+        requirePending(leave, "approved");
 
         leave.setStatus(LeaveStatus.APPROVED);
 
@@ -144,10 +138,9 @@ public class LeaveServiceImpl implements LeaveService {
     @Override
     public LeaveResponse rejectLeave(Long id) {
 
-        LeaveRequestEntity leave = leaveRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Leave request not found with id: " + id));
+        LeaveRequestEntity leave = findLeave(id);
+
+        requirePending(leave, "rejected");
 
         leave.setStatus(LeaveStatus.REJECTED);
 
@@ -177,10 +170,75 @@ public class LeaveServiceImpl implements LeaveService {
     @Override
     public LeaveResponse cancelLeave(Long id) {
 
-        LeaveRequestEntity leave = leaveRepository.findById(id)
+        LeaveRequestEntity leave = findLeave(id);
+
+        if (leave.getStatus() != LeaveStatus.PENDING
+                && leave.getStatus() != LeaveStatus.APPROVED) {
+
+            throw new IllegalArgumentException(
+                    "This leave request can no longer be cancelled.");
+        }
+
+        return cancel(leave);
+    }
+
+    @Override
+    public LeaveResponse cancelOwnLeave(Long leaveId, Long employeeId) {
+
+        LeaveRequestEntity leave = findLeave(leaveId);
+
+        // Someone else's request is reported as "not found" so that request
+        // ids cannot be probed.
+        if (leave.getEmployee() == null
+                || !leave.getEmployee().getId().equals(employeeId)) {
+
+            throw new ResourceNotFoundException(
+                    "Leave request not found with id: " + leaveId);
+        }
+
+        requirePending(leave, "cancelled");
+
+        return cancel(leave);
+    }
+
+    @Override
+    public Page<LeaveResponse> getEmployeeLeaves(
+            Long employeeId,
+            int page,
+            int size) {
+
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee not found with id: " + employeeId));
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return leaveRepository
+                .findByEmployee(employee, pageable)
+                .map(LeaveMapper::toResponse);
+    }
+
+    private LeaveRequestEntity findLeave(Long id) {
+
+        return leaveRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Leave request not found with id: " + id));
+    }
+
+    /**
+     * Only a pending request can be approved, rejected or cancelled by its owner.
+     */
+    private void requirePending(LeaveRequestEntity leave, String action) {
+
+        if (leave.getStatus() != LeaveStatus.PENDING) {
+            throw new IllegalArgumentException(
+                    "Only pending leave requests can be " + action + ".");
+        }
+    }
+
+    private LeaveResponse cancel(LeaveRequestEntity leave) {
 
         leave.setStatus(LeaveStatus.CANCELLED);
 
@@ -203,23 +261,5 @@ public class LeaveServiceImpl implements LeaveService {
                         + "Your leave request has been cancelled successfully.");
 
         return LeaveMapper.toResponse(saved);
-    }
-
-    @Override
-    public Page<LeaveResponse> getEmployeeLeaves(
-            Long employeeId,
-            int page,
-            int size) {
-
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Employee not found with id: " + employeeId));
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        return leaveRepository
-                .findByEmployee(employee, pageable)
-                .map(LeaveMapper::toResponse);
     }
 }

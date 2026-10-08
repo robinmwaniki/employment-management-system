@@ -1,0 +1,30 @@
+# Local development only. Never activate this profile on a server.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/ems_db}
+    username: ${DB_USERNAME:ems}
+    password: ${DB_PASSWORD:ems_dev_password}
+
+  jpa:
+    hibernate:
+      # Temporary: replaced by Flyway migrations (validate) in the data-layer phase.
+      ddl-auto: update
+    show-sql: false
+
+  flyway:
+    enabled: false
+
+jwt:
+  # Development-only key. Generate a real one for any shared environment:
+  #   openssl rand -base64 48
+  secret: ${JWT_SECRET:ZGV2LW9ubHktand0LWtleS1kby1ub3QtdXNlLWluLXByb2R1Y3Rpb24tMDEyMzQ1Njc4OQ==}
+
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+
+logging:
+  level:
+    com.ems: DEBUG

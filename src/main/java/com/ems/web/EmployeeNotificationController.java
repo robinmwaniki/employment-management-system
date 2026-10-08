@@ -26,7 +26,7 @@ public class EmployeeNotificationController {
         return "employee-notifications";
     }
 
-    @GetMapping("/employee/notifications/read/{id}")
+    @PostMapping("/employee/notifications/read/{id}")
     public String markAsRead(@PathVariable Long id) {
 
         notificationService.markAsRead(id);
@@ -34,7 +34,7 @@ public class EmployeeNotificationController {
         return "redirect:/employee/notifications";
     }
 
-    @GetMapping("/employee/notifications/read-all")
+    @PostMapping("/employee/notifications/read-all")
     public String markAllAsRead() {
 
         notificationService.markAllAsRead();

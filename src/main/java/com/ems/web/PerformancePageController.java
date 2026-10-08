@@ -78,7 +78,7 @@ public class PerformancePageController {
         return "redirect:/performance";
     }
 
-    @GetMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     public String deleteReview(
             @PathVariable Long id) {
 
