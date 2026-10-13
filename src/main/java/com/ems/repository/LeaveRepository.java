@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 
 public interface LeaveRepository extends JpaRepository<LeaveRequestEntity, Long> {
 
@@ -17,9 +18,15 @@ public interface LeaveRepository extends JpaRepository<LeaveRequestEntity, Long>
 
     long countByStatus(LeaveStatus status);
 
-    boolean existsByEmployeeAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+    /**
+     * True when the employee already has a request in one of the given statuses
+     * that overlaps the period from startDate to endDate.
+     */
+    boolean existsByEmployeeAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
             Employee employee,
+            Collection<LeaveStatus> statuses,
             LocalDate endDate,
             LocalDate startDate
     );
+
 }
