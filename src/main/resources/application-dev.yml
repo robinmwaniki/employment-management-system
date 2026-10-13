@@ -6,13 +6,7 @@ spring:
     password: ${DB_PASSWORD:ems_dev_password}
 
   jpa:
-    hibernate:
-      # Temporary: replaced by Flyway migrations (validate) in the data-layer phase.
-      ddl-auto: update
     show-sql: false
-
-  flyway:
-    enabled: false
 
 jwt:
   # Development-only key. Generate a real one for any shared environment:
