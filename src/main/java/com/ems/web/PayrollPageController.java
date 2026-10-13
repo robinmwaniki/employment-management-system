@@ -4,7 +4,6 @@ import com.ems.dto.request.PayrollRequest;
 import com.ems.dto.response.PayrollResponse;
 import com.ems.repository.EmployeeRepository;
 import com.ems.service.interfaces.PayrollService;
-import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,7 +15,6 @@ public class PayrollPageController {
 
     private final PayrollService payrollService;
     private final EmployeeRepository employeeRepository;
-    private final SystemLogService systemLogService;
 
     @GetMapping("/payroll")
     public String payroll(
@@ -27,12 +25,6 @@ public class PayrollPageController {
         model.addAttribute(
                 "payrolls",
                 payrollService.getAllPayrolls(page, size));
-
-        systemLogService.saveLog(
-                "HR Admin",
-                "ADMIN",
-                "VIEW PAYROLL",
-                "Viewed payroll records");
 
         return "payroll";
     }
@@ -45,12 +37,6 @@ public class PayrollPageController {
         model.addAttribute(
                 "employees",
                 employeeRepository.findAll());
-
-        systemLogService.saveLog(
-                "HR Admin",
-                "ADMIN",
-                "OPEN PAYROLL FORM",
-                "Opened payroll creation form");
 
         return "payroll-form";
     }
@@ -85,12 +71,6 @@ public class PayrollPageController {
         model.addAttribute("payrollId", id);
         model.addAttribute("employees", employeeRepository.findAll());
 
-        systemLogService.saveLog(
-                "HR Admin",
-                "ADMIN",
-                "EDIT PAYROLL",
-                "Opened payroll for editing");
-
         return "payroll-form";
     }
 
@@ -112,12 +92,6 @@ public class PayrollPageController {
         model.addAttribute(
                 "payroll",
                 payrollService.getPayroll(id));
-
-        systemLogService.saveLog(
-                "HR Admin",
-                "ADMIN",
-                "VIEW PAYSLIP",
-                "Viewed payroll details");
 
         return "payroll-view";
     }
