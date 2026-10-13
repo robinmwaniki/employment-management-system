@@ -1,7 +1,6 @@
 package com.ems.web;
 
 import com.ems.service.interfaces.AttendanceService;
-import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class AttendancePageController {
 
     private final AttendanceService attendanceService;
-    private final SystemLogService systemLogService;
 
     @GetMapping("/attendance")
     public String attendance(
@@ -24,12 +22,6 @@ public class AttendancePageController {
         model.addAttribute(
                 "attendance",
                 attendanceService.getAllAttendance(page, size));
-
-        systemLogService.saveLog(
-                "HR Admin",
-                "ADMIN",
-                "VIEW ATTENDANCE",
-                "Viewed employee attendance records");
 
         return "attendance";
     }
