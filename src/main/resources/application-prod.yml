@@ -1,13 +1,7 @@
 # Production. Every secret and connection value must come from the environment.
 spring:
   jpa:
-    hibernate:
-      ddl-auto: validate
     show-sql: false
-
-  flyway:
-    enabled: true
-    baseline-on-migrate: false
 
 server:
   servlet:
