@@ -1,8 +1,5 @@
 -- V1: baseline schema and reconciliation.
---
--- Safe on an empty database (creates everything) and on a database that Hibernate
--- created earlier with ddl-auto=update (existing tables and data are kept and the
--- known differences are corrected).
+-- Safe on an empty database and on a database that Hibernate created earlier.
 
 -- ---------------------------------------------------------------------------
 -- Tables
@@ -137,7 +134,6 @@ CREATE TABLE IF NOT EXISTS system_logs (
 -- Reconcile a database that Hibernate created earlier
 -- ---------------------------------------------------------------------------
 
--- 1. Notifications now belong to an employee (NULL = staff-only notification).
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS employee_id bigint;
 
 DO $$
@@ -149,18 +145,18 @@ BEGIN
     END IF;
 END $$;
 
--- 2. Two entities used to share performance_reviews. Remove the columns that only
---    the unused entity added (they were never filled; one of them was NOT NULL).
 ALTER TABLE performance_reviews
     DROP COLUMN IF EXISTS score,
     DROP COLUMN IF EXISTS manager_comments,
     DROP COLUMN IF EXISTS employee_comments;
 
--- 3. payroll_month is now stored as text (YYYY-MM). Convert what is there when it
---    can be converted safely; otherwise stop, so no data is ever lost silently.
+-- Convert payroll_month to YYYY-MM text. For bytea, only convert when every
+-- value is valid UTF-8 text in YYYY-MM format; otherwise stop without changing it.
 DO $$
 DECLARE
     month_type text;
+    bad_id bigint;
+    month_value text;
 BEGIN
     SELECT data_type INTO month_type
     FROM information_schema.columns
@@ -170,9 +166,7 @@ BEGIN
 
     IF month_type IS NULL OR month_type = 'character varying' THEN
         RETURN;
-    END IF;
-
-    IF month_type IN ('date', 'timestamp without time zone', 'timestamp with time zone') THEN
+    ELSIF month_type IN ('date', 'timestamp without time zone', 'timestamp with time zone') THEN
         ALTER TABLE payroll
             ALTER COLUMN payroll_month TYPE varchar(7)
             USING to_char(payroll_month, 'YYYY-MM');
@@ -180,19 +174,38 @@ BEGIN
         ALTER TABLE payroll
             ALTER COLUMN payroll_month TYPE varchar(7)
             USING left(payroll_month, 7);
+    ELSIF month_type = 'bytea' THEN
+        FOR bad_id IN SELECT id FROM payroll ORDER BY id LOOP
+            BEGIN
+                SELECT convert_from(payroll_month, 'UTF8')
+                  INTO month_value
+                FROM payroll
+                WHERE id = bad_id;
+            EXCEPTION WHEN OTHERS THEN
+                RAISE EXCEPTION 'Cannot safely convert payroll_month for payroll id %: stored bytes are not valid UTF-8. No conversion was performed.', bad_id;
+            END;
+
+            IF month_value !~ '^[0-9]{4}-(0[1-9]|1[0-2])$' THEN
+                RAISE EXCEPTION 'Cannot safely convert payroll_month for payroll id %: decoded value is not YYYY-MM. No conversion was performed.', bad_id;
+            END IF;
+        END LOOP;
+
+        ALTER TABLE payroll
+            ALTER COLUMN payroll_month TYPE varchar(7)
+            USING convert_from(payroll_month, 'UTF8');
     ELSIF (SELECT count(*) FROM payroll) = 0 THEN
         ALTER TABLE payroll
             ALTER COLUMN payroll_month TYPE varchar(7)
             USING payroll_month::text;
     ELSE
         RAISE EXCEPTION
-            'payroll.payroll_month has type % and contains rows; convert it to varchar(7) (YYYY-MM) manually, then redeploy',
+            'payroll.payroll_month has unsupported type % and contains rows; inspect and convert it to varchar(7) (YYYY-MM) manually, then redeploy',
             month_type;
     END IF;
 END $$;
 
 -- ---------------------------------------------------------------------------
--- Indexes (PostgreSQL does not index foreign keys automatically)
+-- Indexes
 -- ---------------------------------------------------------------------------
 
 CREATE INDEX IF NOT EXISTS idx_employees_department ON employees (department_id);
@@ -204,8 +217,6 @@ CREATE INDEX IF NOT EXISTS idx_performance_employee ON performance_reviews (empl
 CREATE INDEX IF NOT EXISTS idx_notifications_employee_created ON notifications (employee_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_system_logs_created ON system_logs (created_at DESC);
 
--- One attendance row per employee per day, and one payroll per employee per month.
--- Created only when the existing data has no duplicates.
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM attendance GROUP BY employee_id, attendance_date HAVING count(*) > 1) THEN
