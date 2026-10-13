@@ -17,12 +17,20 @@ spring:
       max-lifetime: 1500000
 
   jpa:
-    # Kept enabled until services are made @Transactional (data-layer phase);
-    # templates and mappers currently rely on lazy loading during view rendering.
+    hibernate:
+      # Flyway owns the schema; Hibernate only checks that it matches the entities.
+      ddl-auto: validate
+    # Kept enabled until the integration tests exist; templates and mappers still
+    # rely on lazy loading while pages render.
     open-in-view: true
 
   flyway:
+    enabled: true
     locations: classpath:db/migration
+    # A database created earlier by Hibernate has tables but no Flyway history:
+    # baseline it at version 0 so V1 (which is safe to re-run) reconciles it.
+    baseline-on-migrate: true
+    baseline-version: 0
 
   servlet:
     multipart:
