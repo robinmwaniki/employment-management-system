@@ -11,11 +11,13 @@ import com.ems.service.interfaces.DepartmentService;
 import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+    @Transactional
 public class DepartmentServiceImpl implements DepartmentService {
 
     private final DepartmentRepository departmentRepository;
