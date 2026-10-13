@@ -3,7 +3,6 @@ package com.ems.web;
 import com.ems.dto.request.DepartmentRequest;
 import com.ems.dto.response.DepartmentResponse;
 import com.ems.service.interfaces.DepartmentService;
-import com.ems.service.interfaces.SystemLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 public class DepartmentPageController {
 
     private final DepartmentService departmentService;
-    private final SystemLogService systemLogService;
 
     @GetMapping("/departments")
     public String departments(Model model) {
@@ -22,12 +20,6 @@ public class DepartmentPageController {
         model.addAttribute(
                 "departments",
                 departmentService.getAllDepartments());
-
-        systemLogService.saveLog(
-                "Administrator",
-                "ADMIN",
-                "VIEW DEPARTMENTS",
-                "Viewed department list");
 
         return "departments";
     }
@@ -38,12 +30,6 @@ public class DepartmentPageController {
         model.addAttribute(
                 "department",
                 new DepartmentRequest());
-
-        systemLogService.saveLog(
-                "Administrator",
-                "ADMIN",
-                "OPEN CREATE DEPARTMENT",
-                "Opened create department form");
 
         return "department-form";
     }
@@ -78,13 +64,6 @@ public class DepartmentPageController {
         model.addAttribute(
                 "departmentId",
                 id);
-
-        systemLogService.saveLog(
-                "Administrator",
-                "ADMIN",
-                "OPEN EDIT DEPARTMENT",
-                "Opened edit form for department "
-                        + department.getName());
 
         return "department-form";
     }
