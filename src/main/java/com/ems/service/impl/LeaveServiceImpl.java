@@ -19,6 +19,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -42,9 +43,12 @@ public class LeaveServiceImpl implements LeaveService {
                     "End date cannot be before the start date.");
         }
 
+                // Only pending and approved requests block new ones; cancelled and
+        // rejected requests free the dates again.
         if (leaveRepository
-                .existsByEmployeeAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+                .existsByEmployeeAndStatusInAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         employee,
+                        List.of(LeaveStatus.PENDING, LeaveStatus.APPROVED),
                         request.getEndDate(),
                         request.getStartDate())) {
 
