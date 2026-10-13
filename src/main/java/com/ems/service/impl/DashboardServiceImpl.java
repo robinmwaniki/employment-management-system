@@ -13,7 +13,7 @@ import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
-    @Transactional
+    @Transactional(readOnly = true)
 public class DashboardServiceImpl implements DashboardService {
 
     private final EmployeeRepository employeeRepository;
