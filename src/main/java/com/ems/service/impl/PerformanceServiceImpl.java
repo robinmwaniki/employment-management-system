@@ -15,9 +15,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PerformanceServiceImpl
         implements PerformanceService {
 
@@ -47,9 +49,11 @@ public class PerformanceServiceImpl
         PerformanceReview saved =
                 performanceRepository.save(review);
 
+        // Addressed to the reviewed employee only.
         notificationService.create(
+                employee.getId(),
                 "Performance Review",
-                "A new performance review has been added.");
+                "A new performance review has been added to your record.");
 
         return PerformanceMapper.toResponse(saved);
     }
@@ -97,6 +101,7 @@ public class PerformanceServiceImpl
     }
 
     @Override
+    @Transactional(readOnly = true)
     public PerformanceResponse getReviewById(Long id) {
 
         PerformanceReview review =
@@ -109,6 +114,7 @@ public class PerformanceServiceImpl
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<PerformanceResponse> getAllReviews(
             int page,
             int size) {
@@ -121,6 +127,7 @@ public class PerformanceServiceImpl
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<PerformanceResponse> getEmployeeReviews(
             Long employeeId,
             int page,
