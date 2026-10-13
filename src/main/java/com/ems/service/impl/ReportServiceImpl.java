@@ -18,11 +18,13 @@ import com.ems.repository.PerformanceRepository;
 import com.ems.service.interfaces.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+    @Transactional(readOnly = true)
 public class ReportServiceImpl implements ReportService {
 
     private final EmployeeRepository employeeRepository;
