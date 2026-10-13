@@ -1,6 +1,7 @@
 package com.ems.repository;
 
 import com.ems.entity.Employee;
+import com.ems.entity.Role;
 import com.ems.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,5 +14,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
 
     boolean existsByEmployee(Employee employee);
+
+    boolean existsByRole(Role role);
 
 }
