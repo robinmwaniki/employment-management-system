@@ -1,10 +1,9 @@
 package com.ems.service.interfaces;
 
 import com.ems.dto.request.EmployeeRequest;
+import com.ems.dto.request.ProfileUpdateRequest;
 import com.ems.dto.response.EmployeeResponse;
-import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
-import org.springframework.web.multipart.MultipartFile;
 
 public interface EmployeeService {
 
@@ -18,9 +17,10 @@ public interface EmployeeService {
 
     EmployeeResponse updateEmployee(Long id, EmployeeRequest request);
 
+    /**
+     * Self-service update: changes only name, email and phone number.
+     */
+    EmployeeResponse updateOwnProfile(Long employeeId, ProfileUpdateRequest request);
+
     void deleteEmployee(Long id);
-
-    String uploadEmployeePhoto(Long employeeId, MultipartFile file);
-
-    Resource getEmployeePhoto(Long employeeId);
 }
