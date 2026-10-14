@@ -2,12 +2,12 @@ package com.ems.controller;
 
 import com.ems.dto.request.EmployeeRequest;
 import com.ems.dto.response.EmployeeResponse;
+import com.ems.exception.ResourceNotFoundException;
 import com.ems.service.interfaces.EmployeeService;
+import com.ems.service.interfaces.PhotoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final PhotoService photoService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -77,19 +78,22 @@ public class EmployeeController {
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file) {
 
-        return employeeService.uploadEmployeePhoto(id, file);
+        photoService.storePhoto(id, file);
+
+        return "Profile photo uploaded successfully.";
     }
 
     @GetMapping("/{id}/photo")
-    public ResponseEntity<Resource> getEmployeePhoto(
+    public ResponseEntity<byte[]> getEmployeePhoto(
             @PathVariable Long id) {
 
-        Resource resource = employeeService.getEmployeePhoto(id);
+        var photo = photoService.findPhoto(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Employee does not have a profile photo."));
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "inline; filename=\"" + resource.getFilename() + "\"")
-                .contentType(MediaType.IMAGE_JPEG)
-                .body(resource);
+                .contentType(MediaType.parseMediaType(photo.contentType()))
+                .body(photo.data());
     }
 }
