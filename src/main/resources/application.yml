@@ -81,11 +81,15 @@ jwt:
   # Token lifetime in milliseconds.
   expiration: ${JWT_EXPIRATION_MS:3600000}
 
-file:
-  upload-dir: ${APP_UPLOAD_DIR:uploads}
+
 
 springdoc:
   api-docs:
     enabled: ${SWAGGER_ENABLED:false}
   swagger-ui:
     enabled: ${SWAGGER_ENABLED:false}
+
+  servlet:
+    multipart:
+      max-file-size: 3MB
+      max-request-size: 3MB
