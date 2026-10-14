@@ -15,16 +15,14 @@ RUN --mount=type=cache,target=/root/.m2 mvn -B -q clean package -DskipTests
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# Run as an unprivileged user; uploads live on a mountable volume.
+# Run as an unprivileged user. The application keeps no files on disk.
 RUN groupadd --system --gid 10001 ems \
     && useradd --system --uid 10001 --gid ems --home-dir /app ems \
-    && mkdir -p /app/uploads \
     && chown -R ems:ems /app
 
 COPY --from=build --chown=ems:ems /workspace/target/employee-management-system.jar /app/app.jar
 
 USER ems
-VOLUME ["/app/uploads"]
 EXPOSE 8080
 
 ENV SPRING_PROFILES_ACTIVE=prod \
