@@ -1,39 +1,44 @@
 package com.ems.web;
 
-import com.ems.dto.request.EmployeeRequest;
+import com.ems.dto.request.ProfileUpdateRequest;
 import com.ems.dto.response.EmployeeResponse;
-import com.ems.entity.User;
+import com.ems.exception.ResourceNotFoundException;
 import com.ems.repository.UserRepository;
-import com.ems.service.interfaces.DepartmentService;
 import com.ems.service.interfaces.EmployeeService;
+import com.ems.service.interfaces.PhotoService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * Self-service profile for the signed-in employee. The employee is always taken
+ * from the authenticated account, and only contact details can be changed.
+ */
 @Controller
 @RequiredArgsConstructor
 public class EmployeeProfileController {
 
     private final UserRepository userRepository;
     private final EmployeeService employeeService;
-    private final DepartmentService departmentService;
+    private final PhotoService photoService;
 
     @GetMapping("/employee/profile")
     public String profile(
             Authentication authentication,
             Model model) {
 
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
-
-        EmployeeResponse employee =
-                employeeService.getEmployeeById(
-                        user.getEmployee().getId());
-
-        model.addAttribute("employee", employee);
+        model.addAttribute(
+                "employee",
+                employeeService.getEmployeeById(currentEmployeeId(authentication)));
 
         return "employee-profile";
     }
@@ -43,29 +48,17 @@ public class EmployeeProfileController {
             Authentication authentication,
             Model model) {
 
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
-
         EmployeeResponse employee =
-                employeeService.getEmployeeById(
-                        user.getEmployee().getId());
+                employeeService.getEmployeeById(currentEmployeeId(authentication));
 
-        EmployeeRequest request = new EmployeeRequest();
+        ProfileUpdateRequest form = new ProfileUpdateRequest();
 
-        request.setFirstName(employee.getFirstName());
-        request.setLastName(employee.getLastName());
-        request.setEmail(employee.getEmail());
-        request.setPhoneNumber(employee.getPhoneNumber());
-        request.setDepartmentId(employee.getDepartmentId());
-        request.setHireDate(employee.getHireDate());
-        request.setSalary(employee.getSalary());
+        form.setFirstName(employee.getFirstName());
+        form.setLastName(employee.getLastName());
+        form.setEmail(employee.getEmail());
+        form.setPhoneNumber(employee.getPhoneNumber());
 
-        model.addAttribute("employee", request);
-        model.addAttribute("departments",
-                departmentService.getAllDepartments());
-        model.addAttribute("employeeId",
-                employee.getId());
+        model.addAttribute("profileForm", form);
 
         return "employee-profile-form";
     }
@@ -73,17 +66,75 @@ public class EmployeeProfileController {
     @PostMapping("/employee/profile/update")
     public String updateProfile(
             Authentication authentication,
-            @ModelAttribute EmployeeRequest request) {
+            @Valid @ModelAttribute("profileForm") ProfileUpdateRequest form,
+            BindingResult result,
+            RedirectAttributes redirectAttributes) {
 
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+        if (!result.hasErrors()) {
 
-        employeeService.updateEmployee(
-                user.getEmployee().getId(),
-                request);
+            try {
+
+                employeeService.updateOwnProfile(
+                        currentEmployeeId(authentication),
+                        form);
+
+                redirectAttributes.addFlashAttribute(
+                        "success",
+                        "Your profile has been updated.");
+
+                return "redirect:/employee/profile";
+
+            } catch (IllegalArgumentException ex) {
+
+                // "Email already exists." / "Phone number already exists."
+                String field = ex.getMessage().startsWith("Email")
+                        ? "email"
+                        : "phoneNumber";
+
+                result.rejectValue(field, "duplicate", ex.getMessage());
+            }
+        }
+
+        return "employee-profile-form";
+    }
+
+    @PostMapping("/employee/profile/photo")
+    public String uploadPhoto(
+            Authentication authentication,
+            @RequestParam("file") MultipartFile file,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+
+            photoService.storePhoto(currentEmployeeId(authentication), file);
+
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Your photo has been updated.");
+
+        } catch (IllegalArgumentException ex) {
+
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
 
         return "redirect:/employee/profile";
+    }
+
+    /**
+     * Resolves the employee profile linked to the signed-in account.
+     */
+    private Long currentEmployeeId(Authentication authentication) {
+
+        var user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        if (user.getEmployee() == null) {
+            throw new ResourceNotFoundException(
+                    "No employee profile is linked to this account.");
+        }
+
+        return user.getEmployee().getId();
     }
 
 }
