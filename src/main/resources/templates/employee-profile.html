@@ -9,72 +9,133 @@
 
 <div class="content">
 
-    <div th:replace="~{fragments/navbar :: navbar}"></div>
+    <div th:replace="~{fragments/employee-navbar :: navbar}"></div>
 
-    <div class="container mt-4">
+    <div class="page">
 
-        <div class="card shadow">
+        <div class="page-header">
 
-            <div class="card-header bg-primary text-white">
+            <div>
+                <h1 class="page-title">My Profile</h1>
+                <p class="page-subtitle">Your details as held by HR.</p>
+            </div>
 
-                <h3>My Profile</h3>
+            <a class="btn btn-primary"
+               th:href="@{/employee/profile/edit}">
+                <i class="bi bi-pencil-square"></i>
+                Edit Profile
+            </a>
+
+        </div>
+
+        <div class="alert alert-success"
+             th:if="${success}"
+             th:text="${success}"></div>
+
+        <div class="alert alert-danger"
+             th:if="${error}"
+             th:text="${error}"></div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-4">
+
+                <div class="card">
+
+                    <div class="card-body text-center p-4">
+
+                        <img th:if="${employee.profilePhoto != null and !employee.profilePhoto.isEmpty()}"
+                             th:src="@{/photos/employee/{id}(id=${employee.id},v=${employee.profilePhoto})}"
+                             class="profile-photo"
+                             alt="Profile photo">
+
+                        <span th:unless="${employee.profilePhoto != null and !employee.profilePhoto.isEmpty()}"
+                              class="profile-photo profile-photo-initials"
+                              th:text="${employee.firstName != null and !employee.firstName.isEmpty() ? employee.firstName.substring(0,1).toUpperCase() : '?'}">?</span>
+
+                        <h5 class="mt-3 mb-0"
+                            th:text="${employee.firstName + ' ' + employee.lastName}">Name</h5>
+
+                        <p class="text-muted"
+                           th:text="${employee.departmentName}">Department</p>
+
+                        <form th:action="@{/employee/profile/photo}"
+                              method="post"
+                              enctype="multipart/form-data"
+                              class="mt-3">
+
+                            <input type="file"
+                                   name="file"
+                                   class="form-control form-control-sm mb-2"
+                                   accept="image/jpeg,image/png,image/webp"
+                                   required>
+
+                            <button type="submit"
+                                    class="btn btn-outline-primary btn-sm w-100">
+                                <i class="bi bi-camera"></i>
+                                Update photo
+                            </button>
+
+                            <div class="form-text mt-2">JPEG, PNG or WebP, up to 2 MB.</div>
+
+                        </form>
+
+                    </div>
+
+                </div>
 
             </div>
 
-            <div class="card-body text-center">
+            <div class="col-lg-8">
 
-                <img th:src="@{/api/employees/photo/{id}(id=${employee.id})}"
-                     width="160"
-                     height="160"
-                     class="rounded-circle border">
+                <div class="card">
 
-                <hr>
+                    <div class="card-header">Personal details</div>
 
-                <table class="table table-bordered">
+                    <div class="card-body">
 
-                    <tr>
-                        <th>First Name</th>
-                        <td th:text="${employee.firstName}"></td>
-                    </tr>
+                        <dl class="detail-list">
 
-                    <tr>
-                        <th>Last Name</th>
-                        <td th:text="${employee.lastName}"></td>
-                    </tr>
+                            <div class="row">
+                                <dt class="col-sm-4">First name</dt>
+                                <dd class="col-sm-8" th:text="${employee.firstName}"></dd>
+                            </div>
 
-                    <tr>
-                        <th>Email</th>
-                        <td th:text="${employee.email}"></td>
-                    </tr>
+                            <div class="row">
+                                <dt class="col-sm-4">Last name</dt>
+                                <dd class="col-sm-8" th:text="${employee.lastName}"></dd>
+                            </div>
 
-                    <tr>
-                        <th>Phone</th>
-                        <td th:text="${employee.phoneNumber}"></td>
-                    </tr>
+                            <div class="row">
+                                <dt class="col-sm-4">Email</dt>
+                                <dd class="col-sm-8" th:text="${employee.email}"></dd>
+                            </div>
 
-                    <tr>
-                        <th>Department</th>
-                        <td th:text="${employee.departmentName}"></td>
-                    </tr>
+                            <div class="row">
+                                <dt class="col-sm-4">Phone</dt>
+                                <dd class="col-sm-8" th:text="${employee.phoneNumber}"></dd>
+                            </div>
 
-                    <tr>
-                        <th>Salary</th>
-                        <td th:text="${employee.salary}"></td>
-                    </tr>
+                            <div class="row">
+                                <dt class="col-sm-4">Department</dt>
+                                <dd class="col-sm-8" th:text="${employee.departmentName}"></dd>
+                            </div>
 
-                    <tr>
-                        <th>Hire Date</th>
-                        <td th:text="${employee.hireDate}"></td>
-                    </tr>
+                            <div class="row">
+                                <dt class="col-sm-4">Salary</dt>
+                                <dd class="col-sm-8" th:text="${employee.salary}"></dd>
+                            </div>
 
-                </table>
+                            <div class="row">
+                                <dt class="col-sm-4">Hire date</dt>
+                                <dd class="col-sm-8" th:text="${employee.hireDate}"></dd>
+                            </div>
 
-                <a class="btn btn-primary"
-                   th:href="@{/employee/profile/edit}">
+                        </dl>
 
-                    Edit Profile
+                    </div>
 
-                </a>
+                </div>
 
             </div>
 
