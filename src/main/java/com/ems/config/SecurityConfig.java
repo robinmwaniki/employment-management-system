@@ -181,8 +181,7 @@ public class SecurityConfig {
                                 "/v3/api-docs", "/v3/api-docs/**"
                         ).hasRole(ADMIN)
 
-                        // Employee photos are only shown to signed-in users.
-                        .requestMatchers("/uploads/**").authenticated()
+                       
 
                         .requestMatchers(
                                 "/users", "/users/**",
