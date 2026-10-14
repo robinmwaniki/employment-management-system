@@ -1,25 +1,31 @@
 package com.ems.web;
 
+import com.ems.dto.request.EmployeeRequest;
+import com.ems.dto.response.EmployeeResponse;
+import com.ems.repository.DepartmentRepository;
 import com.ems.service.interfaces.EmployeeService;
+import com.ems.service.interfaces.PhotoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import com.ems.dto.response.EmployeeResponse;
-import com.ems.dto.request.EmployeeRequest;
-import com.ems.repository.DepartmentRepository;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+/**
+ * Staff pages for managing employees (restricted to ADMIN and HR_MANAGER in SecurityConfig).
+ */
 @Controller
 @RequiredArgsConstructor
 public class EmployeePageController {
 
     private final EmployeeService employeeService;
+    private final PhotoService photoService;
     private final DepartmentRepository departmentRepository;
 
     @GetMapping("/employees")
@@ -46,8 +52,9 @@ public class EmployeePageController {
 
         return "employees";
     }
+
     @GetMapping("/employees/new")
-    public String newEmployee(Model model){
+    public String newEmployee(Model model) {
 
         model.addAttribute("employee", new EmployeeRequest());
 
@@ -58,6 +65,7 @@ public class EmployeePageController {
 
         return "employee-form";
     }
+
     @PostMapping("/employees/save")
     public String saveEmployee(@ModelAttribute("employee") EmployeeRequest request) {
 
@@ -65,6 +73,7 @@ public class EmployeePageController {
 
         return "redirect:/employees";
     }
+
     @GetMapping("/employees/edit/{id}")
     public String editEmployee(@PathVariable Long id, Model model) {
 
@@ -86,6 +95,7 @@ public class EmployeePageController {
 
         return "employee-form";
     }
+
     @PostMapping("/employees/update/{id}")
     public String updateEmployee(
             @PathVariable Long id,
@@ -95,6 +105,7 @@ public class EmployeePageController {
 
         return "redirect:/employees";
     }
+
     @PostMapping("/employees/delete/{id}")
     public String deleteEmployee(@PathVariable Long id) {
 
@@ -102,21 +113,33 @@ public class EmployeePageController {
 
         return "redirect:/employees";
     }
+
     @GetMapping("/employees/photo/{id}")
     public String uploadPhotoPage(
             @PathVariable Long id,
-            Model model){
+            Model model) {
 
         model.addAttribute("employeeId", id);
 
         return "upload-photo";
     }
+
     @PostMapping("/employees/photo/{id}")
     public String uploadPhoto(
             @PathVariable Long id,
-            @RequestParam("file") MultipartFile file){
+            @RequestParam("file") MultipartFile file,
+            RedirectAttributes redirectAttributes) {
 
-        employeeService.uploadEmployeePhoto(id, file);
+        try {
+
+            photoService.storePhoto(id, file);
+
+        } catch (IllegalArgumentException ex) {
+
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+
+            return "redirect:/employees/photo/" + id;
+        }
 
         return "redirect:/employees";
     }
