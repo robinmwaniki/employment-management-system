@@ -73,7 +73,7 @@
                             <div class="d-flex align-items-center gap-3">
 
                                 <img th:if="${employee.profilePhoto != null and !employee.profilePhoto.isEmpty()}"
-                                     th:src="@{/uploads/{photo}(photo=${employee.profilePhoto})}"
+                                     th:src="@{/photos/employee/{id}(id=${employee.id},v=${employee.profilePhoto})}"
                                      class="avatar"
                                      alt="">
 
