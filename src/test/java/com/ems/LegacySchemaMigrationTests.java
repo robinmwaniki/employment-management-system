@@ -81,6 +81,11 @@ class LegacySchemaMigrationTests {
         assertThat(query("SELECT count(*) FROM information_schema.tables "
                 + "WHERE table_name = 'employee_photos'"))
                 .isEqualTo("1");
+
+        // Attendance durations are stored as nanoseconds, as Hibernate expects.
+        assertThat(query("SELECT data_type FROM information_schema.columns "
+                + "WHERE table_name = 'attendance' AND column_name = 'working_hours'"))
+                .isEqualTo("numeric");
     }
 
     private void createLegacySchemaWithData() throws Exception {
