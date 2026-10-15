@@ -12,7 +12,7 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q clean package -DskipTests
 
 # ---- Runtime stage ----
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:24-jre
 WORKDIR /app
 
 # Run as an unprivileged user. The application keeps no files on disk.
