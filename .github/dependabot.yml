@@ -7,7 +7,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     ignore:
-      # A new Spring Boot major version needs a planned migration, not an automatic PR.
+      # A new Spring Boot major version needs a planned migration not an automatic PR.
       - dependency-name: "org.springframework.boot:spring-boot-starter-parent"
         update-types: ["version-update:semver-major"]
 
