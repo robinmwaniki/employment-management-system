@@ -93,3 +93,6 @@ springdoc:
     multipart:
       max-file-size: 3MB
       max-request-size: 3MB
+
+cors:
+ allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
