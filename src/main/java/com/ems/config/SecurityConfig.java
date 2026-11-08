@@ -42,6 +42,7 @@ public class SecurityConfig {
 
     private static final String ADMIN = "ADMIN";
     private static final String HR_MANAGER = "HR_MANAGER";
+    private final CorsConfigurationSource corsConfigurationSource;
 
     /** Staff pages of the web UI (employees use the /employee/** pages instead). */
     private static final String[] STAFF_PAGES = {
@@ -102,6 +103,7 @@ public class SecurityConfig {
 
         http
                 .securityMatcher("/api/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
                 // Bearer tokens are sent explicitly by the client, not by the
                 // browser, so CSRF does not apply to this chain.
