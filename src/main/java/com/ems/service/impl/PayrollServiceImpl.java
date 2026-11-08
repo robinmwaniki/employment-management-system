@@ -237,5 +237,23 @@ public class PayrollServiceImpl implements PayrollService {
         return PayrollMapper.toResponse(payroll);
     }
 
+    @Override
+@Transactional(readOnly = true)
+public Page<PayrollResponse> getEmployeePayrolls(
+        Long employeeId,
+        int page,
+        int size) {
+
+    Employee employee = employeeRepository.findById(employeeId)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Employee not found with id: " + employeeId));
+
+    Pageable pageable = PageRequest.of(page, size);
+
+    return payrollRepository.findByEmployee(employee, pageable)
+            .map(PayrollMapper::toResponse);
+}
+
 
 }
