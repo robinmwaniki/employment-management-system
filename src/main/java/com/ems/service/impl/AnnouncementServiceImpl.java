@@ -89,4 +89,35 @@ public class AnnouncementServiceImpl implements AnnouncementService {
                 .map(AnnouncementMapper::toResponse)
                 .toList();
     }
+
+    @Override
+@Transactional(readOnly = true)
+public AnnouncementResponse getAnnouncementById(Long id) {
+
+    Announcement announcement = announcementRepository.findById(id)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Announcement not found with id: " + id));
+
+    return AnnouncementMapper.toResponse(announcement);
+}
+
+@Override
+public AnnouncementResponse updateAnnouncement(
+        Long id,
+        AnnouncementRequest request) {
+
+    Announcement announcement = announcementRepository.findById(id)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Announcement not found with id: " + id));
+
+    announcement.setTitle(request.getTitle());
+    announcement.setMessage(request.getMessage());
+    announcement.setPublishDate(request.getPublishDate());
+    announcement.setExpiryDate(request.getExpiryDate());
+
+    return AnnouncementMapper.toResponse(
+            announcementRepository.save(announcement));
+}
 }
