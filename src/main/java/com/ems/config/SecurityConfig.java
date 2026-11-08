@@ -164,6 +164,7 @@ public class SecurityConfig {
             throws Exception {
 
         http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(auth -> auth
 
                         .requestMatchers(
