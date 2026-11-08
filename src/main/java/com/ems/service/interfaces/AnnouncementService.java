@@ -14,6 +14,9 @@ public interface AnnouncementService {
 
     AnnouncementResponse getAnnouncement(Long id);
 
+    AnnouncementResponse getAnnouncementById(Long id);
+AnnouncementResponse updateAnnouncement(Long id, AnnouncementRequest request);
+
     Page<AnnouncementResponse> getAllAnnouncements(int page, int size);
 
     void deleteAnnouncement(Long id);
