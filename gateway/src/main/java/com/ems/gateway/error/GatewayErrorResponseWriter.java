@@ -59,6 +59,10 @@ public class GatewayErrorResponseWriter {
         exchange.getResponse().setStatusCode(status);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
         exchange.getResponse().getHeaders().setCacheControl("no-store");
+        if (status == HttpStatus.SERVICE_UNAVAILABLE) {
+            // Redis rate limiting fails closed; advise clients to retry after a short backoff.
+            exchange.getResponse().getHeaders().set("Retry-After", "5");
+        }
         return exchange.getResponse().writeWith(
                 Mono.just(exchange.getResponse().bufferFactory().wrap(payload)));
     }
