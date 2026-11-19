@@ -436,6 +436,7 @@ management:
       enabled: true
       probes:
         enabled: true
+        add-additional-paths: true
       group:
         liveness:
           include: livenessState
