@@ -27,200 +27,67 @@ spring:
                 exposedHeaders: ${ems.gateway.cors.exposed-headers}
                 allowCredentials: false
                 maxAge: ${ems.gateway.cors.max-age}
-          filter:
-            request-rate-limiter:
-              deny-empty-key: true
-              empty-key-status-code: TOO_MANY_REQUESTS
           routes:
-            - id: ems-auth-login
-              uri: ${ems.backend.uri}
-              predicates:
-                - Path=/api/auth/login
-                - Method=POST
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.login.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.login.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.login.requested-tokens}
-            - id: ems-auth-register
-              uri: ${ems.backend.uri}
-              predicates:
-                - Path=/api/auth/register
-                - Method=POST
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.registration.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.registration.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.registration.requested-tokens}
             - id: ems-auth-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/auth/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-employees-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/employees/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-departments-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/departments/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-attendance-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/attendance/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-leaves-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/leaves/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-payroll-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/payroll/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-payslips-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/payslips/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-reports-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/reports/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.reports.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.reports.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.reports.requested-tokens}
             - id: ems-performance-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/performance/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-announcements-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/announcements/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-notifications-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/notifications/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-dashboard-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/dashboard/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-users-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/users/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-self-service-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/me/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
             - id: ems-system-logs-api
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/system-logs/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@trustedClientAddressKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${ems.gateway.rate-limit.general.replenish-rate}
-                    redis-rate-limiter.burstCapacity: ${ems.gateway.rate-limit.general.burst-capacity}
-                    redis-rate-limiter.requestedTokens: ${ems.gateway.rate-limit.general.requested-tokens}
 
 server:
   port: ${GATEWAY_PORT:8081}
@@ -242,9 +109,10 @@ ems:
       allowed-origins: ${EMS_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
       allowed-methods: ${EMS_CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
       allowed-headers: ${EMS_CORS_ALLOWED_HEADERS:Authorization,Content-Type,Accept,X-Correlation-ID}
-      exposed-headers: ${EMS_CORS_EXPOSED_HEADERS:Authorization,X-Correlation-ID}
+      exposed-headers: ${EMS_CORS_EXPOSED_HEADERS:Authorization,X-Correlation-ID,X-RateLimit-Limit,X-RateLimit-Remaining,Retry-After}
       max-age: ${EMS_CORS_MAX_AGE:3600}
     rate-limit:
+      enabled: ${EMS_RATE_LIMIT_ENABLED:true}
       trusted-proxy-cidrs: ${EMS_TRUSTED_PROXY_CIDRS:}
       retry-after-seconds: ${EMS_RATE_LIMIT_RETRY_AFTER_SECONDS:5}
       login:
