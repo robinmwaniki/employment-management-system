@@ -49,7 +49,9 @@ class GatewaySentryPrivacyFilterTests {
         user.setId("employee-123");
         user.setEmail("employee@example.test");
         event.setUser(user);
-        event.setBreadcrumbs(List.of(new Breadcrumb("cookie=session-secret")));
+        Breadcrumb breadcrumb = new Breadcrumb(System.currentTimeMillis());
+        breadcrumb.setMessage("cookie=session-secret");
+        event.setBreadcrumbs(List.of(breadcrumb));
         event.setExtras(Map.of("employeeId", "123", "password", "secret"));
         event.setTags(Map.of("username", "employee@example.test"));
         event.setTransaction("/api/employees/123");
