@@ -29,7 +29,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
-        "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173"
+        "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173",
+        "EMS_TRUSTED_PROXY_CIDRS=127.0.0.0/8",
+        "EMS_LOGIN_RATE_LIMIT_REPLENISH_RATE=1",
+        "EMS_LOGIN_RATE_LIMIT_BURST_CAPACITY=2"
 })
 class ApiGatewayApplicationTests {
 
@@ -223,6 +226,31 @@ class ApiGatewayApplicationTests {
                 .expectHeader().exists("Strict-Transport-Security");
 
         assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+    }
+
+
+    @Test
+    void enforcesLoginRateLimitAndReturnsRetryGuidance() {
+        String clientIp = "198.51.100." + (10 + new java.util.Random().nextInt(200));
+
+        for (int attempt = 0; attempt < 2; attempt++) {
+            client().post()
+                    .uri("/api/auth/login")
+                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                    .header("X-Forwarded-For", clientIp)
+                    .bodyValue("{\\"username\\":\\"test-user\\"}")
+                    .exchange()
+                    .expectStatus().isAccepted();
+        }
+
+        client().post()
+                .uri("/api/auth/login")
+                .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                .header("X-Forwarded-For", clientIp)
+                .bodyValue("{\\"username\\":\\"test-user\\"}")
+                .exchange()
+                .expectStatus().isEqualTo(429)
+                .expectHeader().valueEquals("Retry-After", "1");
     }
 
     private String validToken() {
