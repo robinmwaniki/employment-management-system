@@ -13,6 +13,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
+import org.springframework.data.redis.RedisConnectionFailureException;
 
 /**
  * Converts uncaught gateway failures into stable JSON responses.
@@ -67,7 +68,8 @@ public class GatewayGlobalErrorWebExceptionHandler
         if (cause instanceof TimeoutException || cause instanceof SocketTimeoutException) {
             return HttpStatus.GATEWAY_TIMEOUT;
         }
-        if (cause instanceof RejectedExecutionException) {
+        if (cause instanceof RejectedExecutionException
+                || cause instanceof RedisConnectionFailureException) {
             return HttpStatus.SERVICE_UNAVAILABLE;
         }
         if (cause instanceof ConnectException || cause instanceof UnknownHostException) {

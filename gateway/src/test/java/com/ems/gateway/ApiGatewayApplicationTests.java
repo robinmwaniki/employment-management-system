@@ -29,7 +29,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
-        "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173"
+        "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173",
+        "EMS_RATE_LIMIT_ENABLED=false"
 })
 class ApiGatewayApplicationTests {
 
@@ -210,6 +211,7 @@ class ApiGatewayApplicationTests {
                 .isEqualTo("nosniff");
         assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
     }
+
 
     @Test
     void addsSecurityHeadersToUnauthorizedGatewayResponses() {

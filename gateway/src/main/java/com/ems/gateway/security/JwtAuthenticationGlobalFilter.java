@@ -22,6 +22,9 @@ import reactor.core.publisher.Mono;
 @Component
 public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
 
+    /** Exchange attribute containing the verified JWT subject for downstream filters. */
+    public static final String AUTHENTICATED_SUBJECT_ATTRIBUTE = "ems.gateway.authenticated-subject";
+
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String PUBLIC_LOGIN_PATH = "/api/auth/login";
 
@@ -77,6 +80,9 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
             // Never expose parser details or token contents to callers or logs.
             return unauthorized(exchange);
         }
+
+        // Store only the verified subject; rate limiting hashes it before using Redis.
+        exchange.getAttributes().put(AUTHENTICATED_SUBJECT_ATTRIBUTE, claims.getSubject());
 
         if (!authorizationPolicy.isAuthorized(exchange, claims)) {
             return forbidden(exchange);
