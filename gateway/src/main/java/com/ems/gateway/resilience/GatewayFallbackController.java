@@ -3,7 +3,7 @@ package com.ems.gateway.resilience;
 import com.ems.gateway.error.GatewayErrorResponseWriter;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.RestController;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
