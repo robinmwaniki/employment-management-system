@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import java.time.Instant;
+import java.util.List;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,7 +29,8 @@ class JwtAuthenticationGlobalFilterTests {
     private static final String ISSUER = "employee-management-system";
 
     private final JwtAuthenticationGlobalFilter filter =
-            new JwtAuthenticationGlobalFilter(new JwtTokenValidator(TEST_SECRET));
+            new JwtAuthenticationGlobalFilter(
+                    new JwtTokenValidator(TEST_SECRET), new JwtRouteAuthorizationPolicy());
     private final SecretKey signingKey =
             Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
 
@@ -131,12 +133,106 @@ class JwtAuthenticationGlobalFilterTests {
         assertThat(exchange.getResponse().getStatusCode()).isNull();
     }
 
+
+    @Test
+    void allowsEmployeeRoleOnDepartmentsButNotStaffOnlyRoutes() {
+        String employeeToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_EMPLOYEE");
+        ServerWebExchange departments = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/departments")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken)
+                        .build());
+        AtomicBoolean departmentsForwarded = new AtomicBoolean();
+
+        filter.filter(departments, ignored -> {
+            departmentsForwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(departmentsForwarded).isTrue();
+
+        ServerWebExchange employees = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken)
+                        .build());
+        AtomicBoolean employeesForwarded = new AtomicBoolean();
+
+        filter.filter(employees, ignored -> {
+            employeesForwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(employeesForwarded).isFalse();
+        assertThat(employees.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void allowsHrManagerOnStaffRoutes() {
+        String hrToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_HR_MANAGER");
+        ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + hrToken)
+                        .build());
+        AtomicBoolean forwarded = new AtomicBoolean();
+
+        filter.filter(exchange, ignored -> {
+            forwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(forwarded).isTrue();
+    }
+
+    @Test
+    void registrationRequiresAdministratorRole() {
+        String hrToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_HR_MANAGER");
+        ServerWebExchange hrRequest = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/auth/register")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + hrToken)
+                        .build());
+
+        filter.filter(hrRequest, ignored -> Mono.empty()).block();
+
+        assertThat(hrRequest.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        String adminToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_ADMIN");
+        ServerWebExchange adminRequest = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/auth/register")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .build());
+        AtomicBoolean forwarded = new AtomicBoolean();
+
+        filter.filter(adminRequest, ignored -> {
+            forwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(forwarded).isTrue();
+    }
+
+    @Test
+    void rejectsLegacyTokenWithoutSignedRoleClaims() {
+        String legacyToken = tokenWithRoles(Instant.now().plusSeconds(300));
+        ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/employees")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + legacyToken)
+                        .build());
+
+        filter.filter(exchange, ignored -> Mono.empty()).block();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
     private String token(Instant expiresAt) {
+        return tokenWithRoles(expiresAt, "ROLE_ADMIN");
+    }
+
+    private String tokenWithRoles(Instant expiresAt, String... roles) {
         return Jwts.builder()
                 .issuer(ISSUER)
                 .subject("admin@example.test")
                 .issuedAt(new Date())
                 .expiration(Date.from(expiresAt))
+                .claim("roles", List.of(roles))
                 .signWith(signingKey)
                 .compact();
     }
