@@ -76,12 +76,12 @@ The gateway validates the existing EMS backend JWT format before forwarding prot
 
 Set `JWT_SECRET` to exactly the same value used by the backend. The gateway has no default key and fails startup if the value is missing, invalid or too weak. Do not create a second key for the gateway. Generate a strong shared key for new environments with `openssl rand -base64 48`, then configure the same secret in both services through environment variables. Never commit the value.
 
-Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. The gateway answers valid preflight requests at the edge; the backend continues to enforce authorization for actual API calls. Other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
+Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. Other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
 
 | Route | Gateway role policy |
 | --- | --- |
 | `POST /api/auth/login` | Public |
-| `OPTIONS` preflight | Handled at gateway edge |
+| `OPTIONS` preflight | Forwarded to backend CORS handling |
 | `/api/auth/register` | `ROLE_ADMIN` |
 | `/api/departments/**` | Any known EMS role (`ROLE_ADMIN`, `ROLE_HR_MANAGER`, `ROLE_EMPLOYEE`) |
 | Other routed `/api/**` paths | `ROLE_ADMIN` or `ROLE_HR_MANAGER` |
@@ -119,7 +119,7 @@ The gateway tests start an ephemeral local HTTP backend and verify GET forwardin
 
 ## Current scope
 
-Centralized routing, JWT validation, route-role checks, CORS and browser security headers are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Resilience, rate limiting and additional observability are tracked in separate issues and pull requests.
+Centralized routing, JWT validation and route-role checks are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Resilience, rate limiting, metrics, tracing, dashboards and additional observability are tracked in separate issues and pull requests.
 
 
 ## Request correlation and logging
@@ -128,19 +128,52 @@ The gateway accepts a canonical UUID in `X-Correlation-ID`. Missing or malformed
 
 Gateway completion logs contain only the route ID, HTTP method, response status, elapsed milliseconds and correlation ID. Request/response bodies, query strings, authorization headers, cookies, credentials and employee identifiers are deliberately excluded. Client-provided correlation values are validated before use to prevent log injection.
 
-## CORS and browser security headers
 
-The gateway owns the browser-facing CORS policy. Configure `EMS_CORS_ALLOWED_ORIGINS` as a comma-separated list of exact origins (scheme, host and optional port), for example:
+## CORS configuration
+
+The gateway owns the browser-facing CORS policy for routed API paths. Configure `EMS_CORS_ALLOWED_ORIGINS` as a comma-separated list of exact HTTP(S) origins (scheme, host and optional port), for example:
 
 ```text
 EMS_CORS_ALLOWED_ORIGINS=https://ems.example.com,https://admin.example.com
 ```
 
-The local-development default is `http://localhost:3000`. Do not use `*`: credentialed requests are enabled, and wildcard origins are not valid for that policy. Allowed methods and request headers are intentionally restricted; `X-Correlation-ID` is exposed to browser clients. Preflight requests are handled by the gateway, including requests that do not match a backend route.
+Local development allows `http://localhost:3000` and `http://localhost:5173` by default. Wildcard origins, origin paths, credentials and query strings are rejected. Credentialed CORS is disabled because the React clients use Authorization bearer tokens rather than cross-origin cookies.
 
-The gateway's `DedupeResponseHeader` filter retains the gateway's first value for `Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials`, preventing a conflicting legacy backend value from reaching the browser. Keep the gateway allowlist and any backend allowlist aligned during migration; do not widen either to a wildcard.
+| Environment variable | Default | Purpose |
+| --- | --- | --- |
+| `EMS_CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Exact permitted browser origins |
+| `EMS_CORS_ALLOWED_METHODS` | `GET,POST,PUT,DELETE,OPTIONS` | Permitted request methods |
+| `EMS_CORS_ALLOWED_HEADERS` | `Authorization,Content-Type,Accept,X-Correlation-ID` | Permitted request headers |
+| `EMS_CORS_EXPOSED_HEADERS` | `Authorization,X-Correlation-ID` | Response headers readable by browser code |
+| `EMS_CORS_MAX_AGE` | `3600` | Preflight cache duration in seconds |
 
-The gateway also applies baseline API response headers: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Permitted-Cross-Domain-Policies` and a restrictive `Content-Security-Policy`. Existing downstream values are preserved.
+The gateway handles valid preflight requests at the edge for `/api/**`, including paths that are not proxied. Preflight requests do not reach the backend or require a bearer token. Actual API calls still require JWT validation and signed role authorization.
+
+The existing backend CORS policy remains available for direct backend access. Keep its `CORS_ALLOWED_ORIGIN` value aligned with the gateway allowlist during migration. The gateway deduplicates CORS response headers and retains the gateway's first values, preventing duplicate or conflicting origin headers when the legacy backend also emits CORS headers.
+
+## Browser security response headers
+
+A high-priority WebFilter adds these headers to successful responses, CORS preflight responses and gateway-generated 401/403 responses, while preserving any value already set by the downstream service:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), geolocation=(), microphone=()`
+- `X-Permitted-Cross-Domain-Policies: none`
+- `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+
+Browsers honor HSTS only when the response is received over HTTPS; the header is harmless in local HTTP development. The CSP is intentionally restrictive because the gateway serves API responses, not the React UI.
+
+## CORS and security-header tests
+
+Run the deterministic gateway suite with:
+
+```bash
+./mvnw --batch-mode -f gateway/pom.xml verify
+```
+
+Tests cover allowed and disallowed origins, edge-handled preflight, duplicate backend CORS headers, exact-origin validation, credential disabling, security headers on successful and unauthorized responses, and preservation of downstream header values. They use local mock exchanges and an ephemeral backend; no production credentials or hosted services are required.
 
 ## Gateway error responses
 

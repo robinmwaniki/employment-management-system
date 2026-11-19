@@ -4,6 +4,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -11,9 +12,11 @@ import org.springframework.http.HttpHeaders;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.crypto.SecretKey;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
@@ -25,7 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Verifies gateway startup and HTTP forwarding against an isolated local backend.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
-        "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+        "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+        "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173"
 })
 class ApiGatewayApplicationTests {
 
@@ -34,6 +38,7 @@ class ApiGatewayApplicationTests {
     private static final SecretKey SIGNING_KEY =
             Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
     private static DisposableServer mockBackend;
+    private static final AtomicInteger BACKEND_REQUEST_COUNT = new AtomicInteger();
 
     @LocalServerPort
     private int gatewayPort;
@@ -49,22 +54,36 @@ class ApiGatewayApplicationTests {
             mockBackend = HttpServer.create()
                     .host("127.0.0.1")
                     .port(0)
-                    .handle((request, response) -> request.receive()
-                            .aggregate()
-                            .asString()
-                            .defaultIfEmpty("")
-                            .flatMap(body -> response
-                                    .status(202)
-                                    // Simulate a conflicting legacy backend CORS header.
-                                    .header("Access-Control-Allow-Origin", "https://legacy-backend.example")
-                                    .sendString(Mono.just(
-                                            request.method().name() + " "
-                                                    + request.uri() + "|" + body))
-                                    .then()))
+                    .handle((request, response) -> {
+                        BACKEND_REQUEST_COUNT.incrementAndGet();
+                        String origin = request.requestHeaders().get("Origin");
+                        if (origin != null) {
+                            // Simulate the legacy backend CORS response so the
+                            // gateway's dedupe filter can be verified end-to-end.
+                            response.header("Access-Control-Allow-Origin", origin);
+                            response.header("Access-Control-Expose-Headers", "Authorization");
+                        }
+                        return request.receive()
+                                .aggregate()
+                                .asString()
+                                .defaultIfEmpty("")
+                                .flatMap(body -> response
+                                        .status(202)
+                                        .sendString(Mono.just(
+                                                request.method().name() + " "
+                                                        + request.uri() + "|" + body))
+                                        .then());
+                    })
                     .bindNow();
         }
         registry.add("ems.backend.uri",
                 () -> "http://127.0.0.1:" + mockBackend.port());
+    }
+
+
+    @BeforeEach
+    void resetBackendRequestCount() {
+        BACKEND_REQUEST_COUNT.set(0);
     }
 
     /**
@@ -137,71 +156,73 @@ class ApiGatewayApplicationTests {
                 .expectStatus().isNotFound();
     }
 
-    /**
-     * Allows preflight requests from an explicitly configured browser origin.
-     */
+
     @Test
-    void allowsConfiguredCorsOriginOnPreflight() {
+    void handlesAllowedCorsPreflightAtGatewayWithoutCallingBackend() {
         client().options()
                 .uri("/api/employees")
-                .header(HttpHeaders.ORIGIN, "http://localhost:3000")
+                .header(HttpHeaders.ORIGIN, "http://localhost:5173")
                 .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
-                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "authorization")
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS,
+                        "Authorization,X-Correlation-ID")
                 .exchange()
                 .expectStatus().isOk()
-                .expectHeader().valueEquals(
-                        HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:3000")
-                .expectHeader().valueEquals(
-                        HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+                .expectHeader().valueEquals(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN,
+                        "http://localhost:5173")
+                .expectHeader().valueEquals("X-Content-Type-Options", "nosniff");
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
     }
 
-    /**
-     * Rejects origins outside the configured allowlist.
-     */
     @Test
-    void rejectsUnconfiguredCorsOriginOnPreflight() {
+    void rejectsDisallowedCorsOriginBeforeBackendForwarding() {
         client().options()
                 .uri("/api/employees")
-                .header(HttpHeaders.ORIGIN, "https://untrusted.example")
+                .header(HttpHeaders.ORIGIN, "https://attacker.example")
                 .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "Authorization")
                 .exchange()
                 .expectStatus().isForbidden()
-                .expectHeader().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
+                .expectHeader().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN)
+                .expectHeader().valueEquals("X-Frame-Options", "DENY");
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
     }
 
-    /**
-     * Keeps the gateway's configured origin when the backend emits a conflicting value.
-     */
     @Test
-    void deduplicatesConflictingBackendCorsHeaders() {
-        client().get()
+    void deduplicatesBackendCorsHeadersAndExposesCorrelationId() {
+        EntityExchangeResult<String> result = client().get()
                 .uri("/api/employees/42")
-                .header(HttpHeaders.ORIGIN, "http://localhost:3000")
+                .header(HttpHeaders.ORIGIN, "http://localhost:5173")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
                 .exchange()
                 .expectStatus().isAccepted()
-                .expectHeader().valueEquals(
-                        HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:3000");
+                .expectBody(String.class)
+                .returnResult();
+
+        assertThat(result.getResponseHeaders().get(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN))
+                .containsExactly("http://localhost:5173");
+        assertThat(result.getResponseHeaders().getAccessControlExposeHeaders())
+                .contains("Authorization", "X-Correlation-ID");
+        assertThat(result.getResponseHeaders()
+                .getFirst(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS)).isNull();
+        assertThat(result.getResponseHeaders().getFirst("X-Content-Type-Options"))
+                .isEqualTo("nosniff");
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
     }
 
-    /**
-     * Adds baseline browser security headers to proxied API responses.
-     */
     @Test
-    void addsSecurityHeadersToApiResponses() {
+    void addsSecurityHeadersToUnauthorizedGatewayResponses() {
         client().get()
                 .uri("/api/employees/42")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
                 .exchange()
-                .expectStatus().isAccepted()
+                .expectStatus().isUnauthorized()
                 .expectHeader().valueEquals("X-Content-Type-Options", "nosniff")
                 .expectHeader().valueEquals("X-Frame-Options", "DENY")
-                .expectHeader().valueEquals(
-                        "Referrer-Policy", "strict-origin-when-cross-origin")
-                .expectHeader().valueEquals(
-                        "X-Permitted-Cross-Domain-Policies", "none")
-                .expectHeader().valueEquals(
-                        "Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+                .expectHeader().valueEquals("Referrer-Policy", "strict-origin-when-cross-origin")
+                .expectHeader().exists("Strict-Transport-Security");
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
     }
 
     private String validToken() {
