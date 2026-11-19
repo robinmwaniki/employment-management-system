@@ -76,7 +76,7 @@ The gateway validates the existing EMS backend JWT format before forwarding prot
 
 Set `JWT_SECRET` to exactly the same value used by the backend. The gateway has no default key and fails startup if the value is missing, invalid or too weak. Do not create a second key for the gateway. Generate a strong shared key for new environments with `openssl rand -base64 48`, then configure the same secret in both services through environment variables. Never commit the value.
 
-Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. Other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
+Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. The gateway answers valid preflight requests at the edge; the backend continues to enforce authorization for actual API calls. Other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
 
 | Route | Gateway role policy |
 | --- | --- |
@@ -119,7 +119,7 @@ The gateway tests start an ephemeral local HTTP backend and verify GET forwardin
 
 ## Current scope
 
-Centralized routing, JWT validation and route-role checks are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. CORS/security headers, resilience, rate limiting and additional observability are tracked in separate issues and pull requests.
+Centralized routing, JWT validation and route-role checks are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Resilience, rate limiting and additional observability are tracked in separate issues and pull requests.
 
 
 ## Request correlation and logging
@@ -127,3 +127,17 @@ Centralized routing, JWT validation and route-role checks are implemented while 
 The gateway accepts a canonical UUID in `X-Correlation-ID`. Missing or malformed values are replaced with a server-generated UUID. The value is returned in the response and forwarded to the backend so services can correlate related events.
 
 Gateway completion logs contain only the route ID, HTTP method, response status, elapsed milliseconds and correlation ID. Request/response bodies, query strings, authorization headers, cookies, credentials and employee identifiers are deliberately excluded. Client-provided correlation values are validated before use to prevent log injection.
+
+## CORS and browser security headers
+
+The gateway owns the browser-facing CORS policy. Configure `EMS_CORS_ALLOWED_ORIGINS` as a comma-separated list of exact origins (scheme, host and optional port), for example:
+
+```text
+EMS_CORS_ALLOWED_ORIGINS=https://ems.example.com,https://admin.example.com
+```
+
+The local-development default is `http://localhost:3000`. Do not use `*`: credentialed requests are enabled, and wildcard origins are not valid for that policy. Allowed methods and request headers are intentionally restricted; `X-Correlation-ID` is exposed to browser clients. Preflight requests are handled by the gateway, including requests that do not match a backend route.
+
+The gateway's `DedupeResponseHeader` filter retains the gateway's first value for `Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials`, preventing a conflicting legacy backend value from reaching the browser. Keep the gateway allowlist and any backend allowlist aligned during migration; do not widen either to a wildcard.
+
+The gateway also applies baseline API response headers: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Permitted-Cross-Domain-Policies` and a restrictive `Content-Security-Policy`. Existing downstream values are preserved.
