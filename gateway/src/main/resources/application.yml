@@ -3,6 +3,71 @@ spring:
     name: ems-api-gateway
   main:
     web-application-type: reactive
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: ems-auth-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/auth/**
+            - id: ems-employees-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/employees/**
+            - id: ems-departments-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/departments/**
+            - id: ems-attendance-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/attendance/**
+            - id: ems-leaves-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/leaves/**
+            - id: ems-payroll-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/payroll/**
+            - id: ems-payslips-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/payslips/**
+            - id: ems-reports-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/reports/**
+            - id: ems-performance-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/performance/**
+            - id: ems-announcements-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/announcements/**
+            - id: ems-notifications-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/notifications/**
+            - id: ems-dashboard-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/dashboard/**
+            - id: ems-users-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/users/**
+            - id: ems-self-service-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/me/**
+            - id: ems-system-logs-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/system-logs/**
 
 server:
   port: ${GATEWAY_PORT:8081}
@@ -11,6 +76,10 @@ server:
     include-message: never
     include-stacktrace: never
     include-binding-errors: never
+
+ems:
+  backend:
+    uri: ${EMS_BACKEND_URI:http://localhost:8080}
 
 management:
   endpoints:
