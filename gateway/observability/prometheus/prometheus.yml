@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: ems-api-gateway
+    metrics_path: /actuator/prometheus
+    scrape_interval: 15s
+    scrape_timeout: 5s
+    static_configs:
+      - targets:
+          - gateway:8081
+        labels:
+          application: ems-api-gateway
+          environment: local
+    # Read the management key from a mounted secret file; never commit it.
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/ems-management-api-key

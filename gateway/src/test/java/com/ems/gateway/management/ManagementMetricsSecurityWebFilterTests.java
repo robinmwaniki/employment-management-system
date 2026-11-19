@@ -66,6 +66,39 @@ class ManagementMetricsSecurityWebFilterTests {
     }
 
     @Test
+    void acceptsBearerManagementKeyForPrometheusScraping() {
+        ManagementMetricsSecurityWebFilter filter =
+                new ManagementMetricsSecurityWebFilter("test-management-key");
+        ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/actuator/prometheus")
+                        .header("Authorization", "Bearer test-management-key")
+                        .build());
+        AtomicBoolean forwarded = new AtomicBoolean();
+
+        filter.filter(exchange, ignored -> {
+            forwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(forwarded).isTrue();
+        assertThat(exchange.getResponse().getStatusCode()).isNull();
+    }
+
+    @Test
+    void rejectsMalformedBearerManagementCredentials() {
+        ManagementMetricsSecurityWebFilter filter =
+                new ManagementMetricsSecurityWebFilter("test-management-key");
+        ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/actuator/prometheus")
+                        .header("Authorization", "Basic dXNlcjpwYXNz")
+                        .build());
+
+        filter.filter(exchange, ignored -> Mono.empty()).block();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     void leavesHealthAndInfoProbesAccessibleWithoutTheMetricsKey() {
         ManagementMetricsSecurityWebFilter filter =
                 new ManagementMetricsSecurityWebFilter("test-management-key");

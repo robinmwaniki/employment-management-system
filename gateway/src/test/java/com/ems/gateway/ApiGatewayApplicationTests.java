@@ -209,6 +209,18 @@ class ApiGatewayApplicationTests {
                 .header("X-EMS-Management-Key", "test-management-key")
                 .exchange().expectStatus().isOk();
 
+        client().get().uri("/actuator/prometheus").exchange()
+                .expectStatus().isUnauthorized();
+        client().get().uri("/actuator/prometheus")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer test-management-key")
+                .exchange().expectStatus().isOk();
+
+        client().get().uri("/actuator/prometheus").exchange()
+                .expectStatus().isUnauthorized();
+        client().get().uri("/actuator/prometheus")
+                .header("Authorization", "Bearer test-management-key")
+                .exchange().expectStatus().isOk();
+
         client().get().uri("/actuator/env").exchange().expectStatus().isNotFound();
         client().get().uri("/actuator/beans").exchange().expectStatus().isNotFound();
         client().get().uri("/actuator/gateway/routes").exchange().expectStatus().isNotFound();

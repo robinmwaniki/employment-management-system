@@ -54,6 +54,12 @@ public class ManagementMetricsSecurityWebFilter implements WebFilter {
         }
 
         String supplied = exchange.getRequest().getHeaders().getFirst(MANAGEMENT_KEY_HEADER);
+        if (supplied == null || supplied.isBlank()) {
+            String authorization = exchange.getRequest().getHeaders().getFirst("Authorization");
+            if (authorization != null && authorization.startsWith("Bearer ")) {
+                supplied = authorization.substring("Bearer ".length());
+            }
+        }
         if (!isAuthorized(supplied)) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             exchange.getResponse().getHeaders().setCacheControl("no-store");
@@ -63,7 +69,9 @@ public class ManagementMetricsSecurityWebFilter implements WebFilter {
     }
 
     private boolean isMetricsPath(String path) {
-        return path.startsWith("/actuator/metrics");
+        return path.equals("/actuator/metrics")
+                || path.startsWith("/actuator/metrics/")
+                || path.equals("/actuator/prometheus");
     }
 
     private boolean isAuthorized(String supplied) {
