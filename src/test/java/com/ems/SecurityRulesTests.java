@@ -41,7 +41,7 @@ class SecurityRulesTests {
     @Autowired
     private JwtService jwtService;
 
-    @Value(\"${jwt.secret}\")
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
 
