@@ -54,6 +54,7 @@ jobs:
         env:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
+          EMS_GATEWAY_REDIS_INTEGRATION_TESTS: "true"
         run: bash ./mvnw --batch-mode --no-transfer-progress -f gateway/pom.xml verify
 
       - name: Build gateway Docker image
