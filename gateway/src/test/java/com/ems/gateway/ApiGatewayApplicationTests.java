@@ -94,6 +94,7 @@ class ApiGatewayApplicationTests {
                             response.header("Access-Control-Allow-Origin", origin);
                             response.header("Access-Control-Expose-Headers", "Authorization");
                         }
+                        final int backendResponseStatus = responseStatus;
                         return request.receive()
                                 .aggregate()
                                 .asString()
