@@ -1,6 +1,5 @@
 package com.ems.gateway.tracing;
 
-import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
