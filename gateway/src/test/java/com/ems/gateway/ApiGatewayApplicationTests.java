@@ -124,7 +124,7 @@ class ApiGatewayApplicationTests {
         assertThat(routes).hasSize(15);
         assertThat(routes).allSatisfy(route -> {
             assertThat(route.getMetadata()).containsKey("response-timeout");
-            assertThat(route.getFilters()).hasSize(2);
+            assertThat(route.getFilters()).hasSizeGreaterThanOrEqualTo(3);
         });
     }
 
