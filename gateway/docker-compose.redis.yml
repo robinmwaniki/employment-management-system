@@ -1,0 +1,20 @@
+# Start a local Redis instance for the API gateway's distributed rate limiter.
+# Run from this directory with: docker compose -f docker-compose.redis.yml up -d
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: ems-gateway-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ems-gateway-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  ems-gateway-redis-data:
