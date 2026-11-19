@@ -427,28 +427,33 @@ resilience4j:
 
 management:
   endpoints:
-    access:
-      default: none
+    enabled-by-default: false
     web:
       exposure:
         include: health,info,metrics
   endpoint:
     health:
-      access: read-only
+      enabled: true
       probes:
         enabled: true
-        add-additional-paths: true
       group:
         liveness:
           include: livenessState
         readiness:
-          include: readinessState
+          # Redis is required for distributed rate limiting; backend health is
+          # deliberately excluded so downstream outages do not affect liveness.
+          include: readinessState,redis
       show-details: never
       show-components: never
     info:
-      access: read-only
+      enabled: true
     metrics:
-      access: read-only
+      enabled: true
   health:
     circuitbreakers:
       enabled: true
+
+info:
+  app:
+    name: EMS API Gateway
+    status: IN PROGRESS
