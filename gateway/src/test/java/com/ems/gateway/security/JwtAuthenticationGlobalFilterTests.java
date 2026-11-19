@@ -47,6 +47,26 @@ class JwtAuthenticationGlobalFilterTests {
         assertThat(exchange.getResponse().getStatusCode()).isNull();
     }
 
+
+    @Test
+    void forwardsCorsPreflightWithoutBearerToken() {
+        ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.options("/api/employees")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Authorization,Content-Type")
+                        .build());
+        AtomicBoolean forwarded = new AtomicBoolean();
+
+        filter.filter(exchange, forwardedExchange -> {
+            forwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(forwarded).isTrue();
+        assertThat(exchange.getResponse().getStatusCode()).isNull();
+    }
+
     @Test
     void rejectsMissingBearerTokenForProtectedApiRoute() {
         ServerWebExchange exchange = MockServerWebExchange.from(
