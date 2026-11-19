@@ -1,6 +1,9 @@
 package com.ems.gateway.tracing;
 
 import io.micrometer.observation.ObservationFilter;
+import io.opentelemetry.api.OpenTelemetry;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,6 +14,21 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class GatewayTracingConfiguration {
+
+    /**
+     * Supplies the OpenTelemetry no-op API when tracing is explicitly disabled.
+     * This prevents application code from creating valid spans or exporting
+     * telemetry when the deployment opts out of tracing.
+     *
+     * @return no-op OpenTelemetry implementation
+     */
+    @Bean
+    @Primary
+    @ConditionalOnProperty(
+            prefix = "ems.gateway.tracing", name = "enabled", havingValue = "false")
+    public OpenTelemetry disabledOpenTelemetry() {
+        return OpenTelemetry.noop();
+    }
 
     /**
      * Removes high-cardinality URL and credential-related attributes from
