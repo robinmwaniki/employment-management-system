@@ -201,7 +201,11 @@ public class RateLimitGlobalFilter implements GlobalFilter, Ordered {
                 .next()
                 .switchIfEmpty(Mono.error(new IllegalStateException("Redis returned no rate-limit decision.")))
                 .map(this::toDecision)
-                .onErrorResume(exception -> Mono.just(RateLimitDecision.unavailable()));
+                .onErrorResume(exception -> {
+                    log.warn("Redis token bucket execution failed; exceptionType={}",
+                            exception.getClass().getSimpleName());
+                    return Mono.just(RateLimitDecision.unavailable());
+                });
     }
 
     private RateLimitDecision toDecision(List<Long> result) {
