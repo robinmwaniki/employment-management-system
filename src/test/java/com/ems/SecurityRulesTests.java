@@ -1,14 +1,26 @@
 package com.ems;
 
+import com.ems.security.jwt.JwtService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
+
+import javax.crypto.SecretKey;
+import java.util.List;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -25,6 +37,34 @@ class SecurityRulesTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Value(\"${jwt.secret}\")
+    private String jwtSecret;
+
+
+    @Test
+    void generatedJwtContainsSignedCurrentAuthorities() {
+        UserDetails user = User.withUsername("admin@example.test")
+                .password("not-used-in-this-test")
+                .authorities("ROLE_ADMIN", "ROLE_HR_MANAGER")
+                .build();
+
+        String token = jwtService.generateToken(user);
+        SecretKey signingKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+        Claims claims = Jwts.parser()
+                .verifyWith(signingKey)
+                .requireIssuer("employee-management-system")
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        assertThat(claims.getSubject()).isEqualTo("admin@example.test");
+        assertThat(claims.get("roles", List.class))
+                .containsExactlyInAnyOrder("ROLE_ADMIN", "ROLE_HR_MANAGER");
+    }
 
     @Test
     void anonymousUserIsSentToLoginFromStaffPages() throws Exception {
