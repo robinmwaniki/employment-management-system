@@ -13,7 +13,12 @@ RUN chmod +x ./mvnw \
 # Keep the runtime image small and run as a non-root user.
 FROM eclipse-temurin:21-jre
 
-RUN groupadd --system --gid 10001 app \
+# curl is used only by the container health check; no shell-based health probe
+# or application endpoint is exposed beyond the existing read-only /livez route.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app app
 
 WORKDIR /app
@@ -22,5 +27,8 @@ COPY --from=build --chown=10001:10001 \
 
 USER 10001:10001
 EXPOSE 8081
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
+    CMD ["curl", "--fail", "--silent", "--show-error", "http://127.0.0.1:8081/livez"]
 
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]

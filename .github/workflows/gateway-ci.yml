@@ -5,6 +5,7 @@ on:
     branches: ["develop", "main"]
     paths:
       - "gateway/**"
+      - "docker-compose.yml"
       - ".github/workflows/gateway-ci.yml"
       - "mvnw"
       - ".mvn/**"
@@ -59,3 +60,12 @@ jobs:
 
       - name: Build gateway Docker image
         run: docker build --file gateway/Dockerfile --tag ems-api-gateway:ci .
+
+      - name: Validate full-stack Docker Compose configuration
+        env:
+          DB_PASSWORD: ci-only-compose-validation
+          JWT_SECRET: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+          EMS_MANAGEMENT_API_KEY: ci-only-management-validation
+        run: |
+          touch .env
+          docker compose config --quiet

@@ -21,11 +21,17 @@ See [TESTING.md](TESTING.md) for the automated verification commands, coverage b
 
 ## Run locally
 
-Start the local Redis service first because readiness checks include Redis and request rate limiting uses it:
+For a complete local stack, including PostgreSQL, the existing EMS backend, Redis and the gateway, configure the required shared secrets in the root `.env` file and start the stack:
 
 ```bash
-docker compose -f gateway/docker-compose.redis.yml up -d
+docker compose up --build -d
+docker compose ps
+docker compose logs -f gateway
 ```
+
+The gateway is available at `http://localhost:8081`; the backend remains available at `http://localhost:8080`. Redis is internal to the Compose network and is not published to the host. The gateway waits for Redis health and for the backend container to start. The gateway's `/livez` health check is used by Docker; backend availability is deliberately not coupled to process liveness.
+
+To run only the gateway and its Redis dependency while running the backend separately, set `EMS_BACKEND_URI` to a reachable backend URL and use the standalone gateway Docker build command below.
 
 Then run the gateway from the repository root:
 
@@ -356,3 +362,51 @@ docker build --file gateway/Dockerfile --tag ems-api-gateway:local .
 9. Restore Redis/backend availability and verify the circuit breaker closes after its configured recovery window.
 
 The CI workflow runs gateway Maven verification, uses a disposable Redis service, builds the gateway Docker image and runs the root backend tests plus the existing backend production-image build. A manual smoke test against a deployed environment is still required before production traffic is switched to the gateway.
+
+
+## Docker Compose and independent deployment
+
+The root `docker-compose.yml` includes four services:
+
+- `db`: PostgreSQL with a persistent `pgdata` volume.
+- `app`: the existing EMS MVC backend with its existing uploads volume.
+- `redis`: Redis 7 with append-only persistence on the internal Compose network; its port is not published to the host.
+- `gateway`: the standalone multi-stage gateway image, running as UID/GID 10001 and exposing port 8081.
+
+The gateway uses `EMS_BACKEND_URI=http://app:8080` inside Compose and connects to Redis using the service name `redis`. The backend and gateway share the exact same `JWT_SECRET`; never generate separate signing keys. Set `EMS_MANAGEMENT_API_KEY` to a long random value for protected operational metrics.
+
+Required root `.env` entries for the gateway-enabled Compose stack:
+
+```dotenv
+JWT_SECRET=<same-strong-base64-secret-used-by-the-backend>
+EMS_MANAGEMENT_API_KEY=<long-random-management-key>
+EMS_CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+```
+
+Do not commit the root `.env` file. Keep production secrets in the deployment platform's secret/environment configuration. Redis is private to the Docker network and should not be exposed publicly. The gateway health check calls only the read-only liveness endpoint; readiness additionally checks Redis. This avoids restarting the gateway just because the EMS backend is temporarily unavailable.
+
+Build and start:
+
+```bash
+docker compose up --build -d
+docker compose ps
+docker compose logs --tail=100 gateway
+```
+
+Stop without deleting persistent data:
+
+```bash
+docker compose down
+```
+
+To remove local persistent data as well (destructive):
+
+```bash
+docker compose down --volumes
+```
+
+### Render deployment topology
+
+Deploy the backend and gateway as separate Render services. Keep PostgreSQL and Redis private; configure the gateway's `EMS_BACKEND_URI` using the backend's private service URL and set the same `JWT_SECRET` on both services. Configure `REDIS_HOST`, `REDIS_PORT`, and optional `REDIS_PASSWORD` using the private Redis connection details. Set `EMS_MANAGEMENT_API_KEY` only on the gateway. Use Render's assigned `PORT`/gateway port setting and the `/livez` health check path. Do not route public traffic to the backend directly once the gateway is ready; retain the backend private URL for gateway-to-backend traffic.
+
+For a safe rollout, deploy the gateway independently, verify health, login, protected API forwarding, CORS, 429 handling and backend 401/403 propagation, then switch the frontend's API base URL to the gateway. Roll back by restoring the previous frontend API base URL; the backend service and database schema are not changed by gateway deployment. Confirm current Render plan limits and private-service availability in the Render dashboard before production deployment.
