@@ -18,13 +18,6 @@ spring:
           # keeping the gateway's first, environment-validated values.
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Allow-Headers Access-Control-Expose-Headers, RETAIN_FIRST
-            # Every routed API receives a shared per-identity general quota.
-            - name: RequestRateLimiter
-              args:
-                key-resolver: "#{@emsRateLimitKeyResolver}"
-                redis-rate-limiter.replenishRate: ${EMS_API_RATE_LIMIT_REPLENISH_RATE:10}
-                redis-rate-limiter.burstCapacity: ${EMS_API_RATE_LIMIT_BURST_CAPACITY:20}
-                redis-rate-limiter.requestedTokens: 1
           globalcors:
             add-to-simple-url-handler-mapping: true
             cors-configurations:
@@ -43,13 +36,6 @@ spring:
               predicates:
                 - Path=/api/auth/login
                 - Method=POST
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@emsLoginRateLimitKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${EMS_LOGIN_RATE_LIMIT_REPLENISH_RATE:1}
-                    redis-rate-limiter.burstCapacity: ${EMS_LOGIN_RATE_LIMIT_BURST_CAPACITY:5}
-                    redis-rate-limiter.requestedTokens: 1
             # Registration has a separate, deliberately conservative quota.
             - id: ems-registration-api
               order: -19
@@ -57,26 +43,12 @@ spring:
               predicates:
                 - Path=/api/auth/register
                 - Method=POST
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@emsRegistrationRateLimitKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${EMS_REGISTER_RATE_LIMIT_REPLENISH_RATE:1}
-                    redis-rate-limiter.burstCapacity: ${EMS_REGISTER_RATE_LIMIT_BURST_CAPACITY:3}
-                    redis-rate-limiter.requestedTokens: 1
             # Expensive report endpoints have a dedicated lower throughput quota.
             - id: ems-reports-api
               order: -18
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/reports/**
-              filters:
-                - name: RequestRateLimiter
-                  args:
-                    key-resolver: "#{@emsReportsRateLimitKeyResolver}"
-                    redis-rate-limiter.replenishRate: ${EMS_REPORTS_RATE_LIMIT_REPLENISH_RATE:2}
-                    redis-rate-limiter.burstCapacity: ${EMS_REPORTS_RATE_LIMIT_BURST_CAPACITY:4}
-                    redis-rate-limiter.requestedTokens: 1
             - id: ems-auth-api
               uri: ${ems.backend.uri}
               predicates:
