@@ -83,7 +83,7 @@ class GatewaySentryPrivacyFilterTests {
         assertThat(event.getMessage()).isNull();
         assertThat(event.getThreads()).isEmpty();
         assertThat(event.getUnknown()).isNull();
-        assertThat(event.getContexts()).isEmpty();
+        assertThat(event.getContexts().get("custom")).isNull();
         assertThat(exception.getType()).isEqualTo("IllegalStateException");
         assertThat(exception.getValue()).isNull();
         assertThat(exception.getUnknown()).isNull();
