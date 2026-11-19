@@ -1,5 +1,9 @@
 # EMS API Gateway
 
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation and signed role-aware authorization are merged into `develop`. The next milestone is CORS configuration and secure response headers (issue #22).
+>
+> **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
+
 The EMS API Gateway is a separately deployable Spring Boot application and the external entry point for the Employee Management System REST API.
 
 ## Architecture
