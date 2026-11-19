@@ -2,6 +2,7 @@ package com.ems.gateway.error;
 
 import org.springframework.boot.webflux.error.ErrorWebExceptionHandler;
 import org.springframework.core.Ordered;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -64,6 +65,10 @@ public class GatewayGlobalErrorWebExceptionHandler
 
     private HttpStatus resolveStatus(Throwable exception) {
         Throwable cause = rootCause(exception);
+        if (hasCause(exception, DataAccessException.class)) {
+            // Rate limiting fails closed when Redis is unavailable; do not bypass quotas.
+            return HttpStatus.SERVICE_UNAVAILABLE;
+        }
         if (cause instanceof TimeoutException || cause instanceof SocketTimeoutException) {
             return HttpStatus.GATEWAY_TIMEOUT;
         }
@@ -77,6 +82,17 @@ public class GatewayGlobalErrorWebExceptionHandler
             return HttpStatus.valueOf(responseStatusException.getStatusCode().value());
         }
         return HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+
+    private boolean hasCause(Throwable exception, Class<? extends Throwable> type) {
+        Throwable current = exception;
+        while (current != null) {
+            if (type.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private Throwable rootCause(Throwable exception) {
