@@ -56,7 +56,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
         if (isPublicLogin(exchange)
                 || HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
             // Browser CORS preflight requests carry no bearer token. Forward them
-            // so the backend's existing CORS policy can answer the preflight.
+            // the gateway's native CORS handler answers preflight before route forwarding.
             return chain.filter(exchange);
         }
 
