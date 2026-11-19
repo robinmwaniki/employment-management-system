@@ -86,6 +86,7 @@ class ApiGatewayApplicationTests {
                             responseStatus = BACKEND_AUTHORIZATION.get() != null
                                     && BACKEND_AUTHORIZATION.get().startsWith("Bearer ") ? 202 : 401;
                         }
+                        final int finalResponseStatus = responseStatus;
                         String origin = request.requestHeaders().get("Origin");
                         if (origin != null) {
                             // Simulate the legacy backend CORS response so the
@@ -105,7 +106,7 @@ class ApiGatewayApplicationTests {
                                                 .then();
                                     }
                                     return response
-                                            .status(responseStatus)
+                                            .status(finalResponseStatus)
                                             .sendString(Mono.just(
                                                     request.method().name() + " "
                                                             + request.uri() + "|" + body))
