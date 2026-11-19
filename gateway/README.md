@@ -203,3 +203,25 @@ The `correlationId` is included when available. Responses use `application/json`
 | 504 | `UPSTREAM_TIMEOUT` | Upstream request timed out |
 
 Connection failures map to 502, rejected work maps to 503, and timeout failures map to 504. API clients should branch on the numeric `status` or stable `code`, display the safe `message`, and include `correlationId` when reporting a failure. Do not parse internal exception details from the response.
+
+
+## Redis-backed request rate limiting
+
+The gateway uses Spring Cloud Gateway's Redis token-bucket rate limiter. Start Redis locally with Docker:
+
+```bash
+docker run --name ems-gateway-redis --detach --publish 6379:6379 redis:7-alpine
+```
+
+Configure `REDIS_HOST`, `REDIS_PORT`, optional `REDIS_PASSWORD` and `REDIS_TIMEOUT` for deployment. Redis failures are fail-closed: the gateway returns HTTP 503 and does not forward a request when Redis cannot evaluate the token bucket.
+
+| Policy | Refill rate | Burst | Routes |
+| --- | ---: | ---: | --- |
+| Login | 2/second | 5 | `POST /api/auth/login` |
+| Registration | 1/second | 2 | `POST /api/auth/register` |
+| General API | 20/second | 40 | Other routed API paths |
+| Reports | 2/second | 4 | `/api/reports/**` |
+
+Override policy values with `EMS_RATE_LIMIT_<POLICY>_PER_SECOND`, `EMS_RATE_LIMIT_<POLICY>_BURST` and `EMS_RATE_LIMIT_<POLICY>_TOKENS` for `LOGIN`, `REGISTRATION`, `GENERAL` or `REPORTS`. Rejected requests return 429 with a configurable `Retry-After` header.
+
+The key resolver uses the direct socket peer by default. It ignores `X-Forwarded-For` unless the peer address matches an explicitly trusted CIDR in `EMS_TRUSTED_PROXY_CIDRS`. Configure this only for reverse proxies you control. Redis keys contain SHA-256 digests rather than raw IP addresses. Missing safe client addresses are denied rather than sharing an unbounded anonymous bucket.

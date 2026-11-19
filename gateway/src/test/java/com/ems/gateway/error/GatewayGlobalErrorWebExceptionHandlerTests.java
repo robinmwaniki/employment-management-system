@@ -9,6 +9,7 @@ import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.net.ConnectException;
+import org.springframework.data.redis.RedisConnectionFailureException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -48,6 +49,12 @@ class GatewayGlobalErrorWebExceptionHandlerTests {
     @Test
     void mapsRejectedWorkToServiceUnavailable() throws Exception {
         assertError(new RejectedExecutionException("internal executor details"),
+                HttpStatus.SERVICE_UNAVAILABLE, "UPSTREAM_UNAVAILABLE");
+    }
+
+    @Test
+    void failsClosedWhenRedisIsUnavailable() throws Exception {
+        assertError(new RedisConnectionFailureException("redis endpoint unavailable"),
                 HttpStatus.SERVICE_UNAVAILABLE, "UPSTREAM_UNAVAILABLE");
     }
 
