@@ -410,3 +410,21 @@ docker compose down --volumes
 Deploy the backend and gateway as separate Render services. Keep PostgreSQL and Redis private; configure the gateway's `EMS_BACKEND_URI` using the backend's private service URL and set the same `JWT_SECRET` on both services. Configure `REDIS_HOST`, `REDIS_PORT`, and optional `REDIS_PASSWORD` using the private Redis connection details. Set `EMS_MANAGEMENT_API_KEY` only on the gateway. Use Render's assigned `PORT`/gateway port setting and the `/livez` health check path. Do not route public traffic to the backend directly once the gateway is ready; retain the backend private URL for gateway-to-backend traffic.
 
 For a safe rollout, deploy the gateway independently, verify health, login, protected API forwarding, CORS, 429 handling and backend 401/403 propagation, then switch the frontend's API base URL to the gateway. Roll back by restoring the previous frontend API base URL; the backend service and database schema are not changed by gateway deployment. Confirm current Render plan limits and private-service availability in the Render dashboard before production deployment.
+
+
+## Prometheus and Grafana monitoring
+
+The gateway includes the Micrometer Prometheus registry and exposes a restricted scrape endpoint at `/actuator/prometheus`. Only health, info, metrics and Prometheus endpoints are enabled. Prometheus is protected by the dedicated management key; use the standard `Authorization: Bearer <EMS_MANAGEMENT_API_KEY>` header or `X-EMS-Management-Key`. The endpoint must remain on a private monitoring network.
+
+Version-controlled assets are stored under `gateway/observability/`:
+
+- `prometheus/prometheus.yml`: scrape job for the gateway endpoint.
+- `grafana/provisioning/datasources/prometheus.yml`: provisions the Prometheus data source.
+- `grafana/provisioning/dashboards/dashboards.yml`: loads the version-controlled dashboard.
+- `grafana/dashboards/ems-gateway-overview.json`: request rate, route/outcome volume, p50/p95/p99 latency, HTTP status classes, 429 rate-limit responses and Resilience4j circuit-breaker state panels.
+
+The Prometheus configuration reads the management key from a mounted credentials file at `/etc/prometheus/secrets/ems-management-api-key`. Create that file outside the repository and mount it read-only in the Prometheus container. Never place the key in the Prometheus YAML, dashboard JSON, metric labels or logs.
+
+The dashboard uses bounded labels only: route ID, HTTP method, outcome, HTTP status and circuit-breaker name/state. It does not use URL paths, query strings, usernames, JWTs, request bodies or employee identifiers. Latency histograms are enabled for the gateway's custom request-duration timer so percentile panels can be calculated by Prometheus. Panels may remain empty until the corresponding route or circuit breaker has emitted measurements.
+
+For Render or another hosted deployment, configure Prometheus to scrape the gateway's private service address and mount the management key as a secret file. Do not expose the management endpoint publicly. Configure Grafana authentication and restrict its UI to administrators or the internal operations network.
