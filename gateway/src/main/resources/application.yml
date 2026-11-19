@@ -18,6 +18,11 @@ spring:
           httpclient:
             connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
             response-timeout: ${EMS_GATEWAY_RESPONSE_TIMEOUT:5s}
+          metrics:
+            enabled: true
+            tags:
+              path:
+                enabled: false
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Expose-Headers, RETAIN_FIRST
             # Retry only idempotent reads after transient upstream failures.
@@ -422,15 +427,28 @@ resilience4j:
 
 management:
   endpoints:
+    access:
+      default: none
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
+  endpoint:
+    health:
+      access: read-only
+      probes:
+        enabled: true
+        add-additional-paths: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState
+      show-details: never
+      show-components: never
+    info:
+      access: read-only
+    metrics:
+      access: read-only
   health:
     circuitbreakers:
       enabled: true
-  endpoint:
-    health:
-      probes:
-        enabled: true
-      show-details: never
-      show-components: always
