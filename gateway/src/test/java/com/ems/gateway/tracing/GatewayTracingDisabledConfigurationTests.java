@@ -13,6 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "management.opentelemetry.enabled=false",
+                "EMS_TRACING_ENABLED=false",
+                "OTEL_SDK_DISABLED=true",
                 "management.tracing.export.otlp.enabled=false",
                 "EMS_RATE_LIMIT_ENABLED=false",
                 "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
