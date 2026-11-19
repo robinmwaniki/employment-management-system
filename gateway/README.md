@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. The next milestone is Redis-backed request rate limiting (issue #24).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. The next milestone is resilience policies (issue #25).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -119,7 +119,7 @@ The gateway tests start an ephemeral local HTTP backend and verify GET forwardin
 
 ## Current scope
 
-Centralized routing, JWT validation, route-role checks, CORS, secure response headers and standardized gateway errors are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Resilience, metrics, tracing, dashboards and additional observability are tracked in separate issues and pull requests.
+Centralized routing, JWT validation, route-role checks, CORS, secure response headers and standardized gateway errors are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Metrics, tracing, dashboards and additional observability are tracked in separate issues and pull requests.
 
 
 ## Request correlation and logging
