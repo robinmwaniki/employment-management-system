@@ -209,9 +209,39 @@ class ApiGatewayApplicationTests {
                 .header("X-EMS-Management-Key", "test-management-key")
                 .exchange().expectStatus().isOk();
 
+        client().get().uri("/actuator/prometheus").exchange()
+                .expectStatus().isUnauthorized();
+        client().get().uri("/actuator/prometheus")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer test-management-key")
+                .exchange().expectStatus().isOk();
+
+        client().get().uri("/actuator/prometheus").exchange()
+                .expectStatus().isUnauthorized();
+        client().get().uri("/actuator/prometheus")
+                .header("Authorization", "Bearer test-management-key")
+                .exchange().expectStatus().isOk();
+
         client().get().uri("/actuator/env").exchange().expectStatus().isNotFound();
         client().get().uri("/actuator/beans").exchange().expectStatus().isNotFound();
         client().get().uri("/actuator/gateway/routes").exchange().expectStatus().isNotFound();
+    }
+
+    @Test
+    void exportsGatewayCountersInPrometheusFormatForAuthorizedScrapers() {
+        client().get()
+                .uri("/api/employees/prometheus-metric-check")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted();
+
+        client().get()
+                .uri("/actuator/prometheus")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer test-management-key")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith("text/plain")
+                .expectBody(String.class)
+                .value(body -> assertThat(body).contains("ems_gateway_requests_total"));
     }
 
     @Test

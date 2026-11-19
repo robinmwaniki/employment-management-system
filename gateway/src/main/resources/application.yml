@@ -462,7 +462,7 @@ management:
     enabled-by-default: false
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       enabled: true
@@ -482,6 +482,14 @@ management:
       enabled: true
     metrics:
       enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        ems.gateway.request.duration: true
+      percentiles:
+        ems.gateway.request.duration: [0.5, 0.95, 0.99]
   health:
     circuitbreakers:
       enabled: true
