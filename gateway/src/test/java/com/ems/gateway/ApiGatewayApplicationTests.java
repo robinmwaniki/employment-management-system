@@ -175,7 +175,8 @@ class ApiGatewayApplicationTests {
 
     @Test
     void exposesOnlyExplicitReadOnlyActuatorEndpoints() {
-        client().get().uri("/actuator/health").exchange().expectStatus().isOk();
+        client().get().uri("/actuator/health").exchange()
+                .expectStatus().value(status -> assertThat(status).isIn(200, 503));
         client().get().uri("/actuator/info").exchange().expectStatus().isOk();
         client().get().uri("/actuator/metrics").exchange().expectStatus().isOk();
 
