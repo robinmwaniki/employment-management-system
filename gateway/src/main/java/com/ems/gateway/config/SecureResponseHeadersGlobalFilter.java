@@ -53,7 +53,7 @@ public class SecureResponseHeadersGlobalFilter implements GlobalFilter, Ordered 
     }
 
     private void setIfAbsent(HttpHeaders headers, String name, String value) {
-        if (!headers.containsKey(name)) {
+        if (headers.getFirst(name) == null) {
             headers.set(name, value);
         }
     }
