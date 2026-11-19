@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Guards the access rules: who may open which page or endpoint.
  */
-@SpringBootTest
+@SpringBootTest(properties = "SWAGGER_ENABLED=true")
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class SecurityRulesTests {
@@ -72,6 +72,29 @@ class SecurityRulesTests {
         mockMvc.perform(get("/dashboard"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login"));
+    }
+
+    @Test
+    void openApiDocumentRequiresAdministratorBearerToken() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @WithMockUser(roles = "HR_MANAGER")
+    void hrManagerCannotReadOpenApiDocument() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void administratorCanReadCanonicalOpenApiDocument() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.info.title")
+                        .value("Employee Management System API"))
+                .andExpect(jsonPath("$.components.securitySchemes").exists());
     }
 
     @Test

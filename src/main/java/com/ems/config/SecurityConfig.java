@@ -29,7 +29,7 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 /**
  * Security configuration with two independent filter chains:
  * <ul>
- *   <li>{@code /api/**}: stateless, JWT bearer tokens, no CSRF (no cookies are used).</li>
+ *   <li>{@code /api/**} and {@code /v3/api-docs/**}: stateless, JWT bearer tokens, no CSRF.</li>
  *   <li>everything else: the Thymeleaf web UI, session based, CSRF protected.</li>
  * </ul>
  * Role rules are declared here, in one place, and method security
@@ -103,7 +103,7 @@ public class SecurityConfig {
             throws Exception {
 
         http
-                .securityMatcher("/api/**")
+                .securityMatcher("/api/**", "/v3/api-docs", "/v3/api-docs/**")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
                 // Bearer tokens are sent explicitly by the client, not by the
@@ -124,6 +124,10 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.POST, "/api/auth/login")
                         .permitAll()
+
+                        // The gateway and backend both require an administrator JWT for the canonical API contract.
+                        .requestMatchers("/v3/api-docs", "/v3/api-docs/**")
+                        .hasRole(ADMIN)
 
                         // Accounts are created by an administrator only.
                         .requestMatchers("/api/auth/register")

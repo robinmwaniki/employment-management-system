@@ -33,6 +33,7 @@ public class JwtRouteAuthorizationPolicy {
      *   <li>/api/auth/register requires ROLE_ADMIN.</li>
      *   <li>/api/departments/** requires any known authenticated EMS role.</li>
      *   <li>All other routed API paths require ROLE_ADMIN or ROLE_HR_MANAGER.</li>
+     *   <li>The OpenAPI JSON document requires ROLE_ADMIN.</li>
      * </ul>
      *
      * @param exchange current request
@@ -47,6 +48,10 @@ public class JwtRouteAuthorizationPolicy {
         Set<String> roles = extractRoles(claims);
         String path = exchange.getRequest().getURI().getPath();
 
+        if (isOpenApiDocumentationPath(path)) {
+            return roles.contains(ROLE_ADMIN);
+        }
+
         if ("/api/auth/register".equals(path)) {
             return roles.contains(ROLE_ADMIN);
         }
@@ -56,6 +61,10 @@ public class JwtRouteAuthorizationPolicy {
         }
 
         return roles.contains(ROLE_ADMIN) || roles.contains(ROLE_HR_MANAGER);
+    }
+
+    private boolean isOpenApiDocumentationPath(String path) {
+        return "/v3/api-docs".equals(path) || path.startsWith("/v3/api-docs/");
     }
 
     private boolean isPublicRequest(ServerWebExchange exchange) {

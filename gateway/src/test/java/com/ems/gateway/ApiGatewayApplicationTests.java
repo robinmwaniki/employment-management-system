@@ -164,13 +164,34 @@ class ApiGatewayApplicationTests {
     void configuresTimeoutRetryAndCircuitBreakerForEveryApiRoute() {
         var routes = routeLocator.getRoutes().collectList().block();
 
-        assertThat(routes).hasSize(15);
+        assertThat(routes).hasSize(16);
         assertThat(routes).allSatisfy(route -> {
             assertThat(route.getMetadata()).containsKey("response-timeout");
             assertThat(route.getFilters()).hasSizeGreaterThanOrEqualTo(3);
         });
     }
 
+
+    @Test
+    void forwardsOpenApiDocumentOnlyForAdministratorJwt() {
+        client().get()
+                .uri("/v3/api-docs")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validManagerToken())
+                .exchange()
+                .expectStatus().isForbidden();
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+
+        client().get()
+                .uri("/v3/api-docs")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted()
+                .expectBody(String.class)
+                .isEqualTo("GET /v3/api-docs|");
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
+    }
 
     @Test
     void retriesTransientGetFailuresWithinConfiguredLimit() {
