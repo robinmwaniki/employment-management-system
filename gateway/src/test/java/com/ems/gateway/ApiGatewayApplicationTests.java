@@ -7,6 +7,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import io.sentry.IScopes;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.beans.factory.annotation.Autowired;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -62,6 +64,9 @@ class ApiGatewayApplicationTests {
 
     @Autowired
     private RouteLocator routeLocator;
+    @Autowired
+    private ApplicationContext applicationContext;
+
 
     /**
      * Supplies an ephemeral backend address before the gateway context is created.
@@ -467,6 +472,11 @@ class ApiGatewayApplicationTests {
         // The gateway permits the manager role and preserves the backend's
         // independent resource-level authorization decision.
         assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
+    }
+
+    @Test
+    void sentryIsNotInitializedWhenNoDsnIsConfigured() {
+        assertThat(applicationContext.getBeansOfType(IScopes.class)).isEmpty();
     }
 
     @Test
