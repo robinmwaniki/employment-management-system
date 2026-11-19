@@ -208,7 +208,7 @@ Connection failures map to 502, rejected work maps to 503, and timeout failures 
 
 ## Redis-backed rate limiting
 
-The gateway uses Spring Cloud Gateway's Redis token-bucket limiter. Redis is shared across gateway instances, so quotas remain consistent when the gateway is horizontally scaled. The backend remains unchanged and does not need a Redis dependency.
+The gateway uses an atomic Redis Lua token-bucket filter backed by Spring Data Redis Reactive. The script performs refill, consumption and expiry in one Redis operation using Redis server time. Redis is shared across gateway instances, so quotas remain consistent when the gateway is horizontally scaled. The backend remains unchanged and does not need a Redis dependency.
 
 ### Quota policies
 
@@ -221,7 +221,7 @@ The defaults are deliberately conservative starting values and can be tuned per 
 | Registration | 1 token/second | 3 | `EMS_REGISTER_RATE_LIMIT_REPLENISH_RATE`, `EMS_REGISTER_RATE_LIMIT_BURST_CAPACITY` |
 | Reports | 2 tokens/second | 4 | `EMS_REPORTS_RATE_LIMIT_REPLENISH_RATE`, `EMS_REPORTS_RATE_LIMIT_BURST_CAPACITY` |
 
-Login, registration and report requests have their own Redis key namespaces in addition to the general API quota. This prevents the stricter category-specific bucket from sharing token state with the general bucket. CORS preflight requests are handled before route filters and do not consume API quota.
+Login, registration and report requests use independent Redis key namespaces and policies. General API requests use the general bucket. This prevents one category from consuming another category's token state. CORS preflight requests are handled before route filters and do not consume API quota.
 
 ### Identity and proxy trust
 
@@ -263,7 +263,7 @@ Set the same Redis environment variables for each gateway instance. The gateway 
 
 When a quota is exhausted, the gateway returns HTTP `429 Too Many Requests` with `Retry-After: 1`. Clients should respect the header and use exponential backoff for repeated failures.
 
-Rate limiting fails closed. If Redis cannot be reached, the gateway returns a generic HTTP `503 Service Unavailable` response with `Retry-After: 5`; it does not silently bypass protection. The response body follows the shared privacy-safe gateway error schema. Redis connection details and exception messages are never returned to clients.
+Rate limiting fails closed. The custom Lua filter propagates Redis command failures instead of using Spring Cloud Gateway's built-in Redis limiter behavior that can fail open. If Redis cannot be reached, the global error handler returns a generic HTTP `503 Service Unavailable` response with `Retry-After: 5`; the gateway does not silently bypass protection. The response body follows the shared privacy-safe gateway error schema. Redis connection details and exception messages are never returned to clients.
 
 ### Verification
 
