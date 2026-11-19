@@ -76,8 +76,17 @@ Only `POST /api/auth/login` is public at the gateway. Other routed API requests 
 For local PowerShell runs, set the environment variable in the current shell from the local secret manager or `.env` value before starting the gateway:
 
 ```powershell
-$env:JWT_SECRET = Read-Host 'Enter the shared EMS JWT_SECRET'
+$secureSecret = Read-Host 'Enter the shared EMS JWT_SECRET' -AsSecureString
+$secretPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
+try {
+    $env:JWT_SECRET = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($secretPointer)
+}
+finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($secretPointer)
+    $secureSecret.Dispose()
+}
 .\\mvnw.cmd -f gateway/pom.xml spring-boot:run
+Remove-Item Env:JWT_SECRET
 ```
 
 The value is held only in the current shell session; do not paste it into terminal transcripts, issue comments or logs.
