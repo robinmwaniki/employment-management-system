@@ -16,7 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Verifies gateway startup and HTTP forwarding against an isolated local backend.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
+        "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+})
 class ApiGatewayApplicationTests {
 
     private static DisposableServer mockBackend;
