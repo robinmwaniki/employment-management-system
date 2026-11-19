@@ -23,6 +23,16 @@ class RateLimitRetryAfterWebFilterTests {
     }
 
     @Test
+    void rejectsInvalidRetryAfterConfiguration() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> new RateLimitRetryAfterWebFilter("0"))
+                .isInstanceOf(IllegalArgumentException.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> new RateLimitRetryAfterWebFilter("five"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void doesNotAddRetryAfterForSuccessfulResponse() {
         var exchange = MockServerWebExchange.from(MockServerHttpRequest.get("/api").build());
         filter.filter(exchange, current -> {
