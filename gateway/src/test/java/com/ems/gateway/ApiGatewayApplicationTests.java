@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.SecretKey;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -42,6 +43,7 @@ class ApiGatewayApplicationTests {
             Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
     private static DisposableServer mockBackend;
     private static final AtomicInteger BACKEND_REQUEST_COUNT = new AtomicInteger();
+    private static final ConcurrentHashMap<String, AtomicInteger> RETRY_REQUESTS = new ConcurrentHashMap<>();
 
     @LocalServerPort
     private int gatewayPort;
@@ -62,6 +64,14 @@ class ApiGatewayApplicationTests {
                     .port(0)
                     .handle((request, response) -> {
                         BACKEND_REQUEST_COUNT.incrementAndGet();
+                        String requestPath = request.uri();
+                        String retryKey = request.method().name() + ":" + requestPath;
+                        boolean retryScenario = requestPath.contains("/retry-once-");
+                        int retryAttempt = retryScenario
+                                ? RETRY_REQUESTS.computeIfAbsent(retryKey, ignored -> new AtomicInteger())
+                                        .incrementAndGet()
+                                : 0;
+                        int responseStatus = retryScenario && retryAttempt == 1 ? 503 : 202;
                         String origin = request.requestHeaders().get("Origin");
                         if (origin != null) {
                             // Simulate the legacy backend CORS response so the
@@ -74,7 +84,7 @@ class ApiGatewayApplicationTests {
                                 .asString()
                                 .defaultIfEmpty("")
                                 .flatMap(body -> response
-                                        .status(202)
+                                        .status(responseStatus)
                                         .sendString(Mono.just(
                                                 request.method().name() + " "
                                                         + request.uri() + "|" + body))
@@ -90,6 +100,7 @@ class ApiGatewayApplicationTests {
     @BeforeEach
     void resetBackendRequestCount() {
         BACKEND_REQUEST_COUNT.set(0);
+        RETRY_REQUESTS.clear();
     }
 
     /**
@@ -126,6 +137,34 @@ class ApiGatewayApplicationTests {
             assertThat(route.getMetadata()).containsKey("response-timeout");
             assertThat(route.getFilters()).hasSizeGreaterThanOrEqualTo(3);
         });
+    }
+
+
+    @Test
+    void retriesTransientGetFailuresWithinConfiguredLimit() {
+        String path = "/api/employees/retry-once-get";
+
+        client().get()
+                .uri(path)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted();
+
+        assertThat(RETRY_REQUESTS.get("GET:" + path)).hasValue(2);
+    }
+
+    @Test
+    void neverRetriesPostRequests() {
+        String path = "/api/employees/retry-once-post";
+
+        client().post()
+                .uri(path)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .bodyValue("{\\"name\\":\\"test employee\\"}")
+                .exchange()
+                .expectStatus().isEqualTo(503);
+
+        assertThat(RETRY_REQUESTS.get("POST:" + path)).hasValue(1);
     }
 
     @Test
