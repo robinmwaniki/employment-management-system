@@ -4,7 +4,7 @@ A role-based HR and workforce management application built with **Java 21, Sprin
 
 > **Project status: IN PROGRESS.** The Employee Management System backend, React frontend and standalone reactive API Gateway are under active development. Feature work integrates through `develop`; each feature has its own issue and pull request, and merges are gated on passing CI.
 >
-> **Latest update — 19 November 2026:** the gateway foundation, centralized API routing, correlation IDs/privacy-safe logs, existing EMS JWT validation and signed role-aware route authorization have been merged into `develop`. The next gateway milestone is CORS configuration and secure response headers (issue #22).
+> **Latest update — 19 November 2026:** the gateway foundation, centralized routing, correlation IDs/privacy-safe logs, EMS JWT and role authorization, CORS/security headers, standardized JSON errors and Redis-backed rate limiting (issues #18–#24) have been merged into `develop`. Resilience controls are in progress in PR #49 (issue #25).
 
 ## Overview
 
@@ -20,9 +20,10 @@ The system separates administration and HR workflows from employee self-service.
 | JWT authentication | Completed | Shared EMS HMAC signing secret, issuer/expiry validation and backend revalidation |
 | Gateway role authorization | Completed | Signed `roles` claims mirror current backend route rules; backend still rechecks current roles |
 | Correlation IDs and privacy-safe logging | Completed | Validated UUID propagation and redaction tests |
-| CORS and secure response headers | In progress | Issue #22 is next |
-| Global error responses | Planned | Issue #23 |
-| Redis rate limiting and Resilience4j | Planned | Issues #24 and #25 |
+| CORS and secure response headers | Completed | Exact-origin policy, edge preflight and browser security headers (PR #44) |
+| Global error responses | Completed | Stable JSON error contract, safe status mapping and correlation IDs (PR #41) |
+| Redis rate limiting | Completed | Distributed token buckets, hashed identities and trusted-proxy validation (PR #47) |
+| Resilience4j | In progress | Per-route circuit breakers, timeouts, safe retries and controlled fallback (PR #49) |
 | Metrics, tracing, dashboards and Sentry | Planned | Issues #27–#30 |
 | OpenAPI, containerization and end-to-end verification | Planned | Issues #31–#33 |
 
