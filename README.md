@@ -4,7 +4,7 @@ A role-based HR and workforce management application built with **Java 21, Sprin
 
 > **Project status: IN PROGRESS.** The Employee Management System backend, React frontend and standalone reactive API Gateway are under active development. Feature work integrates through `develop`; each feature has its own issue and pull request, and merges are gated on passing CI.
 >
-> **Latest update — 19 November 2026:** the gateway foundation, centralized routing, correlation IDs/privacy-safe logs, EMS JWT and role authorization, CORS/security headers, standardized JSON errors and Redis-backed rate limiting (issues #18–#24) have been merged into `develop`. Resilience controls were merged in PR #49 (issue #25). Actuator health probes and protected Micrometer metrics were merged in PR #50 (issue #27). P0 gateway end-to-end, security and performance verification is now in progress (issue #33).
+> **Latest update — 19 November 2026:** the gateway foundation, centralized routing, correlation IDs/privacy-safe logs, EMS JWT and role authorization, CORS/security headers, standardized JSON errors and Redis-backed rate limiting (issues #18–#24) have been merged into `develop`. Resilience controls were merged in PR #49 (issue #25). Actuator health probes and protected Micrometer metrics were merged in PR #50 (issue #27). P0 gateway end-to-end, security and performance verification was completed in PR #52. Distributed tracing with Micrometer/OpenTelemetry is now in progress (issue #28).
 
 ## Overview
 
@@ -25,9 +25,11 @@ The system separates administration and HR workflows from employee self-service.
 | Redis rate limiting | Completed | Distributed token buckets, hashed identities and trusted-proxy validation (PR #47) |
 | Resilience4j | Completed | Per-route circuit breakers, timeouts, safe retries and controlled fallback (PR #49) |
 | Actuator health and Micrometer metrics | Completed | Liveness/readiness probes, protected operational metrics and bounded-cardinality request measurements (PR #50) |
-| Gateway end-to-end, security and performance verification | In progress | Backend token forwarding, request-size controls, regression coverage and local performance smoke test (issue #33) |
-| Metrics, tracing, dashboards and Sentry | Planned | Issues #27–#30 |
-| OpenAPI, containerization and end-to-end verification | Planned | Issues #31–#33 |
+| Gateway end-to-end, security and performance verification | Completed | 89 gateway tests, Redis integration, backend token/authorization contract, request-size controls, k6 smoke script and gateway image validation (PR #52) |
+| Distributed tracing | In progress | W3C context propagation, OTLP export and span privacy controls (issue #28) |
+| Prometheus/Grafana and Sentry | Planned | Issues #29–#30 |
+| OpenAPI documentation | Planned | Issue #31 |
+| Gateway containerization and deployment documentation | On hold | Issue #32 — deployment remains paused |
 
 See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the detailed change log and next steps. The gateway implementation details are in [gateway/README.md](gateway/README.md).
 
