@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. Redis-backed rate limiting is merged into `develop` (issue #24). Resilience policies are being delivered in PR #49 (issue #25).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. Redis-backed rate limiting is merged into `develop` (issue #24). Resilience4j circuit breakers, safe retries and route timeouts are merged into `develop` (issue #25). The next milestone is Actuator health and Micrometer metrics (issue #27).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -111,7 +111,28 @@ The value is held only in the current shell session; do not paste it into termin
 - Health: `http://localhost:8081/actuator/health`
 - Info: `http://localhost:8081/actuator/info`
 
-Only the health and info actuator endpoints are exposed over HTTP. Detailed health information is not publicly returned.
+Only the health, info and metrics Actuator endpoints are exposed over HTTP, and all are read-only. Environment, beans, gateway route configuration, Prometheus and other operational endpoints are not exposed. Health details and component names are hidden.
+
+
+## Actuator probes and Micrometer metrics
+
+The gateway exposes a deliberately small, read-only Actuator surface:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `/actuator/health` | Sanitized aggregate health status |
+| `/actuator/health/liveness` and `/livez` | Process liveness for container restart decisions |
+| `/actuator/health/readiness` and `/readyz` | Gateway readiness for traffic admission |
+| `/actuator/info` | Non-sensitive application information |
+| `/actuator/metrics` | Available Micrometer metric names |
+| `/actuator/metrics/spring.cloud.gateway.requests` | Gateway request count, duration and outcome measurements |
+
+Liveness and readiness groups include only Spring Boot's application availability state. They do not include backend connectivity or circuit-breaker health: an unavailable EMS backend must not cause the gateway process to be restarted or removed from service discovery solely because a downstream dependency is down. The aggregate `/actuator/health` endpoint may still reflect configured circuit-breaker health, but never reveals component details or exception messages.
+
+Spring Cloud Gateway's Micrometer filter records request count and latency through the `spring.cloud.gateway.requests` timer. Its bounded tags include route ID, route URI, outcome, HTTP status and method. Path tags are explicitly disabled to avoid high-cardinality metrics and employee identifiers appearing in telemetry. The metrics endpoint is read-only. The Prometheus scrape endpoint is intentionally not enabled here; exporter and Grafana integration are tracked separately in issue #29.
+
+For Kubernetes probes, use `/livez` as the liveness probe and `/readyz` as the readiness probe. For Docker Compose or other orchestrators, use the same paths as the gateway container health check. Do not use the aggregate health endpoint as liveness because it can include downstream circuit-breaker state.
+
 
 ## Tests
 
@@ -119,7 +140,7 @@ The gateway tests start an ephemeral local HTTP backend and verify GET forwardin
 
 ## Current scope
 
-Centralized routing, JWT validation, route-role checks, CORS, secure response headers and standardized gateway errors are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Metrics, tracing, dashboards and additional observability are tracked in separate issues and pull requests.
+Centralized routing, JWT validation, route-role checks, CORS, secure response headers, standardized gateway errors, Redis rate limiting and Resilience4j circuit breakers/retries are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Distributed tracing, Prometheus/Grafana dashboards and additional observability are tracked in separate issues and pull requests.
 
 
 ## Request correlation and logging
