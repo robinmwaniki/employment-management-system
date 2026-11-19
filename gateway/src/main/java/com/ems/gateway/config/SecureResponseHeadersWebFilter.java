@@ -3,6 +3,7 @@ package com.ems.gateway.config;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -34,6 +35,10 @@ public class SecureResponseHeadersWebFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         exchange.getResponse().beforeCommit(() -> {
             HttpHeaders headers = exchange.getResponse().getHeaders();
+            if (exchange.getResponse().getStatusCode() == HttpStatus.TOO_MANY_REQUESTS) {
+                // The fastest configured token refill interval is one second.
+                setIfAbsent(headers, "Retry-After", "1");
+            }
             setIfAbsent(headers, "X-Content-Type-Options", "nosniff");
             setIfAbsent(headers, "X-Frame-Options", "DENY");
             setIfAbsent(headers, "Referrer-Policy", "strict-origin-when-cross-origin");
