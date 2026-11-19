@@ -72,7 +72,7 @@ The gateway validates the existing EMS backend JWT format before forwarding prot
 
 Set `JWT_SECRET` to exactly the same value used by the backend. The gateway has no default key and fails startup if the value is missing, invalid or too weak. Do not create a second key for the gateway. Generate a strong shared key for new environments with `openssl rand -base64 48`, then configure the same secret in both services through environment variables. Never commit the value.
 
-Only `POST /api/auth/login` is public at the gateway. Other routed API requests require a valid bearer token. The gateway forwards the original Authorization header unchanged; the backend independently validates the token and remains authoritative for account status, role checks and resource authorization. Role-aware gateway rules are tracked separately in issue #21.
+Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. All other routed API requests require a valid bearer token. The gateway forwards the original Authorization header unchanged; the backend independently validates the token and remains authoritative for account status, role checks and resource authorization. Role-aware gateway rules are tracked separately in issue #21.
 
 For local PowerShell runs, set the environment variable in the current shell from the local secret manager or `.env` value before starting the gateway:
 
