@@ -15,8 +15,30 @@ spring:
         webflux:
           # The gateway owns browser CORS. Deduplicate legacy backend CORS headers,
           # keeping the gateway's first, environment-validated values.
+          httpclient:
+            connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+            response-timeout: ${EMS_GATEWAY_RESPONSE_TIMEOUT:5s}
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Allow-Headers Access-Control-Expose-Headers, RETAIN_FIRST
+            # Retries are restricted to safe methods and transient upstream failures.
+            - name: Retry
+              args:
+                retries: ${EMS_GATEWAY_SAFE_RETRIES:2}
+                statuses:
+                  - BAD_GATEWAY
+                  - SERVICE_UNAVAILABLE
+                  - GATEWAY_TIMEOUT
+                methods:
+                  - GET
+                  - HEAD
+                exceptions:
+                  - java.io.IOException
+                  - java.util.concurrent.TimeoutException
+                backoff:
+                  firstBackoff: ${EMS_GATEWAY_RETRY_FIRST_BACKOFF:100ms}
+                  maxBackoff: ${EMS_GATEWAY_RETRY_MAX_BACKOFF:500ms}
+                  factor: 2
+                  basedOnPreviousValue: false
           globalcors:
             add-to-simple-url-handler-mapping: true
             cors-configurations:
@@ -65,6 +87,18 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_AUTH_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsAuth
+                    fallbackUri: forward:/internal/fallback/ems
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-employees-api
               uri: ${ems.backend.uri}
               predicates:
@@ -95,6 +129,18 @@ spring:
                   args:
                     name: emsEmployeesApiCircuitBreaker
                     fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_EMPLOYEES_RESPONSE_TIMEOUT_MS:4000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsEmployees
+                    fallbackUri: forward:/internal/fallback/ems
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -133,6 +179,18 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_DEPARTMENTS_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsDepartments
+                    fallbackUri: forward:/internal/fallback/ems
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-attendance-api
               uri: ${ems.backend.uri}
               predicates:
@@ -163,6 +221,18 @@ spring:
                   args:
                     name: emsAttendanceApiCircuitBreaker
                     fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_ATTENDANCE_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsAttendance
+                    fallbackUri: forward:/internal/fallback/ems
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -201,6 +271,18 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_LEAVES_RESPONSE_TIMEOUT_MS:4000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsLeaves
+                    fallbackUri: forward:/internal/fallback/ems
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-payroll-api
               uri: ${ems.backend.uri}
               predicates:
@@ -231,6 +313,18 @@ spring:
                   args:
                     name: emsPayrollApiCircuitBreaker
                     fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_PAYROLL_RESPONSE_TIMEOUT_MS:5000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsPayroll
+                    fallbackUri: forward:/internal/fallback/ems
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -269,6 +363,18 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_PAYSLIPS_RESPONSE_TIMEOUT_MS:8000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsPayslips
+                    fallbackUri: forward:/internal/fallback/ems
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-reports-api
               uri: ${ems.backend.uri}
               predicates:
@@ -299,6 +405,18 @@ spring:
                   args:
                     name: emsReportsApiCircuitBreaker
                     fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_REPORTS_RESPONSE_TIMEOUT_MS:8000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsReports
+                    fallbackUri: forward:/internal/fallback/ems
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -337,6 +455,18 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_PERFORMANCE_RESPONSE_TIMEOUT_MS:5000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsPerformance
+                    fallbackUri: forward:/internal/fallback/ems
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-announcements-api
               uri: ${ems.backend.uri}
               predicates:
@@ -367,6 +497,18 @@ spring:
                   args:
                     name: emsAnnouncementsApiCircuitBreaker
                     fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_ANNOUNCEMENTS_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsAnnouncements
+                    fallbackUri: forward:/internal/fallback/ems
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -405,6 +547,18 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_NOTIFICATIONS_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsNotifications
+                    fallbackUri: forward:/internal/fallback/ems
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-dashboard-api
               uri: ${ems.backend.uri}
               predicates:
@@ -435,6 +589,18 @@ spring:
                   args:
                     name: emsDashboardApiCircuitBreaker
                     fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_DASHBOARD_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsDashboard
+                    fallbackUri: forward:/internal/fallback/ems
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -473,6 +639,18 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_USERS_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsUsers
+                    fallbackUri: forward:/internal/fallback/ems
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-self-service-api
               uri: ${ems.backend.uri}
               predicates:
@@ -503,6 +681,18 @@ spring:
                   args:
                     name: emsSelfServiceApiCircuitBreaker
                     fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_SELF_SERVICE_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsSelfService
+                    fallbackUri: forward:/internal/fallback/ems
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -585,11 +775,97 @@ ems:
         burst-capacity: ${EMS_RATE_LIMIT_REPORTS_BURST:4}
         requested-tokens: ${EMS_RATE_LIMIT_REPORTS_TOKENS:1}
 
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: ${EMS_GATEWAY_CB_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${EMS_GATEWAY_CB_MIN_CALLS:10}
+        permitted-number-of-calls-in-half-open-state: ${EMS_GATEWAY_CB_HALF_OPEN_CALLS:3}
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: ${EMS_GATEWAY_CB_OPEN_WAIT:10s}
+        failure-rate-threshold: ${EMS_GATEWAY_CB_FAILURE_THRESHOLD:50}
+        slow-call-duration-threshold: ${EMS_GATEWAY_CB_SLOW_CALL_DURATION:2s}
+        slow-call-rate-threshold: ${EMS_GATEWAY_CB_SLOW_CALL_THRESHOLD:50}
+    instances:
+      emsAuth:
+        base-config: default
+      emsEmployees:
+        base-config: default
+      emsDepartments:
+        base-config: default
+      emsAttendance:
+        base-config: default
+      emsLeaves:
+        base-config: default
+      emsPayroll:
+        base-config: default
+      emsPayslips:
+        base-config: default
+      emsReports:
+        base-config: default
+      emsPerformance:
+        base-config: default
+      emsAnnouncements:
+        base-config: default
+      emsNotifications:
+        base-config: default
+      emsDashboard:
+        base-config: default
+      emsUsers:
+        base-config: default
+      emsSelfService:
+        base-config: default
+      emsSystemLogs:
+        base-config: default
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: ${EMS_GATEWAY_CB_TIMEOUT:5s}
+        cancel-running-future: true
+    instances:
+      emsAuth:
+        base-config: default
+      emsEmployees:
+        base-config: default
+      emsDepartments:
+        base-config: default
+      emsAttendance:
+        base-config: default
+      emsLeaves:
+        base-config: default
+      emsPayroll:
+        base-config: default
+      emsPayslips:
+        base-config: default
+      emsReports:
+        base-config: default
+      emsPerformance:
+        base-config: default
+      emsAnnouncements:
+        base-config: default
+      emsNotifications:
+        base-config: default
+      emsDashboard:
+        base-config: default
+      emsUsers:
+        base-config: default
+      emsSelfService:
+        base-config: default
+      emsSystemLogs:
+        base-config: default
+
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+  health:
+    circuitbreakers:
+      enabled: true
   endpoint:
     health:
       probes:
@@ -681,3 +957,16 @@ resilience4j:
         baseConfig: default
       emsSystemLogsApiCircuitBreaker:
         baseConfig: default
+
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_SYSTEM_LOGS_RESPONSE_TIMEOUT_MS:5000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsSystemLogs
+                    fallbackUri: forward:/internal/fallback/ems
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
