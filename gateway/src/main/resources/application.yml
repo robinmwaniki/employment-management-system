@@ -25,6 +25,10 @@ spring:
                 enabled: false
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Expose-Headers, RETAIN_FIRST
+            # Reject oversized payloads before they reach the EMS backend.
+            - name: RequestSize
+              args:
+                maxSize: ${EMS_GATEWAY_MAX_REQUEST_SIZE:1MB}
             # Retry only idempotent reads after transient upstream failures.
             - name: Retry
               args:
