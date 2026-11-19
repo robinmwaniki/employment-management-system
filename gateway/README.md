@@ -276,3 +276,47 @@ Each route's circuit breaker uses a count-based sliding window, a configurable f
 When an upstream circuit is open, a request times out or a configured upstream failure status is returned, the gateway forwards internally to `/gateway/fallback`. The fallback returns the standard JSON error schema with a safe 503 or 504 message and preserves the request correlation ID. It never returns exception messages or stack traces.
 
 The gateway integration tests use an isolated local backend and verify transient GET retries, the configured retry ceiling, no retries for POST, per-route timeout handling, closed/open circuit behavior, fallback status/body and correlation propagation. No live downstream service or production credentials are required.
+
+
+
+## Gateway verification strategy
+
+Run the focused gateway suite (includes deterministic mock-backend integration tests and Redis-backed rate-limit tests):
+
+```bash
+./mvnw --batch-mode --no-transfer-progress -f gateway/pom.xml verify
+```
+
+Run the complete EMS backend suite from the repository root:
+
+```bash
+./mvnw --batch-mode --no-transfer-progress verify
+```
+
+Build the standalone gateway container from the repository root:
+
+```bash
+docker build --file gateway/Dockerfile --tag ems-api-gateway:local .
+```
+
+### Automated coverage boundaries
+
+- **Gateway unit tests:** JWT parsing and issuer/signature/expiry checks; role policy; CORS origin validation; response security headers; correlation-ID validation; privacy-safe log fields; Redis rate-limit policy, trusted proxy identity and fail-closed behavior; resilience fallback mapping; Actuator access controls and metrics registration.
+- **Gateway integration tests:** an ephemeral local HTTP backend verifies method/path/query/body preservation, backend status propagation, CORS deduplication, retry limits, no retries for unsafe methods, route timeouts, circuit-breaker fallback, backend authorization denials, request-size rejection and management endpoint protection. No hosted Render service is called.
+- **Redis integration:** gateway CI starts a disposable Redis 7 service. Unit tests also use mocks for error-path determinism; no production Redis credentials are needed.
+- **Backend authorization:** the root Maven suite runs the existing backend tests, including Spring Security/JWT and resource authorization. Gateway tests verify the original bearer token is forwarded unchanged and backend 401/403 responses are not replaced by gateway success responses. The gateway remains an additional edge check, not a replacement for backend authorization.
+- **Sensitive logging:** tests capture gateway completion logs and assert that bearer tokens, cookies, query values, request bodies and employee identifiers are absent.
+
+### Manual deployment smoke-test checklist
+
+1. Start the EMS backend and Redis, then configure the gateway with the same `JWT_SECRET`, `EMS_BACKEND_URI`, Redis connection settings and a separate `EMS_MANAGEMENT_API_KEY`.
+2. Start the gateway container and confirm `/livez`, `/readyz` and `/actuator/health` respond as documented.
+3. Authenticate through the gateway's public login route and use the returned bearer token on a protected API request.
+4. Verify an invalid/expired token receives 401, an insufficient role receives 403, and a backend resource-level 403 remains a 403 through the gateway.
+5. Verify an oversized body receives 413 without reaching the backend; exercise login/general/report limits and confirm 429 plus `Retry-After`.
+6. Stop Redis in a controlled test environment and confirm rate-limited API traffic fails closed with 503 rather than bypassing the limiter.
+7. Confirm a valid `X-Correlation-ID` is returned and propagated, while gateway logs contain no token, cookie, query string or body data.
+8. Confirm `/actuator/metrics` requires the management key and that `/actuator/env`, `/actuator/beans`, `/actuator/gateway/routes` and `/actuator/prometheus` are not publicly exposed.
+9. Restore Redis/backend availability and verify the circuit breaker closes after its configured recovery window.
+
+The CI workflow runs gateway Maven verification, uses a disposable Redis service, builds the gateway Docker image and runs the root backend tests plus the existing backend production-image build. A manual smoke test against a deployed environment is still required before production traffic is switched to the gateway.
