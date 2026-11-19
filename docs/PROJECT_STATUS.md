@@ -36,7 +36,6 @@ The Employee Management System combines a Spring MVC HR backend, a separate Reac
 | #24 | P1 | Redis-backed gateway rate limiting | Completed — PR #47 |
 | #25 | P1 | Resilience4j circuit breakers, timeouts and controlled retries | Completed — PR #49 |
 | #27 | P1 | Actuator health probes and Micrometer gateway metrics | In progress — PR pending CI |
-| #27 | P1 | Actuator health and Micrometer metrics | Open |
 | #28 | P2 | Distributed tracing with Micrometer and OpenTelemetry | Open |
 | #29 | P2 | Prometheus metrics and Grafana dashboard | Open |
 | #30 | P2 | Sentry error tracking | Open |
