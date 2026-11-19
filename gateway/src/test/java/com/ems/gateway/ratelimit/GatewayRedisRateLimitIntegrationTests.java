@@ -1,8 +1,5 @@
 package com.ems.gateway.ratelimit;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -17,10 +14,6 @@ import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
 
-import javax.crypto.SecretKey;
-import java.time.Instant;
-import java.util.Date;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,10 +40,6 @@ import static org.assertj.core.api.Assertions.assertThat;
         matches = "true")
 class GatewayRedisRateLimitIntegrationTests {
 
-    private static final String TEST_SECRET =
-            "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
-    private static final SecretKey SIGNING_KEY =
-            Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
     private static final String TEST_CLIENT_IP = "198.51.100.77";
     private static final AtomicInteger BACKEND_REQUESTS = new AtomicInteger();
 
