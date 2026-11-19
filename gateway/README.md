@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. The next milestone is resilience policies (issue #25).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. Redis-backed rate limiting is merged into `develop` (issue #24). Resilience policies are being delivered in PR #49 (issue #25).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -240,9 +240,9 @@ The rate-limit tests use a mocked reactive Redis template and cover allowed requ
 
 ## Upstream resilience: timeouts, retries and circuit breakers
 
-Each API route has its own Resilience4j circuit breaker and an independently configurable response timeout. The gateway also applies a shared connection timeout. Tune `EMS_GATEWAY_CONNECT_TIMEOUT_MS`, `EMS_GATEWAY_DEFAULT_RESPONSE_TIMEOUT` and the route-specific `EMS_GATEWAY_<ROUTE>_RESPONSE_TIMEOUT_MS` variables. The reports, payroll, payslip and system-log routes have longer defaults because they can perform heavier work.
+Each API route has its own Resilience4j circuit breaker and an independently configurable response timeout. The gateway also applies a shared connection timeout. Tune `EMS_GATEWAY_CONNECT_TIMEOUT_MS`, `EMS_GATEWAY_DEFAULT_RESPONSE_TIMEOUT` and the route-specific variables such as `EMS_GATEWAY_AUTH_RESPONSE_TIMEOUT_MS`, `EMS_GATEWAY_REPORTS_RESPONSE_TIMEOUT_MS` and `EMS_GATEWAY_PAYSLIPS_RESPONSE_TIMEOUT_MS`. The reports, payroll, payslip and system-log routes have longer defaults because they can perform heavier work.
 
-The gateway retries only `GET`, `HEAD` and `OPTIONS` requests, and only for transient 502, 503, 504 responses or I/O/timeout exceptions. POST, PUT, PATCH and DELETE are never retried. Configure the retry count and bounded exponential backoff with `EMS_GATEWAY_RETRY_MAX_ATTEMPTS`, `EMS_GATEWAY_RETRY_FIRST_BACKOFF` and `EMS_GATEWAY_RETRY_MAX_BACKOFF`.
+The gateway retries only `GET` and `HEAD` requests; CORS `OPTIONS` preflight is handled at the edge and is not retried, and only for transient 502, 503, 504 responses or I/O/timeout exceptions. POST, PUT, PATCH and DELETE are never retried. Configure the retry count and bounded exponential backoff with `EMS_GATEWAY_RETRY_MAX_ATTEMPTS`, `EMS_GATEWAY_RETRY_FIRST_BACKOFF` and `EMS_GATEWAY_RETRY_MAX_BACKOFF`.
 
 Each route's circuit breaker uses a count-based sliding window, a configurable failure threshold and a timed open state before half-open probes are allowed. The Resilience4j time limiter bounds reactive execution. Circuit transitions are logged with the breaker name and state transition only; request bodies, tokens and personal data are not logged. Circuit-breaker health indicators are enabled under the existing Actuator health endpoint.
 
