@@ -44,7 +44,10 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
      */
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        if (isPublicLogin(exchange)) {
+        if (isPublicLogin(exchange)
+                || HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
+            // Browser CORS preflight requests carry no bearer token. Forward them
+            // so the backend's existing CORS policy can answer the preflight.
             return chain.filter(exchange);
         }
 
