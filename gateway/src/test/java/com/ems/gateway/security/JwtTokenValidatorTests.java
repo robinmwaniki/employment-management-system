@@ -24,6 +24,8 @@ class JwtTokenValidatorTests {
             "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
     private static final String WRONG_SECRET =
             "YWJjZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODk=";
+    private static final String HS384_TEST_SECRET =
+            "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm";
     private static final String ISSUER = "employee-management-system";
 
     private final JwtTokenValidator validator = new JwtTokenValidator(TEST_SECRET);
@@ -38,6 +40,24 @@ class JwtTokenValidatorTests {
         assertThat(claims.getIssuer()).isEqualTo(ISSUER);
         assertThat(claims.getSubject()).isEqualTo("admin@example.test");
         assertThat(claims.getExpiration()).isNotNull();
+    }
+
+
+    @Test
+    void acceptsHs384TokenWhenTheSharedHmacKeyIsAtLeastFortyEightBytes() {
+        SecretKey hs384Key =
+                Keys.hmacShaKeyFor(Decoders.BASE64.decode(HS384_TEST_SECRET));
+        String hs384Token = Jwts.builder()
+                .issuer(ISSUER)
+                .subject("hr@example.test")
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plusSeconds(300)))
+                .signWith(hs384Key)
+                .compact();
+
+        Claims claims = new JwtTokenValidator(HS384_TEST_SECRET).validate(hs384Token);
+
+        assertThat(claims.getSubject()).isEqualTo("hr@example.test");
     }
 
     @Test
