@@ -2,11 +2,31 @@
 
 A role-based HR and workforce management application built with **Java 21, Spring Boot, Spring Security, PostgreSQL, and Thymeleaf**. It combines server-rendered pages with REST endpoints for client integrations.
 
-> **Status:** Portfolio project. Review the security, privacy, and operational configuration before using real employee data.
+> **Project status: IN PROGRESS.** The Employee Management System backend, React frontend and standalone reactive API Gateway are under active development. Feature work integrates through `develop`; each feature has its own issue and pull request, and merges are gated on passing CI.
+>
+> **Latest update — 19 November 2026:** the gateway foundation, centralized API routing, correlation IDs/privacy-safe logs, existing EMS JWT validation and signed role-aware route authorization have been merged into `develop`. The next gateway milestone is CORS configuration and secure response headers (issue #22).
 
 ## Overview
 
 The system separates administration and HR workflows from employee self-service. A separate React client is maintained in [ems_frontend](https://github.com/robinmwaniki/ems_frontend).
+
+## Current delivery status
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Existing HR/employee management backend | In progress | Spring MVC backend remains the source of truth for account state, role checks and resource authorization |
+| Standalone reactive gateway foundation | Completed | Isolated Spring Boot 4.1.1 / Spring Cloud Gateway WebFlux application under `gateway/` |
+| Centralized API routing | Completed | Explicit API route table and deterministic forwarding tests |
+| JWT authentication | Completed | Shared EMS HMAC signing secret, issuer/expiry validation and backend revalidation |
+| Gateway role authorization | Completed | Signed `roles` claims mirror current backend route rules; backend still rechecks current roles |
+| Correlation IDs and privacy-safe logging | Completed | Validated UUID propagation and redaction tests |
+| CORS and secure response headers | In progress | Issue #22 is next |
+| Global error responses | Planned | Issue #23 |
+| Redis rate limiting and Resilience4j | Planned | Issues #24 and #25 |
+| Metrics, tracing, dashboards and Sentry | Planned | Issues #27–#30 |
+| OpenAPI, containerization and end-to-end verification | Planned | Issues #31–#33 |
+
+See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the detailed change log and next steps. The gateway implementation details are in [gateway/README.md](gateway/README.md).
 
 ## Features
 
