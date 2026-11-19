@@ -10,13 +10,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** Verifies that tracing can be disabled without requiring an OTLP collector. */
 @SpringBootTest(
-        webEnvironment = SpringBootTest.WebEnvironment.NONE,
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
                 "management.opentelemetry.enabled=false",
                 "management.tracing.export.otlp.enabled=false",
                 "EMS_RATE_LIMIT_ENABLED=false",
                 "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
-                "EMS_MANAGEMENT_API_KEY=test-management-key"
+                "EMS_MANAGEMENT_API_KEY=test-management-key",
+                "EMS_BACKEND_URI=http://localhost:8080",
+                "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173"
         })
 class GatewayTracingDisabledConfigurationTests {
 
