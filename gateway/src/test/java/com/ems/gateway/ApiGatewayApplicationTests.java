@@ -231,7 +231,7 @@ class ApiGatewayApplicationTests {
 
     @Test
     void enforcesLoginRateLimitAndReturnsRetryGuidance() {
-        String clientIp = "198.51.100." + (10 + new java.util.Random().nextInt(200));
+        String clientIp = "198.51.100.44";
 
         for (int attempt = 0; attempt < 2; attempt++) {
             client().post()
