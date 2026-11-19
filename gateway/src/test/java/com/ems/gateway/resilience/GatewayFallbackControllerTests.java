@@ -26,7 +26,7 @@ class GatewayFallbackControllerTests {
     @Test
     void returnsSafeUnavailableResponseWithCorrelationId() {
         var exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/gateway/fallback")
+                MockServerHttpRequest.get("/internal/fallback/ems")
                         .header("X-Correlation-ID", CORRELATION_ID)
                         .build());
 
@@ -44,7 +44,7 @@ class GatewayFallbackControllerTests {
     @Test
     void mapsTimeoutFailuresToGatewayTimeoutWithoutLeakingDetails() {
         var exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.get("/gateway/fallback").build());
+                MockServerHttpRequest.get("/internal/fallback/ems").build());
         exchange.getAttributes().put(
                 ServerWebExchangeUtils.CIRCUITBREAKER_EXECUTION_EXCEPTION_ATTR,
                 new TimeoutException("private upstream endpoint detail"));
