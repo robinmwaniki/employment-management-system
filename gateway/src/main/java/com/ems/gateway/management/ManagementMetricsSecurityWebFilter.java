@@ -63,7 +63,7 @@ public class ManagementMetricsSecurityWebFilter implements WebFilter {
     }
 
     private boolean isMetricsPath(String path) {
-        return "/actuator/metrics".equals(path) || path.startsWith("/actuator/metrics/");
+        return path.startsWith("/actuator/metrics");
     }
 
     private boolean isAuthorized(String supplied) {
