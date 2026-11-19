@@ -4,6 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ResponseStatusException;
@@ -58,6 +59,13 @@ class GatewayGlobalErrorWebExceptionHandlerTests {
     }
 
     @Test
+    void mapsRedisConnectionFailuresToServiceUnavailable() throws Exception {
+        assertError(new DataAccessResourceFailureException(
+                        "Redis redis.internal:6379 refused connection"),
+                HttpStatus.SERVICE_UNAVAILABLE, "UPSTREAM_UNAVAILABLE");
+    }
+
+    @Test
     void hidesUnexpectedExceptionDetails() throws Exception {
         assertError(new IllegalStateException("password=do-not-return"),
                 HttpStatus.INTERNAL_SERVER_ERROR, "GATEWAY_ERROR");
@@ -76,6 +84,9 @@ class GatewayGlobalErrorWebExceptionHandlerTests {
         assertThat(exchange.getResponse().getHeaders().getContentType())
                 .isEqualTo(org.springframework.http.MediaType.APPLICATION_JSON);
         assertThat(exchange.getResponse().getHeaders().getCacheControl()).isEqualTo("no-store");
+        if (expectedStatus == HttpStatus.SERVICE_UNAVAILABLE) {
+            assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("5");
+        }
 
         String json = exchange.getResponse().getBodyAsString().block();
         JsonNode body = jsonMapper.readTree(json);
