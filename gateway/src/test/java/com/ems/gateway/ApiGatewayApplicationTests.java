@@ -101,7 +101,7 @@ class ApiGatewayApplicationTests {
                                     if ("/api/employees/backend-forbidden".equals(requestPath)) {
                                         return response.status(403)
                                                 .sendString(Mono.just(
-                                                        "{\\"code\\":\\"BACKEND_RESOURCE_FORBIDDEN\\"}"))
+                                                        "{\"code\":\"BACKEND_RESOURCE_FORBIDDEN\"}"))
                                                 .then();
                                     }
                                     return response
