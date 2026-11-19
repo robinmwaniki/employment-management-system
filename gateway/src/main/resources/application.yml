@@ -13,6 +13,9 @@ spring:
     gateway:
       server:
         webflux:
+          httpclient:
+            connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+            response-timeout: ${EMS_GATEWAY_DEFAULT_RESPONSE_TIMEOUT:5s}
           # The gateway owns browser CORS. Deduplicate legacy backend CORS headers,
           # keeping the gateway's first, environment-validated values.
           httpclient:
@@ -55,6 +58,19 @@ spring:
               predicates:
                 - Path=/api/auth/**
               metadata:
+                response-timeout: ${EMS_GATEWAY_AUTH_RESPONSE_TIMEOUT_MS:3000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsAuth
+                    fallbackUri: forward:/gateway-fallback/auth
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
+              metadata:
                 connect-timeout: 1000
                 response-timeout: 3000
               filters:
@@ -70,6 +86,19 @@ spring:
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/employees/**
+              metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
               metadata:
                 connect-timeout: 1000
                 response-timeout: 4000
@@ -87,6 +116,19 @@ spring:
               predicates:
                 - Path=/api/departments/**
               metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
+              metadata:
                 connect-timeout: 1000
                 response-timeout: 3000
               filters:
@@ -102,6 +144,19 @@ spring:
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/attendance/**
+              metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
               metadata:
                 connect-timeout: 1000
                 response-timeout: 3000
@@ -119,6 +174,19 @@ spring:
               predicates:
                 - Path=/api/leaves/**
               metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
+              metadata:
                 connect-timeout: 1000
                 response-timeout: 4000
               filters:
@@ -134,6 +202,19 @@ spring:
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/payroll/**
+              metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
               metadata:
                 connect-timeout: 1000
                 response-timeout: 5000
@@ -151,6 +232,19 @@ spring:
               predicates:
                 - Path=/api/payslips/**
               metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
+              metadata:
                 connect-timeout: 1000
                 response-timeout: 8000
               filters:
@@ -166,6 +260,19 @@ spring:
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/reports/**
+              metadata:
+                response-timeout: ${EMS_GATEWAY_REPORTS_RESPONSE_TIMEOUT_MS:15000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsReports
+                    fallbackUri: forward:/gateway-fallback/reports
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
               metadata:
                 connect-timeout: 1000
                 response-timeout: 8000
@@ -183,6 +290,19 @@ spring:
               predicates:
                 - Path=/api/performance/**
               metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
+              metadata:
                 connect-timeout: 1000
                 response-timeout: 5000
               filters:
@@ -198,6 +318,19 @@ spring:
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/announcements/**
+              metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
               metadata:
                 connect-timeout: 1000
                 response-timeout: 3000
@@ -215,6 +348,19 @@ spring:
               predicates:
                 - Path=/api/notifications/**
               metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
+              metadata:
                 connect-timeout: 1000
                 response-timeout: 3000
               filters:
@@ -230,6 +376,19 @@ spring:
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/dashboard/**
+              metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
               metadata:
                 connect-timeout: 1000
                 response-timeout: 3000
@@ -247,6 +406,19 @@ spring:
               predicates:
                 - Path=/api/users/**
               metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
+              metadata:
                 connect-timeout: 1000
                 response-timeout: 3000
               filters:
@@ -263,6 +435,19 @@ spring:
               predicates:
                 - Path=/api/me/**
               metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
+              metadata:
                 connect-timeout: 1000
                 response-timeout: 3000
               filters:
@@ -278,6 +463,19 @@ spring:
               uri: ${ems.backend.uri}
               predicates:
                 - Path=/api/system-logs/**
+              metadata:
+                response-timeout: ${EMS_GATEWAY_GENERAL_RESPONSE_TIMEOUT_MS:5000}
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:2000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsGeneral
+                    fallbackUri: forward:/gateway-fallback/general
+                    statusCodes:
+                      - 500
+                      - 502
+                      - 503
+                      - 504
 
 server:
   port: ${GATEWAY_PORT:8081}
@@ -404,11 +602,54 @@ resilience4j:
       emsSystemLogsCircuitBreaker:
         base-config: default
 
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      emsAuth:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: ${EMS_CB_AUTH_WINDOW_SIZE:20}
+        minimumNumberOfCalls: ${EMS_CB_AUTH_MIN_CALLS:10}
+        failureRateThreshold: ${EMS_CB_AUTH_FAILURE_RATE:50}
+        waitDurationInOpenState: ${EMS_CB_AUTH_OPEN_WAIT:15s}
+        permittedNumberOfCallsInHalfOpenState: ${EMS_CB_AUTH_HALF_OPEN_CALLS:3}
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      emsGeneral:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: ${EMS_CB_GENERAL_WINDOW_SIZE:20}
+        minimumNumberOfCalls: ${EMS_CB_GENERAL_MIN_CALLS:10}
+        failureRateThreshold: ${EMS_CB_GENERAL_FAILURE_RATE:50}
+        waitDurationInOpenState: ${EMS_CB_GENERAL_OPEN_WAIT:15s}
+        permittedNumberOfCallsInHalfOpenState: ${EMS_CB_GENERAL_HALF_OPEN_CALLS:3}
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+      emsReports:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: ${EMS_CB_REPORTS_WINDOW_SIZE:20}
+        minimumNumberOfCalls: ${EMS_CB_REPORTS_MIN_CALLS:10}
+        failureRateThreshold: ${EMS_CB_REPORTS_FAILURE_RATE:50}
+        waitDurationInOpenState: ${EMS_CB_REPORTS_OPEN_WAIT:30s}
+        permittedNumberOfCallsInHalfOpenState: ${EMS_CB_REPORTS_HALF_OPEN_CALLS:2}
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+  timelimiter:
+    instances:
+      emsAuth:
+        timeoutDuration: ${EMS_GATEWAY_AUTH_TIMEOUT:3s}
+        cancelRunningFuture: true
+      emsGeneral:
+        timeoutDuration: ${EMS_GATEWAY_GENERAL_TIMEOUT:5s}
+        cancelRunningFuture: true
+      emsReports:
+        timeoutDuration: ${EMS_GATEWAY_REPORTS_TIMEOUT:15s}
+        cancelRunningFuture: true
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,gatewaycircuitbreakers
   health:
     circuitbreakers:
       enabled: true
@@ -417,6 +658,7 @@ management:
       probes:
         enabled: true
       show-details: never
+      show-components: always
 
 
               metadata:
