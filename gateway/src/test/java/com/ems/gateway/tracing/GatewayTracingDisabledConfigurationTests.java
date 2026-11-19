@@ -14,7 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = {
                 "management.opentelemetry.enabled=false",
                 "management.tracing.export.otlp.enabled=false",
-                "EMS_RATE_LIMIT_ENABLED=false"
+                "EMS_RATE_LIMIT_ENABLED=false",
+                "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
+                "EMS_MANAGEMENT_API_KEY=test-management-key"
         })
 class GatewayTracingDisabledConfigurationTests {
 
