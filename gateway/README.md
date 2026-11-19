@@ -123,3 +123,50 @@ Centralized routing, JWT validation and route-role checks are implemented while 
 The gateway accepts a canonical UUID in `X-Correlation-ID`. Missing or malformed values are replaced with a server-generated UUID. The value is returned in the response and forwarded to the backend so services can correlate related events.
 
 Gateway completion logs contain only the route ID, HTTP method, response status, elapsed milliseconds and correlation ID. Request/response bodies, query strings, authorization headers, cookies, credentials and employee identifiers are deliberately excluded. Client-provided correlation values are validated before use to prevent log injection.
+
+
+## CORS configuration
+
+The gateway owns the browser-facing CORS policy. Configure `EMS_CORS_ALLOWED_ORIGINS` as a comma-separated list of exact origins (scheme, host and optional port), for example:
+
+```text
+EMS_CORS_ALLOWED_ORIGINS=https://ems.example.com,https://admin.example.com
+```
+
+Local development allows `http://localhost:3000` and `http://localhost:5173` by default. The gateway rejects wildcard origins and origin values containing paths, credentials, queries or fragments because credentialed browser requests are enabled.
+
+| Environment variable | Default | Purpose |
+| --- | --- | --- |
+| `EMS_CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://localhost:5173` | Exact permitted browser origins |
+| `EMS_CORS_ALLOWED_METHODS` | `GET,POST,PUT,PATCH,DELETE,OPTIONS` | Permitted request methods |
+| `EMS_CORS_ALLOWED_HEADERS` | `Authorization,Content-Type,Accept,X-Correlation-ID` | Permitted request headers |
+| `EMS_CORS_EXPOSED_HEADERS` | `X-Correlation-ID` | Response headers readable by browser code |
+| `EMS_CORS_MAX_AGE` | `3600` | Preflight cache duration in seconds |
+
+The gateway handles valid preflight requests at the edge, including requests for paths that are not proxied. The JWT filter therefore does not require a bearer token for OPTIONS requests. For actual API calls, JWT validation and signed role authorization still apply.
+
+The existing backend may continue to serve direct browser clients, so its CORS allowlist must be kept aligned with the gateway allowlist during migration. The gateway deduplicates downstream `Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials` headers, retaining the gateway's first value. Do not use wildcard origins in either service.
+
+## Browser security response headers
+
+The gateway adds the following headers when the downstream service has not already supplied them:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy: camera=(), geolocation=(), microphone=()`
+- `X-Permitted-Cross-Domain-Policies: none`
+- `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'`
+- `Strict-Transport-Security: max-age=31536000; includeSubDomains` for HTTPS requests only
+
+Existing downstream header values are preserved. The CSP is intentionally restrictive because this gateway exposes API routes rather than serving the application UI. TLS should be terminated at the trusted hosting edge; configure HSTS there as well when TLS is terminated before the gateway.
+
+## CORS and security-header tests
+
+Run the deterministic gateway test suite with:
+
+```bash
+./mvnw --batch-mode -f gateway/pom.xml verify
+```
+
+The CORS and security-header tests cover allowed and disallowed origins, credentialed preflight behavior, invalid wildcard/path origins, baseline response headers and preservation of downstream security header values. They use mock exchanges and do not require a live backend or production secrets.
