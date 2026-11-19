@@ -321,6 +321,8 @@ ems:
   jwt:
     secret: ${JWT_SECRET}
   gateway:
+    tracing:
+      enabled: ${EMS_TRACING_ENABLED:true}
     cors:
       # Comma-separated exact origins; wildcard origins and credentials are disabled.
       allowed-origins: ${EMS_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
