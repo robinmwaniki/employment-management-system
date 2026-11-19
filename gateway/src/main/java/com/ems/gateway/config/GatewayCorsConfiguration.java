@@ -50,7 +50,7 @@ public class GatewayCorsConfiguration {
         }
 
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(allowedOrigins);
+        // Exact patterns keep the configured values strict while supporting credentialed CORS.\n        cors.setAllowedOriginPatterns(allowedOrigins);
         cors.setAllowedMethods(allowedMethods);
         cors.setAllowedHeaders(allowedHeaders);
         cors.setExposedHeaders(exposedHeaders);
