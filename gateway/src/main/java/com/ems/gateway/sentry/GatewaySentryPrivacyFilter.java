@@ -51,6 +51,7 @@ public class GatewaySentryPrivacyFilter implements SentryOptions.BeforeSendCallb
         event.setMessage(null);
         event.setThreads(List.of());
         event.setUnknown(null);
+        event.setDebugMeta(null);
         event.getContexts().clear();
 
         List<SentryException> exceptions = event.getExceptions();
@@ -98,6 +99,7 @@ public class GatewaySentryPrivacyFilter implements SentryOptions.BeforeSendCallb
         if (stackTrace.getFrames() != null) {
             for (SentryStackFrame frame : stackTrace.getFrames()) {
                 frame.setVars(null);
+                frame.setAbsPath(null);
             }
         }
     }
