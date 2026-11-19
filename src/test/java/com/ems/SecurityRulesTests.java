@@ -81,26 +81,16 @@ class SecurityRulesTests {
     }
 
     @Test
+    @WithMockUser(roles = "HR_MANAGER")
     void hrManagerCannotReadOpenApiDocument() throws Exception {
-        UserDetails hrManager = User.withUsername("hr@example.test")
-                .password("not-used-in-this-test")
-                .authorities("ROLE_HR_MANAGER")
-                .build();
-
-        mockMvc.perform(get("/v3/api-docs")
-                        .header("Authorization", "Bearer " + jwtService.generateToken(hrManager)))
+        mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void administratorCanReadCanonicalOpenApiDocument() throws Exception {
-        UserDetails admin = User.withUsername("admin@example.test")
-                .password("not-used-in-this-test")
-                .authorities("ROLE_ADMIN")
-                .build();
-
-        mockMvc.perform(get("/v3/api-docs")
-                        .header("Authorization", "Bearer " + jwtService.generateToken(admin)))
+        mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.info.title")
                         .value("Employee Management System API"))
