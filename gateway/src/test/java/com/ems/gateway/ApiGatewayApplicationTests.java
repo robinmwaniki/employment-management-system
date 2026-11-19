@@ -2,7 +2,6 @@ package com.ems.gateway;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -21,9 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ApiGatewayApplicationTests {
 
     private static DisposableServer mockBackend;
-
-    @Autowired
-    private WebTestClient webTestClient;
 
     @LocalServerPort
     private int gatewayPort;
@@ -67,6 +63,17 @@ class ApiGatewayApplicationTests {
     }
 
     /**
+     * Creates an HTTP client bound to the embedded gateway server.
+     *
+     * @return client for the random test port
+     */
+    private WebTestClient client() {
+        return WebTestClient.bindToServer()
+                .baseUrl("http://localhost:" + gatewayPort)
+                .build();
+    }
+
+    /**
      * Confirms that the gateway starts on its configured reactive port.
      */
     @Test
@@ -79,7 +86,7 @@ class ApiGatewayApplicationTests {
      */
     @Test
     void forwardsGetRequestAndQueryString() {
-        webTestClient.get()
+        client().get()
                 .uri("/api/employees/42?include=manager")
                 .exchange()
                 .expectStatus().isAccepted()
@@ -92,7 +99,7 @@ class ApiGatewayApplicationTests {
      */
     @Test
     void forwardsPostRequestAndBody() {
-        webTestClient.post()
+        client().post()
                 .uri("/api/auth/login")
                 .header("Content-Type", "application/json")
                 .bodyValue("{\"username\":\"test-user\"}")
@@ -107,7 +114,7 @@ class ApiGatewayApplicationTests {
      */
     @Test
     void doesNotForwardUnmatchedPath() {
-        webTestClient.get()
+        client().get()
                 .uri("/not-an-api-route")
                 .exchange()
                 .expectStatus().isNotFound();
