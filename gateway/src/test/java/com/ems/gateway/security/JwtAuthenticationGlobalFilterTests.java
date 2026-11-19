@@ -1,5 +1,7 @@
 package com.ems.gateway.security;
 
+import com.ems.gateway.error.GatewayErrorResponseWriter;
+import tools.jackson.databind.json.JsonMapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -7,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
+import org.springframework.mock.http.server.reactive.MockServerHttpResponse;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -28,9 +31,13 @@ class JwtAuthenticationGlobalFilterTests {
             "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
     private static final String ISSUER = "employee-management-system";
 
+    private final GatewayErrorResponseWriter errorResponseWriter =
+            new GatewayErrorResponseWriter(JsonMapper.builder().build());
     private final JwtAuthenticationGlobalFilter filter =
             new JwtAuthenticationGlobalFilter(
-                    new JwtTokenValidator(TEST_SECRET), new JwtRouteAuthorizationPolicy());
+                    new JwtTokenValidator(TEST_SECRET),
+                    new JwtRouteAuthorizationPolicy(),
+                    errorResponseWriter);
     private final SecretKey signingKey =
             Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
 
@@ -71,7 +78,7 @@ class JwtAuthenticationGlobalFilterTests {
 
     @Test
     void rejectsMissingBearerTokenForProtectedApiRoute() {
-        ServerWebExchange exchange = MockServerWebExchange.from(
+        MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/employees").build());
         AtomicBoolean forwarded = new AtomicBoolean();
 
@@ -84,6 +91,9 @@ class JwtAuthenticationGlobalFilterTests {
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(exchange.getResponse().getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE))
                 .isEqualTo("Bearer");
+        assertThat(((MockServerHttpResponse) exchange.getResponse()).getBodyAsString().block())
+                .contains("\"GATEWAY_UNAUTHORIZED\"")
+                .contains("\"status\":401");
     }
 
     @Test
@@ -150,7 +160,7 @@ class JwtAuthenticationGlobalFilterTests {
 
         assertThat(departmentsForwarded).isTrue();
 
-        ServerWebExchange employees = MockServerWebExchange.from(
+        MockServerWebExchange employees = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/api/employees")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken)
                         .build());
@@ -163,6 +173,9 @@ class JwtAuthenticationGlobalFilterTests {
 
         assertThat(employeesForwarded).isFalse();
         assertThat(employees.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(((MockServerHttpResponse) employees.getResponse()).getBodyAsString().block())
+                .contains("\"GATEWAY_FORBIDDEN\"")
+                .contains("\"status\":403");
     }
 
     @Test
@@ -185,7 +198,7 @@ class JwtAuthenticationGlobalFilterTests {
     @Test
     void registrationRequiresAdministratorRole() {
         String hrToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_HR_MANAGER");
-        ServerWebExchange hrRequest = MockServerWebExchange.from(
+        MockServerWebExchange hrRequest = MockServerWebExchange.from(
                 MockServerHttpRequest.post("/api/auth/register")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + hrToken)
                         .build());
@@ -193,6 +206,8 @@ class JwtAuthenticationGlobalFilterTests {
         filter.filter(hrRequest, ignored -> Mono.empty()).block();
 
         assertThat(hrRequest.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(((MockServerHttpResponse) hrRequest.getResponse()).getBodyAsString().block())
+                .contains("\"GATEWAY_FORBIDDEN\"");
 
         String adminToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_ADMIN");
         ServerWebExchange adminRequest = MockServerWebExchange.from(

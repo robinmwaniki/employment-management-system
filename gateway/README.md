@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation and signed role-aware authorization are merged into `develop`. The next milestone is CORS configuration and secure response headers (issue #22).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS and secure response headers are merged into `develop`. The next milestone is standardized gateway error handling (issue #23).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -81,7 +81,7 @@ Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed wi
 | Route | Gateway role policy |
 | --- | --- |
 | `POST /api/auth/login` | Public |
-| `OPTIONS` preflight | Forwarded to backend CORS handling |
+| `OPTIONS` preflight | Handled at gateway edge |
 | `/api/auth/register` | `ROLE_ADMIN` |
 | `/api/departments/**` | Any known EMS role (`ROLE_ADMIN`, `ROLE_HR_MANAGER`, `ROLE_EMPLOYEE`) |
 | Other routed `/api/**` paths | `ROLE_ADMIN` or `ROLE_HR_MANAGER` |
@@ -119,7 +119,7 @@ The gateway tests start an ephemeral local HTTP backend and verify GET forwardin
 
 ## Current scope
 
-Centralized routing, JWT validation and route-role checks are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Resilience, rate limiting and additional observability are tracked in separate issues and pull requests.
+Centralized routing, JWT validation, route-role checks, CORS and browser security headers are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Resilience, rate limiting and additional observability are tracked in separate issues and pull requests.
 
 
 ## Request correlation and logging
@@ -141,3 +141,32 @@ The local-development default is `http://localhost:3000`. Do not use `*`: creden
 The gateway's `DedupeResponseHeader` filter retains the gateway's first value for `Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials`, preventing a conflicting legacy backend value from reaching the browser. Keep the gateway allowlist and any backend allowlist aligned during migration; do not widen either to a wildcard.
 
 The gateway also applies baseline API response headers: `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Permitted-Cross-Domain-Policies` and a restrictive `Content-Security-Policy`. Existing downstream values are preserved.
+
+## Gateway error responses
+
+Uncaught gateway failures and gateway authentication/authorization rejections are returned as JSON with a stable schema:
+
+```json
+{
+  "timestamp": "2026-11-19T10:00:00Z",
+  "status": 502,
+  "code": "UPSTREAM_BAD_GATEWAY",
+  "message": "The gateway could not complete the request to the upstream service.",
+  "correlationId": "c2d5a0a1-94e7-4f8f-a8c9-10dcb13e7412"
+}
+```
+
+The `correlationId` is included when available. Responses use `application/json` and `Cache-Control: no-store`. The gateway never returns exception messages, stack traces, backend addresses, credentials or tokens.
+
+| HTTP status | Error code | Meaning |
+| --- | --- | --- |
+| 401 | `GATEWAY_UNAUTHORIZED` | Missing or invalid bearer token |
+| 403 | `GATEWAY_FORBIDDEN` | Authenticated caller is not permitted |
+| 404 | `GATEWAY_NOT_FOUND` | Gateway route/resource was not found |
+| 429 | `GATEWAY_RATE_LIMITED` | Request limit exceeded |
+| 500 | `GATEWAY_ERROR` | Unexpected gateway failure |
+| 502 | `UPSTREAM_BAD_GATEWAY` | Upstream connection or name-resolution failure |
+| 503 | `UPSTREAM_UNAVAILABLE` | Upstream work cannot currently be accepted |
+| 504 | `UPSTREAM_TIMEOUT` | Upstream request timed out |
+
+Connection failures map to 502, rejected work maps to 503, and timeout failures map to 504. API clients should branch on the numeric `status` or stable `code`, display the safe `message`, and include `correlationId` when reporting a failure. Do not parse internal exception details from the response.
