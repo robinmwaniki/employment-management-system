@@ -35,7 +35,7 @@ public class GatewayFallbackController {
      * @param exchange current fallback exchange
      * @return safe 503 or 504 response completion
      */
-    @RequestMapping("/gateway/fallback")
+    @RequestMapping("/internal/fallback/ems")
     public Mono<Void> fallback(ServerWebExchange exchange) {
         Throwable failure = exchange.getAttribute(
                 ServerWebExchangeUtils.CIRCUITBREAKER_EXECUTION_EXCEPTION_ATTR);
