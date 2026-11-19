@@ -65,8 +65,8 @@ class GatewayCorsAndSecurityHeadersTests {
 
         assertThat(forwarded).isFalse();
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(exchange.getResponse().getHeaders())
-                .doesNotContainKey(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
+        assertThat(exchange.getResponse().getHeaders().getFirst(
+                HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN)).isNull();
     }
 
     @Test
