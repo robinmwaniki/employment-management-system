@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import io.netty.handler.timeout.ReadTimeoutException;
+
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeoutException;
 
@@ -56,7 +58,8 @@ public class GatewayFallbackController {
     private boolean isTimeout(Throwable failure) {
         Throwable current = failure;
         while (current != null) {
-            if (current instanceof TimeoutException || current instanceof SocketTimeoutException) {
+            if (current instanceof TimeoutException || current instanceof SocketTimeoutException
+                    || current instanceof ReadTimeoutException) {
                 return true;
             }
             current = current.getCause();
