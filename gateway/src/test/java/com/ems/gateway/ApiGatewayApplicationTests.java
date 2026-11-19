@@ -342,7 +342,10 @@ class ApiGatewayApplicationTests {
                 .expectStatus().isAccepted();
 
         assertThat(BACKEND_TRACEPARENT.get())
-                .matches("^00-[0-9a-f]{32}-[0-9a-f]{16}-01$");
+                .matches("^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$");
+        // W3C reserves the low-order bit for sampling; other flag bits may be set.
+        assertThat(Integer.parseInt(BACKEND_TRACEPARENT.get().substring(53, 55), 16) & 1)
+                .isEqualTo(1);
     }
 
     @Test
