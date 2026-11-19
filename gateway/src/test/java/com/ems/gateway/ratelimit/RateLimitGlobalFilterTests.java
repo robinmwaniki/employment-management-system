@@ -179,13 +179,17 @@ class RateLimitGlobalFilterTests {
     }
 
     private ServerWebExchange exchange(HttpMethod method, String path, String remote) throws Exception {
-        MockServerHttpRequest.BaseBuilder<?> builder = method == HttpMethod.POST
-                ? MockServerHttpRequest.post(path)
-                : method == HttpMethod.OPTIONS
-                    ? MockServerHttpRequest.options(path)
-                    : MockServerHttpRequest.get(path);
-        return MockServerWebExchange.from(builder
-                .remoteAddress(new InetSocketAddress(InetAddress.getByName(remote), 43210))
-                .build());
+        InetSocketAddress remoteAddress =
+                new InetSocketAddress(InetAddress.getByName(remote), 43210);
+        if (method == HttpMethod.POST) {
+            return MockServerWebExchange.from(
+                    MockServerHttpRequest.post(path).remoteAddress(remoteAddress).build());
+        }
+        if (method == HttpMethod.OPTIONS) {
+            return MockServerWebExchange.from(
+                    MockServerHttpRequest.options(path).remoteAddress(remoteAddress).build());
+        }
+        return MockServerWebExchange.from(
+                MockServerHttpRequest.get(path).remoteAddress(remoteAddress).build());
     }
 }
