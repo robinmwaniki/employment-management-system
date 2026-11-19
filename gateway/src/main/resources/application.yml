@@ -77,9 +77,12 @@ server:
     include-stacktrace: never
     include-binding-errors: never
 
+# The gateway and backend must receive the same environment-provided signing key.
 ems:
   backend:
     uri: ${EMS_BACKEND_URI:http://localhost:8080}
+  jwt:
+    secret: ${JWT_SECRET}
 
 management:
   endpoints:
@@ -92,7 +95,3 @@ management:
         enabled: true
       show-details: never
 
-# Must be the same Base64 HMAC key used by the EMS backend. No default is allowed.
-ems:
-  jwt:
-    secret: ${JWT_SECRET}
