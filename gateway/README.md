@@ -66,13 +66,23 @@ The gateway validates the existing EMS backend JWT format before forwarding prot
 - Issuer: `employee-management-system`.
 - Subject: the existing EMS username/email.
 - Signature: HMAC selected by JJWT from the configured key length (the backend uses `signWith(signingKey)`). A 32–47 byte key selects HS256, a 48–63 byte key selects HS384, and a key of at least 64 bytes selects HS512. The current checked-in development key decodes to 52 bytes, so it uses HS384.
-- Claims: `iss` is `employee-management-system`; `sub` is the existing username/email; `iat` is the issue time; `exp` is the expiration. The backend does not embed role claims in these tokens.
+- Claims: `iss` is `employee-management-system`; `sub` is the existing username/email; `iat` is the issue time; `exp` is the expiration; `roles` is the signed list of Spring Security authorities (for example, `ROLE_ADMIN`).
 - Expiration: the backend default is 3,600,000 ms (one hour); JJWT enforces the `exp` claim.
 - The signing key must decode from Base64 to at least 32 bytes.
 
 Set `JWT_SECRET` to exactly the same value used by the backend. The gateway has no default key and fails startup if the value is missing, invalid or too weak. Do not create a second key for the gateway. Generate a strong shared key for new environments with `openssl rand -base64 48`, then configure the same secret in both services through environment variables. Never commit the value.
 
-Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. All other routed API requests require a valid bearer token. The gateway forwards the original Authorization header unchanged; the backend independently validates the token and remains authoritative for account status, role checks and resource authorization. Role-aware gateway rules are tracked separately in issue #21.
+Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. Other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
+
+| Route | Gateway role policy |
+| --- | --- |
+| `POST /api/auth/login` | Public |
+| `OPTIONS` preflight | Forwarded to backend CORS handling |
+| `/api/auth/register` | `ROLE_ADMIN` |
+| `/api/departments/**` | Any known EMS role (`ROLE_ADMIN`, `ROLE_HR_MANAGER`, `ROLE_EMPLOYEE`) |
+| Other routed `/api/**` paths | `ROLE_ADMIN` or `ROLE_HR_MANAGER` |
+
+The role claim is a signed snapshot from login. When an employee's role changes, the backend immediately rechecks the current database role, while the gateway role snapshot is refreshed at the next login. Tokens minted before the roles claim was introduced are denied on protected gateway routes (403); users must sign in again to obtain a token with roles. The gateway forwards the original Authorization header unchanged; the backend independently validates the token and remains authoritative for account status, role checks and resource authorization. Role-aware gateway rules are tracked separately in issue #21.
 
 For local PowerShell runs, set the environment variable in the current shell from the local secret manager or `.env` value before starting the gateway:
 
@@ -101,11 +111,11 @@ Only the health and info actuator endpoints are exposed over HTTP. Detailed heal
 
 ## Tests
 
-The gateway tests start an ephemeral local HTTP backend and verify GET forwarding, query-string preservation, POST body/method forwarding, backend status propagation and unmatched-path handling. JWT tests cover valid HS256/HS384 tokens, missing, malformed, expired, wrong-issuer and incorrectly signed tokens, weak configuration, the public login route and unchanged bearer forwarding. Tests use isolated test keys and do not require production credentials or a hosted EMS backend.
+The gateway tests start an ephemeral local HTTP backend and verify GET forwarding, query-string preservation, POST body/method forwarding, backend status propagation and unmatched-path handling. JWT tests cover valid HS256/HS384 tokens, missing, malformed, expired, wrong-issuer and incorrectly signed tokens, weak configuration, public login/CORS preflight, role-specific route access, admin-only registration, legacy tokens without roles and unchanged bearer forwarding. Tests use isolated test keys and do not require production credentials or a hosted EMS backend.
 
 ## Current scope
 
-Centralized routing and JWT signature/issuer/expiration validation are implemented while leaving the existing MVC backend unchanged. Role-aware gateway authorization, CORS/security headers, resilience, rate limiting and additional observability are tracked in separate issues and pull requests.
+Centralized routing, JWT validation and route-role checks are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. CORS/security headers, resilience, rate limiting and additional observability are tracked in separate issues and pull requests.
 
 
 ## Request correlation and logging
