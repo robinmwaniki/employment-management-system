@@ -129,6 +129,21 @@ class RateLimitGlobalFilterTests {
     }
 
     @Test
+    void rejectsPublicRequestWhenNoSafeClientAddressCanBeResolved() {
+        ReactiveStringRedisTemplate redis = mock(ReactiveStringRedisTemplate.class);
+        GatewayErrorResponseWriter writer = mockWriter();
+        RateLimitGlobalFilter filter = filter(redis, writer);
+        ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/auth/login").build());
+
+        filter.filter(exchange, ignored -> Mono.empty()).block();
+
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+        verify(redis, org.mockito.Mockito.never())
+                .execute(any(RedisScript.class), anyList(), any(Object[].class));
+    }
+
+    @Test
     void doesNotRateLimitCorsPreflightRequests() throws Exception {
         ReactiveStringRedisTemplate redis = mock(ReactiveStringRedisTemplate.class);
         RateLimitGlobalFilter filter = filter(redis, mockWriter());
