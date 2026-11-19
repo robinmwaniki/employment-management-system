@@ -59,6 +59,39 @@ All listed paths are forwarded to the same configured backend destination. The g
 
 Only the API paths above are routed. Other paths are not proxied and return a gateway 404 response. Backend authorization remains authoritative; gateway authentication and authorization are delivered in separate security issues.
 
+## JWT authentication
+
+The gateway validates the existing EMS backend JWT format before forwarding protected API requests. It uses JJWT 0.12.7, the same Base64-encoded HMAC signing key, issuer and token conventions as the backend:
+
+- Issuer: `employee-management-system`.
+- Subject: the existing EMS username/email.
+- Signature: HMAC selected by JJWT from the configured key length (the backend uses `signWith(signingKey)`). A 32–47 byte key selects HS256, a 48–63 byte key selects HS384, and a key of at least 64 bytes selects HS512. The current checked-in development key decodes to 52 bytes, so it uses HS384.
+- Claims: `iss` is `employee-management-system`; `sub` is the existing username/email; `iat` is the issue time; `exp` is the expiration. The backend does not embed role claims in these tokens.
+- Expiration: the backend default is 3,600,000 ms (one hour); JJWT enforces the `exp` claim.
+- The signing key must decode from Base64 to at least 32 bytes.
+
+Set `JWT_SECRET` to exactly the same value used by the backend. The gateway has no default key and fails startup if the value is missing, invalid or too weak. Do not create a second key for the gateway. Generate a strong shared key for new environments with `openssl rand -base64 48`, then configure the same secret in both services through environment variables. Never commit the value.
+
+Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. All other routed API requests require a valid bearer token. The gateway forwards the original Authorization header unchanged; the backend independently validates the token and remains authoritative for account status, role checks and resource authorization. Role-aware gateway rules are tracked separately in issue #21.
+
+For local PowerShell runs, set the environment variable in the current shell from the local secret manager or `.env` value before starting the gateway:
+
+```powershell
+$secureSecret = Read-Host 'Enter the shared EMS JWT_SECRET' -AsSecureString
+$secretPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureSecret)
+try {
+    $env:JWT_SECRET = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($secretPointer)
+}
+finally {
+    [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($secretPointer)
+    $secureSecret.Dispose()
+}
+.\\mvnw.cmd -f gateway/pom.xml spring-boot:run
+Remove-Item Env:JWT_SECRET
+```
+
+The value is held only in the current shell session; do not paste it into terminal transcripts, issue comments or logs.
+
 ## Health
 
 - Health: `http://localhost:8081/actuator/health`
@@ -68,11 +101,11 @@ Only the health and info actuator endpoints are exposed over HTTP. Detailed heal
 
 ## Tests
 
-The gateway tests start an ephemeral local HTTP backend and verify GET forwarding, query-string preservation, POST body/method forwarding, backend status propagation and unmatched-path handling. They do not require production credentials or a hosted EMS backend.
+The gateway tests start an ephemeral local HTTP backend and verify GET forwarding, query-string preservation, POST body/method forwarding, backend status propagation and unmatched-path handling. JWT tests cover valid HS256/HS384 tokens, missing, malformed, expired, wrong-issuer and incorrectly signed tokens, weak configuration, the public login route and unchanged bearer forwarding. Tests use isolated test keys and do not require production credentials or a hosted EMS backend.
 
 ## Current scope
 
-This delivery adds explicit centralized API routing while leaving the existing MVC backend unchanged. JWT validation, role authorization, CORS/security headers, resilience, rate limiting and observability are tracked in separate issues and pull requests.
+Centralized routing and JWT signature/issuer/expiration validation are implemented while leaving the existing MVC backend unchanged. Role-aware gateway authorization, CORS/security headers, resilience, rate limiting and additional observability are tracked in separate issues and pull requests.
 
 
 ## Request correlation and logging
