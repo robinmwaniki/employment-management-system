@@ -36,7 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
         "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173",
-        "EMS_RATE_LIMIT_ENABLED=false"
+        "EMS_RATE_LIMIT_ENABLED=false",
+        "EMS_MANAGEMENT_API_KEY=test-management-key"
 })
 class ApiGatewayApplicationTests {
 
@@ -234,6 +235,50 @@ class ApiGatewayApplicationTests {
                 "outcome",
                 "status");
         assertThat(metric).doesNotContain("\"tag\":\"path\"");
+    }
+
+
+    @Test
+    void exposesSafeHealthProbesAndProtectsMetricsEndpoint() {
+        client().get()
+                .uri("/actuator/health/liveness")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo("UP")
+                .jsonPath("$.components").doesNotExist();
+
+        client().get()
+                .uri("/actuator/health/readiness")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo("UP")
+                .jsonPath("$.components").doesNotExist();
+
+        client().get()
+                .uri("/actuator/env")
+                .exchange()
+                .expectStatus().isNotFound();
+
+        client().get()
+                .uri("/api/employees/metrics-check")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted();
+
+        client().get()
+                .uri("/actuator/metrics/ems.gateway.requests")
+                .exchange()
+                .expectStatus().isUnauthorized();
+
+        client().get()
+                .uri("/actuator/metrics/ems.gateway.requests")
+                .header("X-EMS-Management-Key", "test-management-key")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.name").isEqualTo("ems.gateway.requests");
     }
 
     @Test
