@@ -236,3 +236,16 @@ If Redis is unavailable, the gateway fails closed: it returns HTTP 503 with code
 The identity resolver uses the verified JWT subject for authenticated requests and a socket-derived client IP for public login requests. Both identities are SHA-256 hashed before being used as Redis keys, so raw usernames and IP addresses are not stored in Redis. `X-Forwarded-For` is ignored by default. To use forwarded addresses, configure `EMS_TRUSTED_PROXY_CIDRS` with exact CIDR ranges for reverse proxies you control. The resolver checks the direct socket peer against that allowlist and walks the forwarded chain from right to left; client-supplied values cannot override the address appended by a trusted proxy. Missing client identity is denied rather than placed in a shared anonymous bucket.
 
 The rate-limit tests use a mocked reactive Redis template and cover allowed requests, exhausted buckets, route policy selection, authenticated subject keys, spoofed forwarded headers, and Redis failure. They do not require a live Redis server or production credentials.
+
+
+## Upstream resilience: timeouts, retries and circuit breakers
+
+Each API route has its own Resilience4j circuit breaker and an independently configurable response timeout. The gateway also applies a shared connection timeout. Tune `EMS_GATEWAY_CONNECT_TIMEOUT_MS`, `EMS_GATEWAY_DEFAULT_RESPONSE_TIMEOUT` and the route-specific `EMS_GATEWAY_<ROUTE>_RESPONSE_TIMEOUT_MS` variables. The reports, payroll, payslip and system-log routes have longer defaults because they can perform heavier work.
+
+The gateway retries only `GET`, `HEAD` and `OPTIONS` requests, and only for transient 502, 503, 504 responses or I/O/timeout exceptions. POST, PUT, PATCH and DELETE are never retried. Configure the retry count and bounded exponential backoff with `EMS_GATEWAY_RETRY_MAX_ATTEMPTS`, `EMS_GATEWAY_RETRY_FIRST_BACKOFF` and `EMS_GATEWAY_RETRY_MAX_BACKOFF`.
+
+Each route's circuit breaker uses a count-based sliding window, a configurable failure threshold and a timed open state before half-open probes are allowed. The Resilience4j time limiter bounds reactive execution. Circuit transitions are logged with the breaker name and state transition only; request bodies, tokens and personal data are not logged. Circuit-breaker health indicators are enabled under the existing Actuator health endpoint.
+
+When an upstream circuit is open, a request times out or a configured upstream failure status is returned, the gateway forwards internally to `/gateway/fallback`. The fallback returns the standard JSON error schema with a safe 503 or 504 message and preserves the request correlation ID. It never returns exception messages or stack traces.
+
+The gateway integration tests use an isolated local backend and test fallback status/body behavior, per-route timeout metadata and the presence of retry/circuit-breaker filters. No live downstream service or production credentials are required.
