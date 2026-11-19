@@ -97,12 +97,20 @@ class ApiGatewayApplicationTests {
                                 .aggregate()
                                 .asString()
                                 .defaultIfEmpty("")
-                                .flatMap(body -> response
-                                        .status(responseStatus)
-                                        .sendString(Mono.just(
-                                                request.method().name() + " "
-                                                        + request.uri() + "|" + body))
-                                        .then());
+                                .flatMap(body -> {
+                                    if ("/api/employees/backend-forbidden".equals(requestPath)) {
+                                        return response.status(403)
+                                                .sendString(Mono.just(
+                                                        "{\\"code\\":\\"BACKEND_RESOURCE_FORBIDDEN\\"}"))
+                                                .then();
+                                    }
+                                    return response
+                                            .status(responseStatus)
+                                            .sendString(Mono.just(
+                                                    request.method().name() + " "
+                                                            + request.uri() + "|" + body))
+                                            .then();
+                                });
                     })
                     .bindNow();
         }
@@ -351,6 +359,21 @@ class ApiGatewayApplicationTests {
     }
 
     @Test
+    void preservesBackendResourceAuthorizationDenial() {
+        client().get()
+                .uri("/api/employees/backend-forbidden")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validManagerToken())
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody()
+                .jsonPath("$.code").isEqualTo("BACKEND_RESOURCE_FORBIDDEN");
+
+        // The gateway permits the manager role and preserves the backend's
+        // independent resource-level authorization decision.
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
+    }
+
+    @Test
     void contextLoads() {
         assertThat(gatewayPort).isPositive();
     }
@@ -471,6 +494,17 @@ class ApiGatewayApplicationTests {
                 .issuer("employee-management-system")
                 .subject("employee@example.test")
                 .claim("roles", List.of(roles))
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plusSeconds(300)))
+                .signWith(SIGNING_KEY)
+                .compact();
+    }
+
+    private String validManagerToken() {
+        return Jwts.builder()
+                .issuer("employee-management-system")
+                .subject("manager@example.test")
+                .claim("roles", List.of("ROLE_HR_MANAGER"))
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plusSeconds(300)))
                 .signWith(SIGNING_KEY)
