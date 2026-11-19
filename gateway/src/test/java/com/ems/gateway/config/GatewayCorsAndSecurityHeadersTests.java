@@ -82,6 +82,20 @@ class GatewayCorsAndSecurityHeadersTests {
         assertSecurityHeaders(exchange);
     }
 
+    @Test
+    void addsRetryGuidanceToRateLimitedResponses() {
+        SecureResponseHeadersWebFilter filter = new SecureResponseHeadersWebFilter();
+        ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/employees").build());
+
+        filter.filter(exchange, ignored -> {
+            exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+            return exchange.getResponse().setComplete();
+        }).block();
+
+        assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("1");
+    }
+
     private void assertSecurityHeaders(ServerWebExchange exchange) {
         HttpHeaders headers = exchange.getResponse().getHeaders();
         assertThat(headers.getFirst("X-Content-Type-Options")).isEqualTo("nosniff");
