@@ -213,7 +213,7 @@ The gateway uses Spring Cloud Gateway's Redis token-bucket rate limiter. Start R
 docker run --name ems-gateway-redis --detach --publish 6379:6379 redis:7-alpine
 ```
 
-Configure `REDIS_HOST`, `REDIS_PORT`, optional `REDIS_PASSWORD` and `REDIS_TIMEOUT` for deployment. Redis failures are fail-closed: the gateway returns HTTP 503 and does not forward a request when Redis cannot evaluate the token bucket.
+Configure `REDIS_HOST`, `REDIS_PORT`, optional `REDIS_PASSWORD` and `REDIS_TIMEOUT` for deployment. Redis failures are fail-closed: Spring Cloud Gateway's Redis limiter reports an `X-RateLimit-Remaining: -1` sentinel when Redis cannot evaluate a bucket; the gateway converts that result into a denied HTTP 429 response and does not forward the request. A Redis connection exception that escapes the limiter is returned as HTTP 503.
 
 | Policy | Refill rate | Burst | Routes |
 | --- | ---: | ---: | --- |
