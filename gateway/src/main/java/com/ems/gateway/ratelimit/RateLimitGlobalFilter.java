@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.List;
 
 /**
@@ -41,8 +40,11 @@ public class RateLimitGlobalFilter implements GlobalFilter, Ordered {
     private static final String TOKEN_BUCKET_SCRIPT_SOURCE = """
             local rate = tonumber(ARGV[1])
             local capacity = tonumber(ARGV[2])
-            local now = tonumber(ARGV[3])
-            local requested = tonumber(ARGV[4])
+            -- Use Redis server time so gateway instance clock skew cannot alter buckets.
+            local redis_time = redis.call('TIME')
+            local now = (tonumber(redis_time[1]) * 1000)
+                    + math.floor(tonumber(redis_time[2]) / 1000)
+            local requested = tonumber(ARGV[3])
 
             local fill_time = capacity / rate
             local ttl = math.max(1, math.floor(fill_time * 2))
@@ -196,7 +198,6 @@ public class RateLimitGlobalFilter implements GlobalFilter, Ordered {
                         List.of(redisKey),
                         policy.replenishRate(),
                         policy.burstCapacity(),
-                        Instant.now().toEpochMilli(),
                         policy.requestedTokens())
                 .next()
                 .switchIfEmpty(Mono.error(new IllegalStateException("Redis returned no rate-limit decision.")))
