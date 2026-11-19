@@ -160,7 +160,7 @@ class ApiGatewayApplicationTests {
         client().post()
                 .uri(path)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
-                .bodyValue("{\\"name\\":\\"test employee\\"}")
+                .bodyValue("{\"name\":\"test employee\"}")
                 .exchange()
                 .expectStatus().isEqualTo(503);
 
