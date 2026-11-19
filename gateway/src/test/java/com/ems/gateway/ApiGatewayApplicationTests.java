@@ -10,6 +10,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpHeaders;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import javax.crypto.SecretKey;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -138,6 +139,7 @@ class ApiGatewayApplicationTests {
         return Jwts.builder()
                 .issuer("employee-management-system")
                 .subject("admin@example.test")
+                .claim("roles", List.of("ROLE_ADMIN"))
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plusSeconds(300)))
                 .signWith(SIGNING_KEY)
