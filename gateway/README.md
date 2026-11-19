@@ -450,3 +450,38 @@ curl --fail --header "Authorization: Bearer $EMS_ADMIN_JWT" \
 ```
 
 Do not put bearer tokens in shell history, logs or shared command output. API clients can import the returned JSON into their own tooling without exposing an interactive documentation console.
+
+
+## Optional Sentry error tracking
+
+The gateway supports the Spring Boot 4-specific Sentry SDK. Sentry auto-configuration is conditional on the `SENTRY_DSN` environment variable; the repository does not contain a DSN or default project key. If the variable is absent, the SDK is not initialized, so local development and CI remain offline and do not send events.
+
+For a deployment with a Sentry project, configure `SENTRY_DSN` as a deployment secret. The environment is taken from `EMS_ENVIRONMENT` (default `local`). Error reporting is enabled by the presence of the DSN; performance transaction sampling remains disabled by default with `SENTRY_TRACES_SAMPLE_RATE=0.0`. Increase sampling only after reviewing your Sentry event quota and the operational value of performance traces.
+
+### Privacy controls
+
+A gateway `BeforeSendCallback` is registered with the SDK and runs before an event is sent:
+
+- Expected 4xx exceptions (including Spring `ResponseStatusException`, authentication/authorization failures and 4xx WebClient responses) are dropped to avoid noisy client-error events.
+- Request objects are removed entirely, which excludes URLs, query strings, headers, cookies and request bodies.
+- User objects, breadcrumbs, custom tags, extras, transaction names, server names, contexts and unknown event fields are removed.
+- Exception class and stack frames are retained for diagnosis, but exception message values are removed.
+- Sentry's default PII collection remains disabled.
+
+Do not add custom event processors that restore request bodies, credentials, tokens, cookies, user identifiers or employee personal data. Configure Sentry's server-side data scrubbing and IP-address handling in the Sentry project settings as an additional control.
+
+### Deployment configuration
+
+Set these values in the gateway service's environment/secret configuration:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `SENTRY_DSN` | unset | Enables Sentry when supplied; store as a deployment secret |
+| `EMS_ENVIRONMENT` | `local` | Environment tag for grouping deployment events |
+| `SENTRY_TRACES_SAMPLE_RATE` | `0.0` | Performance trace sample rate; disabled by default |
+
+To disable Sentry, remove `SENTRY_DSN` from the service environment and restart the gateway. Never commit a DSN, event payload or captured exception containing real employee information.
+
+### Free-plan and retention considerations
+
+The default configuration sends actionable error events only and disables performance tracing to limit event volume. Sentry plan quotas, retention periods and feature availability can change; check the current plan and project usage/retention settings in your Sentry account before enabling production reporting. Set an alert for quota consumption and keep the gateway's own privacy filter enabled regardless of Sentry-side scrubbing. A Sentry account/project is not required for local development or CI.
