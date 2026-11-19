@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS and secure response headers are merged into `develop`. The next milestone is standardized gateway error handling (issue #23).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS and secure response headers are merged into `develop`. Standardized gateway error responses are implemented. The current milestone is Redis-backed rate limiting (issue #24).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -203,3 +203,68 @@ The `correlationId` is included when available. Responses use `application/json`
 | 504 | `UPSTREAM_TIMEOUT` | Upstream request timed out |
 
 Connection failures map to 502, rejected work maps to 503, and timeout failures map to 504. API clients should branch on the numeric `status` or stable `code`, display the safe `message`, and include `correlationId` when reporting a failure. Do not parse internal exception details from the response.
+
+
+
+## Redis-backed rate limiting
+
+The gateway uses Spring Cloud Gateway's Redis token-bucket limiter. Redis is shared across gateway instances, so quotas remain consistent when the gateway is horizontally scaled. The backend remains unchanged and does not need a Redis dependency.
+
+### Quota policies
+
+The defaults are deliberately conservative starting values and can be tuned per environment:
+
+| Request category | Refill rate | Burst capacity | Environment variables |
+| --- | ---: | ---: | --- |
+| General routed API | 10 tokens/second | 20 | `EMS_API_RATE_LIMIT_REPLENISH_RATE`, `EMS_API_RATE_LIMIT_BURST_CAPACITY` |
+| Login | 1 token/second | 5 | `EMS_LOGIN_RATE_LIMIT_REPLENISH_RATE`, `EMS_LOGIN_RATE_LIMIT_BURST_CAPACITY` |
+| Registration | 1 token/second | 3 | `EMS_REGISTER_RATE_LIMIT_REPLENISH_RATE`, `EMS_REGISTER_RATE_LIMIT_BURST_CAPACITY` |
+| Reports | 2 tokens/second | 4 | `EMS_REPORTS_RATE_LIMIT_REPLENISH_RATE`, `EMS_REPORTS_RATE_LIMIT_BURST_CAPACITY` |
+
+Login, registration and report requests have their own Redis key namespaces in addition to the general API quota. This prevents the stricter category-specific bucket from sharing token state with the general bucket. CORS preflight requests are handled before route filters and do not consume API quota.
+
+### Identity and proxy trust
+
+Authenticated requests are keyed by a SHA-256 hash of the verified JWT subject. Anonymous requests, including login, are keyed by a SHA-256 hash of the client IP. Raw usernames, email addresses, bearer tokens and IP addresses are not used as Redis keys or written to rate-limit logs.
+
+The resolver uses the socket peer address by default. It reads `X-Forwarded-For` only when the immediate peer belongs to `EMS_TRUSTED_PROXY_CIDRS`. Configure this variable as a comma-separated list of exact proxy CIDR ranges, for example:
+
+```text
+EMS_TRUSTED_PROXY_CIDRS=10.20.0.0/16,192.0.2.10/32
+```
+
+The resolver walks the forwarded chain from right to left and selects the first address outside the trusted proxy ranges. Do not add broad public networks to this allowlist. When no trusted proxy range is configured, forwarded headers are ignored.
+
+### Redis connection settings
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `REDIS_HOST` | `localhost` | Redis host |
+| `REDIS_PORT` | `6379` | Redis port |
+| `REDIS_PASSWORD` | empty | Redis password, if configured |
+| `REDIS_CONNECT_TIMEOUT` | `2s` | Connection timeout |
+| `REDIS_TIMEOUT` | `2s` | Command timeout |
+
+For local development, start Redis from the repository root:
+
+```bash
+docker compose -f gateway/docker-compose.redis.yml up -d
+```
+
+Stop the local Redis service with:
+
+```bash
+docker compose -f gateway/docker-compose.redis.yml down
+```
+
+Set the same Redis environment variables for each gateway instance. The gateway CI workflow starts an isolated Redis 7 service for deterministic integration tests.
+
+### Rejection and Redis outage behavior
+
+When a quota is exhausted, the gateway returns HTTP `429 Too Many Requests` with `Retry-After: 1`. Clients should respect the header and use exponential backoff for repeated failures.
+
+Rate limiting fails closed. If Redis cannot be reached, the gateway returns a generic HTTP `503 Service Unavailable` response with `Retry-After: 5`; it does not silently bypass protection. The response body follows the shared privacy-safe gateway error schema. Redis connection details and exception messages are never returned to clients.
+
+### Verification
+
+The automated suite covers hashed JWT identities, anonymous client-IP keys, ignored spoofed forwarding headers, trusted-proxy chain resolution, malformed proxy headers, invalid CIDR configuration, login quota exhaustion, HTTP 429 retry guidance and Redis failure-to-503 mapping.
