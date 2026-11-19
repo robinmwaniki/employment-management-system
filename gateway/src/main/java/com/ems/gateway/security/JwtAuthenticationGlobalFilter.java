@@ -1,5 +1,6 @@
 package com.ems.gateway.security;
 
+import com.ems.gateway.error.GatewayErrorResponseWriter;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -26,6 +27,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
 
     private final JwtTokenValidator tokenValidator;
     private final JwtRouteAuthorizationPolicy authorizationPolicy;
+    private final GatewayErrorResponseWriter errorResponseWriter;
 
     /**
      * Creates the gateway authentication filter.
@@ -34,9 +36,11 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
      */
     public JwtAuthenticationGlobalFilter(
             JwtTokenValidator tokenValidator,
-            JwtRouteAuthorizationPolicy authorizationPolicy) {
+            JwtRouteAuthorizationPolicy authorizationPolicy,
+            GatewayErrorResponseWriter errorResponseWriter) {
         this.tokenValidator = tokenValidator;
         this.authorizationPolicy = authorizationPolicy;
+        this.errorResponseWriter = errorResponseWriter;
     }
 
     /**
@@ -52,7 +56,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
         if (isPublicLogin(exchange)
                 || HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())) {
             // Browser CORS preflight requests carry no bearer token. Forward them
-            // so the backend's existing CORS policy can answer the preflight.
+            // the gateway's native CORS handler answers preflight before route forwarding.
             return chain.filter(exchange);
         }
 
@@ -100,15 +104,19 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {
-        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         exchange.getResponse().getHeaders().set(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
-        exchange.getResponse().getHeaders().setCacheControl("no-store");
-        return exchange.getResponse().setComplete();
+        return errorResponseWriter.write(
+                exchange,
+                HttpStatus.UNAUTHORIZED,
+                "GATEWAY_UNAUTHORIZED",
+                "Authentication is required or the supplied token is invalid.");
     }
 
     private Mono<Void> forbidden(ServerWebExchange exchange) {
-        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-        exchange.getResponse().getHeaders().setCacheControl("no-store");
-        return exchange.getResponse().setComplete();
+        return errorResponseWriter.write(
+                exchange,
+                HttpStatus.FORBIDDEN,
+                "GATEWAY_FORBIDDEN",
+                "You are not permitted to access this resource.");
     }
 }
