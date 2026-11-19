@@ -55,3 +55,6 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
         run: bash ./mvnw --batch-mode --no-transfer-progress -f gateway/pom.xml verify
+
+      - name: Build gateway Docker image
+        run: docker build --file gateway/Dockerfile --tag ems-api-gateway:ci .
