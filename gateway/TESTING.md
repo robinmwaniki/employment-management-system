@@ -1,6 +1,6 @@
 # EMS API Gateway verification
 
-**Status: IN PROGRESS.** Gateway security, routing, resilience and observability verification is being expanded under issue #33. This document describes the repeatable checks and the manual smoke-test checklist to use when deployment is explicitly resumed.
+**Status: IN PROGRESS.** P0 gateway end-to-end, security and performance verification was completed in PR #52. Distributed tracing and OTLP integration are being expanded under issue #28. This document describes the repeatable checks and the manual smoke-test checklist to use when deployment is explicitly resumed.
 
 ## Local prerequisites
 
@@ -50,8 +50,31 @@ The gateway CI workflow runs the gateway Maven suite with an ephemeral Redis 7 s
 | Resilience | Safe GET/HEAD retries, retry exhaustion, no POST retry, route timeouts, open/closed circuit behavior and controlled fallbacks |
 | Error handling | Stable JSON schema, status mapping, correlation IDs and suppression of exception/credential details |
 | Observability | Privacy-safe correlation logs, bounded Micrometer tags, metrics key protection, liveness/readiness and Actuator allowlist |
+| Distributed tracing | W3C traceparent extraction/propagation, child-span creation, trace-disabled mode and sensitive span-attribute scrubbing |
 
 Gateway integration tests use an in-process Reactor Netty downstream service. Redis-dependent behavior is verified with deterministic test doubles and an isolated Redis service in CI. The backend test suite separately verifies backend persistence and authorization rules. These tests do not claim to replace a production-like end-to-end environment.
+
+
+## Distributed tracing verification
+
+The automated gateway tests verify W3C trace context propagation to the mock downstream service, child-span creation when an incoming `traceparent` is present, new trace creation when it is absent, and removal of raw URLs, query strings, credentials and internal backend addresses from observation attributes. A separate Spring context test verifies OpenTelemetry can be disabled without an OTLP collector.
+
+To inspect traces locally, start Jaeger:
+
+```bash
+docker compose -f gateway/docker-compose.tracing.yml up -d
+```
+
+Then start the gateway with:
+
+```bash
+EMS_TRACING_ENABLED=true
+EMS_TRACING_EXPORT_ENABLED=true
+EMS_TRACING_SAMPLING_PROBABILITY=1.0
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4318/v1/traces
+```
+
+Open `http://localhost:16686`. Automated tests keep OTLP export disabled and do not require a collector. For normal development use the default 10% sampling rate; use 100% only for short local investigations.
 
 ## Performance smoke test
 

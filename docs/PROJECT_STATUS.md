@@ -36,12 +36,12 @@ The Employee Management System combines a Spring MVC HR backend, a separate Reac
 | #24 | P1 | Redis-backed gateway rate limiting | Completed — PR #47 |
 | #25 | P1 | Resilience4j circuit breakers, timeouts and controlled retries | Completed — PR #49 |
 | #27 | P1 | Actuator health probes and Micrometer gateway metrics | Completed — PR #50 |
-| #28 | P2 | Distributed tracing with Micrometer and OpenTelemetry | Open |
+| #28 | P2 | Distributed tracing with Micrometer and OpenTelemetry | In progress — PR pending CI |
 | #29 | P2 | Prometheus metrics and Grafana dashboard | Open |
 | #30 | P2 | Sentry error tracking | Open |
 | #31 | P2 | Centralized gateway OpenAPI documentation | Open |
 | #32 | P1 | Gateway containerization and local/Render deployment documentation | Open |
-| #33 | P0 | Gateway end-to-end, security and performance verification | In progress — PR pending CI |
+| #33 | P0 | Gateway end-to-end, security and performance verification | Completed — PR #52 |
 
 Deployment work is not being started as part of the current feature sequence. Issue #32 contains the later deployment/containerization scope; it will be handled only after the gateway's core security, resilience and verification work is complete.
 
@@ -58,7 +58,8 @@ Deployment work is not being started as part of the current feature sequence. Is
 - Merged PR #47: distributed Redis token-bucket rate limiting, hashed identity keys, trusted-proxy validation, separate API policies and fail-closed Redis outage handling.
 - Merged PR #49: per-route Resilience4j circuit breakers, environment-backed response timeouts, safe GET/HEAD retries, controlled fallbacks and circuit-state transition logging. Gateway tests, backend tests and Docker image build all passed.
 - Merged PR #50: explicit liveness/readiness probes, protected Actuator metrics, bounded Micrometer request tags and endpoint security tests; gateway CI, backend tests and Docker image build passed.
-- Issue #33 is now adding end-to-end backend-token forwarding checks, request-size protection, security regression coverage and a safe local performance smoke test. Deployment smoke testing remains deferred.
+- Merged PR #52: P0 gateway verification with 89 passing gateway tests, Redis token-bucket integration, backend-token forwarding, backend 403 preservation, request-size 413 protection, k6 read-only smoke testing and gateway Docker image validation. No deployment was performed.
+- Issue #28 is now adding W3C distributed tracing, OpenTelemetry OTLP export, downstream trace-context propagation and span-attribute privacy controls.
 
 ## Delivery rules
 
