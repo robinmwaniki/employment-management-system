@@ -38,7 +38,9 @@ import static org.assertj.core.api.Assertions.assertThat;
         "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173",
         "EMS_RATE_LIMIT_ENABLED=false",
         "EMS_MANAGEMENT_API_KEY=test-management-key",
-        "EMS_GATEWAY_MAX_REQUEST_SIZE=1KB"
+        "EMS_GATEWAY_MAX_REQUEST_SIZE=1KB",
+        "management.tracing.sampling.probability=1.0",
+        "management.tracing.export.otlp.enabled=false"
 })
 class ApiGatewayApplicationTests {
 
@@ -50,6 +52,7 @@ class ApiGatewayApplicationTests {
     private static final AtomicInteger BACKEND_REQUEST_COUNT = new AtomicInteger();
     private static final ConcurrentHashMap<String, AtomicInteger> RETRY_REQUESTS = new ConcurrentHashMap<>();
     private static final AtomicReference<String> BACKEND_AUTHORIZATION = new AtomicReference<>();
+    private static final AtomicReference<String> BACKEND_TRACEPARENT = new AtomicReference<>();
 
     @LocalServerPort
     private int gatewayPort;
@@ -85,6 +88,9 @@ class ApiGatewayApplicationTests {
                             BACKEND_AUTHORIZATION.set(request.requestHeaders().get("Authorization"));
                             responseStatus = BACKEND_AUTHORIZATION.get() != null
                                     && BACKEND_AUTHORIZATION.get().startsWith("Bearer ") ? 202 : 401;
+                        }
+                        if (requestPath.endsWith("/trace-check")) {
+                            BACKEND_TRACEPARENT.set(request.requestHeaders().get("traceparent"));
                         }
                         final int finalResponseStatus = responseStatus;
                         String origin = request.requestHeaders().get("Origin");
@@ -126,6 +132,7 @@ class ApiGatewayApplicationTests {
         BACKEND_REQUEST_COUNT.set(0);
         RETRY_REQUESTS.clear();
         BACKEND_AUTHORIZATION.set(null);
+        BACKEND_TRACEPARENT.set(null);
     }
 
     /**
@@ -304,6 +311,39 @@ class ApiGatewayApplicationTests {
     }
 
 
+
+
+    @Test
+    void propagatesW3cTraceContextAndCreatesAChildSpanForBackendRequest() {
+        String incomingTraceparent =
+                "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
+
+        client().get()
+                .uri("/api/employees/trace-check")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .header("traceparent", incomingTraceparent)
+                .exchange()
+                .expectStatus().isAccepted();
+
+        String downstreamTraceparent = BACKEND_TRACEPARENT.get();
+        assertThat(downstreamTraceparent).isNotNull();
+        assertThat(downstreamTraceparent)
+                .matches("^00-4bf92f3577b34da6a3ce929d0e0e4736-[0-9a-f]{16}-01$");
+        assertThat(downstreamTraceparent.substring(36, 52))
+                .isNotEqualTo(incomingTraceparent.substring(36, 52));
+    }
+
+    @Test
+    void createsW3cTraceContextWhenTheIncomingRequestHasNoTraceparent() {
+        client().get()
+                .uri("/api/employees/trace-check")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted();
+
+        assertThat(BACKEND_TRACEPARENT.get())
+                .matches("^00-[0-9a-f]{32}-[0-9a-f]{16}-01$");
+    }
 
     @Test
     void forwardsTheOriginalBearerTokenForBackendRevalidation() {
