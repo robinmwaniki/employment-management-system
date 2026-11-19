@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.crypto.SecretKey;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -36,7 +37,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
         "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173",
         "EMS_RATE_LIMIT_ENABLED=false",
-        "EMS_MANAGEMENT_API_KEY=test-management-key"
+        "EMS_MANAGEMENT_API_KEY=test-management-key",
+        "EMS_GATEWAY_MAX_REQUEST_SIZE=1KB"
 })
 class ApiGatewayApplicationTests {
 
@@ -47,6 +49,7 @@ class ApiGatewayApplicationTests {
     private static DisposableServer mockBackend;
     private static final AtomicInteger BACKEND_REQUEST_COUNT = new AtomicInteger();
     private static final ConcurrentHashMap<String, AtomicInteger> RETRY_REQUESTS = new ConcurrentHashMap<>();
+    private static final AtomicReference<String> BACKEND_AUTHORIZATION = new AtomicReference<>();
 
     @LocalServerPort
     private int gatewayPort;
@@ -78,6 +81,12 @@ class ApiGatewayApplicationTests {
                                         .incrementAndGet()
                                 : 0;
                         int responseStatus = retryScenario && retryAttempt == 1 ? 503 : 202;
+                        if (requestPath.endsWith("/backend-auth-check")) {
+                            BACKEND_AUTHORIZATION.set(request.requestHeaders().get("Authorization"));
+                            responseStatus = BACKEND_AUTHORIZATION.get() != null
+                                    && BACKEND_AUTHORIZATION.get().startsWith("Bearer ") ? 202 : 401;
+                        }
+                        final int finalResponseStatus = responseStatus;
                         String origin = request.requestHeaders().get("Origin");
                         if (origin != null) {
                             // Simulate the legacy backend CORS response so the
@@ -85,16 +94,25 @@ class ApiGatewayApplicationTests {
                             response.header("Access-Control-Allow-Origin", origin);
                             response.header("Access-Control-Expose-Headers", "Authorization");
                         }
+                        final int backendResponseStatus = responseStatus;
                         return request.receive()
                                 .aggregate()
                                 .asString()
                                 .defaultIfEmpty("")
-                                .flatMap(body -> response
-                                        .status(responseStatus)
-                                        .sendString(Mono.just(
-                                                request.method().name() + " "
-                                                        + request.uri() + "|" + body))
-                                        .then());
+                                .flatMap(body -> {
+                                    if ("/api/employees/backend-forbidden".equals(requestPath)) {
+                                        return response.status(403)
+                                                .sendString(Mono.just(
+                                                        "{\"code\":\"BACKEND_RESOURCE_FORBIDDEN\"}"))
+                                                .then();
+                                    }
+                                    return response
+                                            .status(finalResponseStatus)
+                                            .sendString(Mono.just(
+                                                    request.method().name() + " "
+                                                            + request.uri() + "|" + body))
+                                            .then();
+                                });
                     })
                     .bindNow();
         }
@@ -107,6 +125,7 @@ class ApiGatewayApplicationTests {
     void resetBackendRequestCount() {
         BACKEND_REQUEST_COUNT.set(0);
         RETRY_REQUESTS.clear();
+        BACKEND_AUTHORIZATION.set(null);
     }
 
     /**
@@ -284,6 +303,78 @@ class ApiGatewayApplicationTests {
                 .jsonPath("$.name").isEqualTo("ems.gateway.requests");
     }
 
+
+
+    @Test
+    void forwardsTheOriginalBearerTokenForBackendRevalidation() {
+        String token = validToken();
+
+        client().get()
+                .uri("/api/employees/backend-auth-check")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus().isAccepted();
+
+        assertThat(BACKEND_AUTHORIZATION.get()).isEqualTo("Bearer " + token);
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
+    }
+
+    @Test
+    void rejectsInvalidJwtBeforeBackendForwarding() {
+        client().get()
+                .uri("/api/employees/invalid-jwt")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer not-a-valid-jwt")
+                .exchange()
+                .expectStatus().isUnauthorized();
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+    }
+
+    @Test
+    void rejectsEmployeeRoleBypassAttemptBeforeBackendForwarding() {
+        String employeeToken = tokenWithRoles("ROLE_EMPLOYEE");
+
+        client().get()
+                .uri("/api/employees/role-bypass")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken)
+                .exchange()
+                .expectStatus().isForbidden();
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+    }
+
+    @Test
+    void rejectsOversizedRequestBeforeForwardingToBackend() {
+        String oversizedBody = "x".repeat(1025);
+
+        client().post()
+                .uri("/api/employees/oversized")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                .header(HttpHeaders.CONTENT_LENGTH,
+                        Integer.toString(oversizedBody.getBytes(java.nio.charset.StandardCharsets.UTF_8).length))
+                .bodyValue(oversizedBody)
+                .exchange()
+                .expectStatus().isEqualTo(413);
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+    }
+
+    @Test
+    void preservesBackendResourceAuthorizationDenial() {
+        client().get()
+                .uri("/api/employees/backend-forbidden")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validManagerToken())
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody()
+                .jsonPath("$.code").isEqualTo("BACKEND_RESOURCE_FORBIDDEN");
+
+        // The gateway permits the manager role and preserves the backend's
+        // independent resource-level authorization decision.
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
+    }
+
     @Test
     void contextLoads() {
         assertThat(gatewayPort).isPositive();
@@ -397,6 +488,29 @@ class ApiGatewayApplicationTests {
                 .expectHeader().exists("Strict-Transport-Security");
 
         assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+    }
+
+
+    private String tokenWithRoles(String... roles) {
+        return Jwts.builder()
+                .issuer("employee-management-system")
+                .subject("employee@example.test")
+                .claim("roles", List.of(roles))
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plusSeconds(300)))
+                .signWith(SIGNING_KEY)
+                .compact();
+    }
+
+    private String validManagerToken() {
+        return Jwts.builder()
+                .issuer("employee-management-system")
+                .subject("manager@example.test")
+                .claim("roles", List.of("ROLE_HR_MANAGER"))
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plusSeconds(300)))
+                .signWith(SIGNING_KEY)
+                .compact();
     }
 
     private String validToken() {

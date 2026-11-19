@@ -194,14 +194,18 @@ public class RateLimitGlobalFilter implements GlobalFilter, Ordered {
         return redisTemplate.execute(
                         TOKEN_BUCKET_SCRIPT,
                         List.of(redisKey),
-                        policy.replenishRate(),
-                        policy.burstCapacity(),
-                        Instant.now().toEpochMilli(),
-                        policy.requestedTokens())
+                        Integer.toString(policy.replenishRate()),
+                        Integer.toString(policy.burstCapacity()),
+                        Long.toString(Instant.now().toEpochMilli()),
+                        Integer.toString(policy.requestedTokens()))
                 .next()
                 .switchIfEmpty(Mono.error(new IllegalStateException("Redis returned no rate-limit decision.")))
                 .map(this::toDecision)
-                .onErrorResume(exception -> Mono.just(RateLimitDecision.unavailable()));
+                .onErrorResume(exception -> {
+                    log.warn("Redis token bucket execution failed; exceptionType={}",
+                            exception.getClass().getSimpleName());
+                    return Mono.just(RateLimitDecision.unavailable());
+                });
     }
 
     private RateLimitDecision toDecision(List<Long> result) {
