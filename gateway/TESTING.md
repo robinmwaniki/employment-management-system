@@ -1,6 +1,6 @@
 # EMS API Gateway verification
 
-**Status: IN PROGRESS.** Gateway security, routing, resilience and observability verification is being expanded under issue #33. This document describes the repeatable checks and the manual smoke-test checklist to use when deployment is explicitly resumed.
+**Status: IN PROGRESS.** P0 gateway end-to-end, security and performance verification was completed in PR #52. Distributed tracing and OTLP integration are being expanded under issue #28. This document describes the repeatable checks and the manual smoke-test checklist to use when deployment is explicitly resumed.
 
 ## Local prerequisites
 
