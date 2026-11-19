@@ -33,6 +33,36 @@ class TrustedClientAddressKeyResolverTests {
     }
 
     @Test
+    void ignoresClientPrependedSpoofWhenTrustedProxyAppendsRealClient() throws Exception {
+        var resolver = new TrustedClientAddressKeyResolver("10.0.0.0/8");
+        String actual = resolver.resolve(exchange(
+                "10.1.2.3", "203.0.113.99, 198.51.100.25, 10.2.0.8")).block();
+        String expected = new TrustedClientAddressKeyResolver("")
+                .resolve(exchange("198.51.100.25", null)).block();
+
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void usesHashedVerifiedSubjectForAuthenticatedRequests() throws Exception {
+        var resolver = new TrustedClientAddressKeyResolver("");
+        var first = exchange("203.0.113.10", null);
+        first.getAttributes().put(
+                com.ems.gateway.security.JwtAuthenticationGlobalFilter.AUTHENTICATED_SUBJECT_ATTRIBUTE,
+                "employee@example.test");
+        var second = exchange("198.51.100.25", null);
+        second.getAttributes().put(
+                com.ems.gateway.security.JwtAuthenticationGlobalFilter.AUTHENTICATED_SUBJECT_ATTRIBUTE,
+                "employee@example.test");
+
+        String firstKey = resolver.resolve(first).block();
+        String secondKey = resolver.resolve(second).block();
+
+        assertThat(firstKey).isEqualTo(secondKey);
+        assertThat(firstKey).doesNotContain("employee@example.test");
+    }
+
+    @Test
     void fallsBackToProxyAddressForMalformedForwardedHeader() throws Exception {
         var resolver = new TrustedClientAddressKeyResolver("10.0.0.0/8");
         String actual = resolver.resolve(exchange("10.1.2.3", "spoofed-host")).block();
