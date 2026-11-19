@@ -63,7 +63,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsAuthCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - INTERNAL_SERVER_ERROR
                       - BAD_GATEWAY
@@ -80,7 +80,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsEmployeesCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -96,7 +96,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsDepartmentsCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -112,7 +112,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsAttendanceCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -128,7 +128,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsLeavesCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -144,7 +144,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsPayrollCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -160,7 +160,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsPayslipsCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -176,7 +176,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsReportsCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -192,7 +192,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsPerformanceCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -208,7 +208,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsAnnouncementsCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -224,7 +224,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsNotificationsCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -240,7 +240,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsDashboardCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -256,7 +256,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsUsersCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -272,7 +272,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsSelfServiceCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
@@ -288,7 +288,7 @@ spring:
                 - name: CircuitBreaker
                   args:
                     name: emsSystemLogsCircuitBreaker
-                    fallbackUri: forward:/internal/fallback/ems
+                    fallbackUri: forward:/gateway/fallback
                     statusCodes:
                       - INTERNAL_SERVER_ERROR
                       - BAD_GATEWAY
