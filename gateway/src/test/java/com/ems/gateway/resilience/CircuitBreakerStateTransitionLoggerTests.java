@@ -15,8 +15,12 @@ class CircuitBreakerStateTransitionLoggerTests {
         new CircuitBreakerStateTransitionLogger(registry);
 
         CircuitBreaker circuitBreaker = registry.circuitBreaker("employees");
-        circuitBreaker.transitionToOpenState();
+        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.CLOSED);
 
+        circuitBreaker.transitionToOpenState();
         assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN);
+
+        circuitBreaker.reset();
+        assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.CLOSED);
     }
 }
