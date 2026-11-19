@@ -19,7 +19,13 @@ The gateway imports the Spring Cloud 2025.1.4 release-train BOM. Keep Spring Boo
 
 ## Run locally
 
-From the repository root:
+Start the local Redis service first because readiness checks include Redis and request rate limiting uses it:
+
+```bash
+docker compose -f gateway/docker-compose.redis.yml up -d
+```
+
+Then run the gateway from the repository root:
 
 **Linux / macOS**
 ```bash
