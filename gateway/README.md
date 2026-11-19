@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. Redis-backed rate limiting is merged into `develop` (issue #24). Resilience4j circuit breakers, safe retries and route timeouts are merged into `develop` (issue #25). The next milestone is Actuator health and Micrometer metrics (issue #27).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. Redis-backed rate limiting is merged into `develop` (issue #24). Resilience4j circuit breakers, safe retries and route timeouts are merged into `develop` (issue #25). Actuator health probes and protected Micrometer metrics are merged in PR #50 (issue #27). P0 end-to-end, security and performance verification is in progress (issue #33).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -16,6 +16,8 @@ The EMS API Gateway is a separately deployable Spring Boot application and the e
 ## Version alignment
 
 The gateway imports the Spring Cloud 2025.1.4 release-train BOM. Keep Spring Boot and Spring Cloud versions aligned through the official compatibility matrix; do not independently override managed Spring Cloud component versions.
+
+See [TESTING.md](TESTING.md) for the automated verification commands, coverage boundaries, performance smoke test and deferred deployment checklist.
 
 ## Run locally
 
@@ -307,13 +309,13 @@ docker build --file gateway/Dockerfile --tag ems-api-gateway:local .
 - **Backend authorization:** the root Maven suite runs the existing backend tests, including Spring Security/JWT and resource authorization. Gateway tests verify the original bearer token is forwarded unchanged and backend 401/403 responses are not replaced by gateway success responses. The gateway remains an additional edge check, not a replacement for backend authorization.
 - **Sensitive logging:** tests capture gateway completion logs and assert that bearer tokens, cookies, query values, request bodies and employee identifiers are absent.
 
-### Manual deployment smoke-test checklist
+### Manual deployment smoke-test checklist (deferred — deployment is on hold)
 
 1. Start the EMS backend and Redis, then configure the gateway with the same `JWT_SECRET`, `EMS_BACKEND_URI`, Redis connection settings and a separate `EMS_MANAGEMENT_API_KEY`.
 2. Start the gateway container and confirm `/livez`, `/readyz` and `/actuator/health` respond as documented.
 3. Authenticate through the gateway's public login route and use the returned bearer token on a protected API request.
 4. Verify an invalid/expired token receives 401, an insufficient role receives 403, and a backend resource-level 403 remains a 403 through the gateway.
-5. Verify an oversized body receives 413 without reaching the backend (`EMS_GATEWAY_MAX_REQUEST_SIZE`, default `1MB`); exercise login/general/report limits and confirm 429 plus `Retry-After`.
+5. Verify an oversized body receives 413 without reaching the backend (`EMS_GATEWAY_MAX_REQUEST_SIZE`, default `10MB`); exercise login/general/report limits and confirm 429 plus `Retry-After`.
 6. Stop Redis in a controlled test environment and confirm rate-limited API traffic fails closed with 503 rather than bypassing the limiter.
 7. Confirm a valid `X-Correlation-ID` is returned and propagated, while gateway logs contain no token, cookie, query string or body data.
 8. Confirm `/actuator/metrics` requires the management key and that `/actuator/env`, `/actuator/beans`, `/actuator/gateway/routes` and `/actuator/prometheus` are not publicly exposed.
