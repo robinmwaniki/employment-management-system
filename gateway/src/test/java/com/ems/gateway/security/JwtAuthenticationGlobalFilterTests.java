@@ -179,6 +179,33 @@ class JwtAuthenticationGlobalFilterTests {
     }
 
     @Test
+    void openApiDocumentRequiresAdministratorRole() {
+        String hrToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_HR_MANAGER");
+        MockServerWebExchange hrRequest = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/v3/api-docs")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + hrToken)
+                        .build());
+
+        filter.filter(hrRequest, ignored -> Mono.empty()).block();
+
+        assertThat(hrRequest.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+
+        String adminToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_ADMIN");
+        ServerWebExchange adminRequest = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/v3/api-docs")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)
+                        .build());
+        AtomicBoolean forwarded = new AtomicBoolean();
+
+        filter.filter(adminRequest, ignored -> {
+            forwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(forwarded).isTrue();
+    }
+
+    @Test
     void allowsHrManagerOnStaffRoutes() {
         String hrToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_HR_MANAGER");
         ServerWebExchange exchange = MockServerWebExchange.from(
