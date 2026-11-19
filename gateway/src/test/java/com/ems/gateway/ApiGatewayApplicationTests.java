@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.springframework.cloud.gateway.route.RouteLocator;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import java.time.Instant;
 import java.util.Date;
@@ -179,7 +178,10 @@ class ApiGatewayApplicationTests {
         client().get().uri("/actuator/health").exchange()
                 .expectStatus().value(status -> assertThat(status).isIn(200, 503));
         client().get().uri("/actuator/info").exchange().expectStatus().isOk();
-        client().get().uri("/actuator/metrics").exchange().expectStatus().isOk();
+        client().get().uri("/actuator/metrics").exchange().expectStatus().isUnauthorized();
+        client().get().uri("/actuator/metrics")
+                .header("X-EMS-Management-Key", "test-management-key")
+                .exchange().expectStatus().isOk();
 
         client().get().uri("/actuator/env").exchange().expectStatus().isNotFound();
         client().get().uri("/actuator/beans").exchange().expectStatus().isNotFound();
@@ -220,6 +222,7 @@ class ApiGatewayApplicationTests {
 
         String metric = client().get()
                 .uri("/actuator/metrics/spring.cloud.gateway.requests")
+                .header("X-EMS-Management-Key", "test-management-key")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
