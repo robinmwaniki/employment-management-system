@@ -1,9 +1,16 @@
 package com.ems.gateway;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpHeaders;
+import java.time.Instant;
+import java.util.Date;
+import javax.crypto.SecretKey;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -21,6 +28,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 })
 class ApiGatewayApplicationTests {
 
+    private static final String TEST_SECRET =
+            "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
+    private static final SecretKey SIGNING_KEY =
+            Keys.hmacShaKeyFor(Decoders.BASE64.decode(TEST_SECRET));
     private static DisposableServer mockBackend;
 
     @LocalServerPort
@@ -90,6 +101,7 @@ class ApiGatewayApplicationTests {
     void forwardsGetRequestAndQueryString() {
         client().get()
                 .uri("/api/employees/42?include=manager")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
                 .exchange()
                 .expectStatus().isAccepted()
                 .expectBody(String.class)
@@ -121,4 +133,15 @@ class ApiGatewayApplicationTests {
                 .exchange()
                 .expectStatus().isNotFound();
     }
+
+    private String validToken() {
+        return Jwts.builder()
+                .issuer("employee-management-system")
+                .subject("admin@example.test")
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plusSeconds(300)))
+                .signWith(SIGNING_KEY)
+                .compact();
+    }
+
 }
