@@ -71,17 +71,17 @@ spring:
               predicates:
                 - Path=/api/system-logs/**
 
-      # Gateway owns browser CORS; dedupe legacy backend headers after routing.
-      globalcors:
-        add-to-simple-url-handler-mapping: true
-        cors-configurations:
-          '[/**]':
-            allowedOrigins: ${EMS_CORS_ALLOWED_ORIGINS:http://localhost:3000}
-            allowedMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
-            allowedHeaders: [Authorization, Content-Type, Accept, X-Correlation-ID]
-            exposedHeaders: [X-Correlation-ID]
-            allowCredentials: true
-            maxAge: 3600
+          # Gateway owns browser CORS; dedupe legacy backend headers after routing.
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: ${EMS_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+                allowedMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
+                allowedHeaders: [Authorization, Content-Type, Accept, X-Correlation-ID]
+                exposedHeaders: [X-Correlation-ID]
+                allowCredentials: true
+                maxAge: 3600
 
 server:
   port: ${GATEWAY_PORT:8081}
