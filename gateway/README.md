@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. Redis-backed rate limiting is merged into `develop` (issue #24). Resilience4j circuit breakers, safe retries and route timeouts are merged into `develop` (issue #25). Actuator health probes and protected Micrometer metrics are merged in PR #50 (issue #27). P0 end-to-end, security and performance verification is in progress (issue #33).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. Redis-backed rate limiting is merged into `develop` (issue #24). Resilience4j circuit breakers, safe retries and route timeouts are merged into `develop` (issue #25). Actuator health probes and protected Micrometer metrics are merged in PR #50 (issue #27). P0 end-to-end, security and performance verification is complete (PR #52). Distributed tracing and OTLP integration are in progress (issue #28).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -141,6 +141,40 @@ Spring Cloud Gateway's Micrometer filter records request count and latency throu
 
 For Kubernetes probes, use `/livez` as the liveness probe and `/readyz` as the readiness probe. For Docker Compose or other orchestrators, use the same paths as the gateway container health check. Do not use the aggregate health endpoint as liveness because it can include downstream circuit-breaker state.
 
+
+## Distributed tracing and OTLP export
+
+The gateway uses Spring Boot's Micrometer/OpenTelemetry integration and W3C Trace Context. Incoming `traceparent` values are extracted and child spans are propagated to downstream EMS services. The trace ID and span ID are included in the standard Spring Boot log correlation fields alongside the gateway's existing request correlation ID.
+
+- Sampling is configurable through `EMS_TRACING_SAMPLING_PROBABILITY` (default `0.1`, or 10%).
+- `EMS_TRACING_EXPORT_ENABLED` controls OTLP span export and defaults to `false`; propagation and local span creation remain enabled.
+- Set `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` to the collector's OTLP/HTTP traces endpoint and set `EMS_TRACING_EXPORT_ENABLED=true` to export spans.
+- `OTEL_SERVICE_NAME` defaults to `ems-api-gateway`; `EMS_ENVIRONMENT` defaults to `local`.
+- Baggage propagation is disabled by default. Do not put employee identifiers, emails, tokens or other personal data in baggage.
+- The observation privacy filter removes full request URIs, query strings, authorization/cookie headers, correlation IDs and internal backend route addresses from exported span attributes. The configured route ID remains available for diagnosis.
+- `EMS_TRACING_ENABLED=false` disables the OpenTelemetry SDK. `EMS_TRACING_EXPORT_ENABLED=false` is the safer default when a collector is not configured.
+
+### Local Jaeger collector
+
+Start the local OTLP collector and trace UI:
+
+```bash
+docker compose -f gateway/docker-compose.tracing.yml up -d
+```
+
+For a gateway running directly on the host:
+
+```bash
+EMS_TRACING_ENABLED=true
+EMS_TRACING_EXPORT_ENABLED=true
+EMS_TRACING_SAMPLING_PROBABILITY=1.0
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://localhost:4318/v1/traces
+OTEL_SERVICE_NAME=ems-api-gateway
+```
+
+On PowerShell, set the same values with `$env:NAME = "value"` before starting the gateway. Open Jaeger's local UI at `http://localhost:16686` to inspect traces. If the gateway itself runs in a container, use the collector's reachable service/host address rather than container-local `localhost`.
+
+No collector is required for automated tests. Tests verify W3C propagation and span privacy with OTLP export disabled.
 
 ## Tests
 
