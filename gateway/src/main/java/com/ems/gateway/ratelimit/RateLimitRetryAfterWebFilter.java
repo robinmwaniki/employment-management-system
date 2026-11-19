@@ -26,7 +26,15 @@ public class RateLimitRetryAfterWebFilter implements WebFilter {
      */
     public RateLimitRetryAfterWebFilter(
             @Value("${ems.gateway.rate-limit.retry-after-seconds:5}") String retryAfterSeconds) {
-        this.retryAfterSeconds = retryAfterSeconds;
+        try {
+            int seconds = Integer.parseInt(retryAfterSeconds);
+            if (seconds < 1 || seconds > 3600) {
+                throw new IllegalArgumentException("Retry-After must be between 1 and 3600 seconds.");
+            }
+            this.retryAfterSeconds = String.valueOf(seconds);
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("Retry-After must be a whole number of seconds.", exception);
+        }
     }
 
     /**
