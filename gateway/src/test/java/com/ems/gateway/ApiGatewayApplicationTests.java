@@ -55,6 +55,8 @@ class ApiGatewayApplicationTests {
                             .defaultIfEmpty("")
                             .flatMap(body -> response
                                     .status(202)
+                                    // Simulate a conflicting legacy backend CORS header.
+                                    .header("Access-Control-Allow-Origin", "https://legacy-backend.example")
                                     .sendString(Mono.just(
                                             request.method().name() + " "
                                                     + request.uri() + "|" + body))
@@ -133,6 +135,73 @@ class ApiGatewayApplicationTests {
                 .uri("/not-an-api-route")
                 .exchange()
                 .expectStatus().isNotFound();
+    }
+
+    /**
+     * Allows preflight requests from an explicitly configured browser origin.
+     */
+    @Test
+    void allowsConfiguredCorsOriginOnPreflight() {
+        client().options()
+                .uri("/api/employees")
+                .header(HttpHeaders.ORIGIN, "http://localhost:3000")
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "authorization")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().valueEquals(
+                        HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:3000")
+                .expectHeader().valueEquals(
+                        HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+    }
+
+    /**
+     * Rejects origins outside the configured allowlist.
+     */
+    @Test
+    void rejectsUnconfiguredCorsOriginOnPreflight() {
+        client().options()
+                .uri("/api/employees")
+                .header(HttpHeaders.ORIGIN, "https://untrusted.example")
+                .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET")
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectHeader().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN);
+    }
+
+    /**
+     * Keeps the gateway's configured origin when the backend emits a conflicting value.
+     */
+    @Test
+    void deduplicatesConflictingBackendCorsHeaders() {
+        client().get()
+                .uri("/api/employees/42")
+                .header(HttpHeaders.ORIGIN, "http://localhost:3000")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted()
+                .expectHeader().valueEquals(
+                        HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:3000");
+    }
+
+    /**
+     * Adds baseline browser security headers to proxied API responses.
+     */
+    @Test
+    void addsSecurityHeadersToApiResponses() {
+        client().get()
+                .uri("/api/employees/42")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted()
+                .expectHeader().valueEquals("X-Content-Type-Options", "nosniff")
+                .expectHeader().valueEquals("X-Frame-Options", "DENY")
+                .expectHeader().valueEquals(
+                        "Referrer-Policy", "strict-origin-when-cross-origin")
+                .expectHeader().valueEquals(
+                        "X-Permitted-Cross-Domain-Policies", "none")
+                .expectHeader().valueEquals(
+                        "Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     }
 
     private String validToken() {
