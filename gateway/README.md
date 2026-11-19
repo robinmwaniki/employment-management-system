@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation and signed role-aware authorization are merged into `develop`. The next milestone is CORS configuration and secure response headers (issue #22).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS and secure response headers are merged into `develop`. The next milestone is standardized gateway error handling (issue #23).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -174,3 +174,32 @@ Run the deterministic gateway suite with:
 ```
 
 Tests cover allowed and disallowed origins, edge-handled preflight, duplicate backend CORS headers, exact-origin validation, credential disabling, security headers on successful and unauthorized responses, and preservation of downstream header values. They use local mock exchanges and an ephemeral backend; no production credentials or hosted services are required.
+
+## Gateway error responses
+
+Uncaught gateway failures and gateway authentication/authorization rejections are returned as JSON with a stable schema:
+
+```json
+{
+  "timestamp": "2026-11-19T10:00:00Z",
+  "status": 502,
+  "code": "UPSTREAM_BAD_GATEWAY",
+  "message": "The gateway could not complete the request to the upstream service.",
+  "correlationId": "c2d5a0a1-94e7-4f8f-a8c9-10dcb13e7412"
+}
+```
+
+The `correlationId` is included when available. Responses use `application/json` and `Cache-Control: no-store`. The gateway never returns exception messages, stack traces, backend addresses, credentials or tokens.
+
+| HTTP status | Error code | Meaning |
+| --- | --- | --- |
+| 401 | `GATEWAY_UNAUTHORIZED` | Missing or invalid bearer token |
+| 403 | `GATEWAY_FORBIDDEN` | Authenticated caller is not permitted |
+| 404 | `GATEWAY_NOT_FOUND` | Gateway route/resource was not found |
+| 429 | `GATEWAY_RATE_LIMITED` | Request limit exceeded |
+| 500 | `GATEWAY_ERROR` | Unexpected gateway failure |
+| 502 | `UPSTREAM_BAD_GATEWAY` | Upstream connection or name-resolution failure |
+| 503 | `UPSTREAM_UNAVAILABLE` | Upstream work cannot currently be accepted |
+| 504 | `UPSTREAM_TIMEOUT` | Upstream request timed out |
+
+Connection failures map to 502, rejected work maps to 503, and timeout failures map to 504. API clients should branch on the numeric `status` or stable `code`, display the safe `message`, and include `correlationId` when reporting a failure. Do not parse internal exception details from the response.
