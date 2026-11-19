@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import java.time.Instant;
 import java.util.Date;
@@ -43,6 +45,9 @@ class ApiGatewayApplicationTests {
 
     @LocalServerPort
     private int gatewayPort;
+
+    @Autowired
+    private RouteLocator routeLocator;
 
     /**
      * Supplies an ephemeral backend address before the gateway context is created.
@@ -112,6 +117,17 @@ class ApiGatewayApplicationTests {
     /**
      * Confirms that the gateway starts on its configured reactive port.
      */
+    @Test
+    void configuresTimeoutRetryAndCircuitBreakerForEveryApiRoute() {
+        var routes = routeLocator.getRoutes().collectList().block();
+
+        assertThat(routes).hasSize(15);
+        assertThat(routes).allSatisfy(route -> {
+            assertThat(route.getMetadata()).containsKey("response-timeout");
+            assertThat(route.getFilters()).hasSize(2);
+        });
+    }
+
     @Test
     void contextLoads() {
         assertThat(gatewayPort).isPositive();
