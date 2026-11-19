@@ -227,6 +227,24 @@ class ApiGatewayApplicationTests {
     }
 
     @Test
+    void exportsGatewayCountersInPrometheusFormatForAuthorizedScrapers() {
+        client().get()
+                .uri("/api/employees/prometheus-metric-check")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted();
+
+        client().get()
+                .uri("/actuator/prometheus")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer test-management-key")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentTypeCompatibleWith("text/plain")
+                .expectBody(String.class)
+                .value(body -> assertThat(body).contains("ems_gateway_requests_total"));
+    }
+
+    @Test
     void exposesLivenessAndReadinessProbesIndependentOfBackendCircuitState() {
         CircuitBreaker employeesBreaker =
                 circuitBreakerRegistry.circuitBreaker("emsEmployeesCircuitBreaker");
