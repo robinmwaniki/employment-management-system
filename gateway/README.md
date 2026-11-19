@@ -1,6 +1,6 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS and secure response headers are merged into `develop`. The next milestone is standardized gateway error handling (issue #23).
+> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. The next milestone is Redis-backed request rate limiting (issue #24).
 >
 > **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
@@ -119,7 +119,7 @@ The gateway tests start an ephemeral local HTTP backend and verify GET forwardin
 
 ## Current scope
 
-Centralized routing, JWT validation and route-role checks are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Resilience, rate limiting, metrics, tracing, dashboards and additional observability are tracked in separate issues and pull requests.
+Centralized routing, JWT validation, route-role checks, CORS, secure response headers and standardized gateway errors are implemented while leaving the existing MVC runtime separate. The backend remains authoritative for current account state and resource-level permissions. Resilience, metrics, tracing, dashboards and additional observability are tracked in separate issues and pull requests.
 
 
 ## Request correlation and logging
@@ -207,21 +207,32 @@ Connection failures map to 502, rejected work maps to 503, and timeout failures 
 
 ## Redis-backed request rate limiting
 
-The gateway uses Spring Cloud Gateway's Redis token-bucket rate limiter. Start Redis locally with Docker:
+The gateway applies a Redis-backed token bucket before forwarding API requests. The token bucket is updated by one atomic Lua script, so limits are shared across gateway instances. Start a local Redis instance with Docker:
 
 ```bash
 docker run --name ems-gateway-redis --detach --publish 6379:6379 redis:7-alpine
 ```
 
-Configure `REDIS_HOST`, `REDIS_PORT`, optional `REDIS_PASSWORD` and `REDIS_TIMEOUT` for deployment. Redis failures are fail-closed: Spring Cloud Gateway's Redis limiter reports an `X-RateLimit-Remaining: -1` sentinel when Redis cannot evaluate a bucket; the gateway converts that result into a denied HTTP 429 response and does not forward the request. A Redis connection exception that escapes the limiter is returned as HTTP 503.
+Stop it when finished with `docker stop ems-gateway-redis`. Configure `REDIS_HOST`, `REDIS_PORT`, optional `REDIS_PASSWORD` and `REDIS_TIMEOUT` for deployment. Redis is required when rate limiting is enabled.
 
-| Policy | Refill rate | Burst | Routes |
-| --- | ---: | ---: | --- |
-| Login | 2/second | 5 | `POST /api/auth/login` |
-| Registration | 1/second | 2 | `POST /api/auth/register` |
-| General API | 20/second | 40 | Other routed API paths |
-| Reports | 2/second | 4 | `/api/reports/**` |
+| Policy | Refill rate | Burst capacity | Identity | Routes |
+| --- | ---: | ---: | --- | --- |
+| Login | 2 tokens/second | 5 | Client IP | `POST /api/auth/login` |
+| Registration | 1 token/second | 2 | Verified user subject | `POST /api/auth/register` |
+| General API | 20 tokens/second | 40 | Verified user subject | Other `/api/**` routes |
+| Reports | 2 tokens/second | 4 | Verified user subject | `/api/reports/**` |
 
-Override policy values with `EMS_RATE_LIMIT_<POLICY>_PER_SECOND`, `EMS_RATE_LIMIT_<POLICY>_BURST` and `EMS_RATE_LIMIT_<POLICY>_TOKENS` for `LOGIN`, `REGISTRATION`, `GENERAL` or `REPORTS`. Rejected requests return 429 with a configurable `Retry-After` header.
+Each request consumes the configured `requested-tokens` amount (1 by default). Refill rate, burst capacity and request cost can be overridden independently:
 
-The key resolver uses the direct socket peer by default. It ignores `X-Forwarded-For` unless the peer address matches an explicitly trusted CIDR in `EMS_TRUSTED_PROXY_CIDRS`. Configure this only for reverse proxies you control. Redis keys contain SHA-256 digests rather than raw IP addresses. Missing safe client addresses are denied rather than sharing an unbounded anonymous bucket.
+- Login: `EMS_RATE_LIMIT_LOGIN_PER_SECOND`, `EMS_RATE_LIMIT_LOGIN_BURST`, `EMS_RATE_LIMIT_LOGIN_TOKENS`.
+- Registration: `EMS_RATE_LIMIT_REGISTRATION_PER_SECOND`, `EMS_RATE_LIMIT_REGISTRATION_BURST`, `EMS_RATE_LIMIT_REGISTRATION_TOKENS`.
+- General API: `EMS_RATE_LIMIT_GENERAL_PER_SECOND`, `EMS_RATE_LIMIT_GENERAL_BURST`, `EMS_RATE_LIMIT_GENERAL_TOKENS`.
+- Reports: `EMS_RATE_LIMIT_REPORTS_PER_SECOND`, `EMS_RATE_LIMIT_REPORTS_BURST`, `EMS_RATE_LIMIT_REPORTS_TOKENS`.
+
+Set `EMS_RATE_LIMIT_ENABLED=false` only for isolated tests or controlled local troubleshooting. Production should leave it enabled. A rate-limited request receives HTTP 429, the standard `GATEWAY_RATE_LIMITED` JSON body, `X-RateLimit-Limit`, `X-RateLimit-Remaining` and a configurable `Retry-After` header (`EMS_RATE_LIMIT_RETRY_AFTER_SECONDS`, default 5). These response headers are exposed through gateway CORS for browser clients.
+
+If Redis is unavailable, the gateway fails closed: it returns HTTP 503 with code `RATE_LIMITER_UNAVAILABLE` and does not forward the request. It never silently disables the limiter or falls back to an in-memory counter.
+
+The identity resolver uses the verified JWT subject for authenticated requests and a socket-derived client IP for public login requests. Both identities are SHA-256 hashed before being used as Redis keys, so raw usernames and IP addresses are not stored in Redis. `X-Forwarded-For` is ignored by default. To use forwarded addresses, configure `EMS_TRUSTED_PROXY_CIDRS` with exact CIDR ranges for reverse proxies you control. The resolver checks the direct socket peer against that allowlist and walks the forwarded chain from right to left; client-supplied values cannot override the address appended by a trusted proxy. Missing client identity is denied rather than placed in a shared anonymous bucket.
+
+The rate-limit tests use a mocked reactive Redis template and cover allowed requests, exhausted buckets, route policy selection, authenticated subject keys, spoofed forwarded headers, and Redis failure. They do not require a live Redis server or production credentials.
