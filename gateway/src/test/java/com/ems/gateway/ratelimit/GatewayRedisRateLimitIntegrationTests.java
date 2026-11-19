@@ -33,6 +33,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "EMS_RATE_LIMIT_LOGIN_PER_SECOND=1",
         "EMS_RATE_LIMIT_LOGIN_BURST=1",
         "EMS_RATE_LIMIT_LOGIN_TOKENS=1",
+        "spring.data.redis.host=localhost",
+        "spring.data.redis.port=6379",
         "EMS_GATEWAY_MAX_REQUEST_SIZE=1KB"
 })
 @EnabledIfEnvironmentVariable(
