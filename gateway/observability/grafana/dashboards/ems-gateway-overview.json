@@ -156,7 +156,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(spring_cloud_gateway_requests_seconds_count{status=\"429\"}[$__rate_interval]))",
+          "expr": "sum(rate(spring_cloud_gateway_requests_seconds_count{httpStatusCode=\"429\"}[$__rate_interval]))",
           "legendFormat": "429 responses/s",
           "refId": "A"
         }
@@ -194,12 +194,12 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(spring_cloud_gateway_requests_seconds_count{status=~\"4..\"}[$__rate_interval]))",
+          "expr": "sum(rate(spring_cloud_gateway_requests_seconds_count{httpStatusCode=~\"4..\"}[$__rate_interval]))",
           "legendFormat": "4xx",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(spring_cloud_gateway_requests_seconds_count{status=~\"5..\"}[$__rate_interval]))",
+          "expr": "sum(rate(spring_cloud_gateway_requests_seconds_count{httpStatusCode=~\"5..\"}[$__rate_interval]))",
           "legendFormat": "5xx",
           "refId": "B"
         }
