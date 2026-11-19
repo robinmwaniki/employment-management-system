@@ -8,12 +8,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.cloud.gateway.filter.ratelimit.RateLimiter;
+import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.http.HttpHeaders;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.crypto.SecretKey;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
@@ -23,6 +27,8 @@ import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 /**
  * Verifies gateway startup and HTTP forwarding against an isolated local backend.
@@ -42,6 +48,9 @@ class ApiGatewayApplicationTests {
 
     @LocalServerPort
     private int gatewayPort;
+
+    @MockitoBean(name = "redisRateLimiter")
+    private RedisRateLimiter redisRateLimiter;
 
     /**
      * Supplies an ephemeral backend address before the gateway context is created.
@@ -84,6 +93,8 @@ class ApiGatewayApplicationTests {
     @BeforeEach
     void resetBackendRequestCount() {
         BACKEND_REQUEST_COUNT.set(0);
+        when(redisRateLimiter.isAllowed(anyString(), anyString()))
+                .thenReturn(Mono.just(new RateLimiter.Response(true, Map.of())));
     }
 
     /**
@@ -209,6 +220,21 @@ class ApiGatewayApplicationTests {
         assertThat(result.getResponseHeaders().getFirst("X-Content-Type-Options"))
                 .isEqualTo("nosniff");
         assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
+    }
+
+    @Test
+    void rejectsRequestsWhenTheRedisRateLimiterExhaustsTheBucket() {
+        when(redisRateLimiter.isAllowed(anyString(), anyString()))
+                .thenReturn(Mono.just(new RateLimiter.Response(false, Map.of())));
+
+        client().get()
+                .uri("/api/employees/42")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isEqualTo(429)
+                .expectHeader().valueEquals("Retry-After", "5");
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
     }
 
     @Test
