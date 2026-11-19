@@ -8,6 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.beans.factory.annotation.Autowired;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -47,6 +50,9 @@ class ApiGatewayApplicationTests {
 
     @LocalServerPort
     private int gatewayPort;
+
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakerRegistry;
 
     @Autowired
     private RouteLocator routeLocator;
@@ -165,6 +171,68 @@ class ApiGatewayApplicationTests {
                 .expectStatus().isEqualTo(503);
 
         assertThat(RETRY_REQUESTS.get("POST:" + path)).hasValue(1);
+    }
+
+    @Test
+    void exposesOnlyExplicitReadOnlyActuatorEndpoints() {
+        client().get().uri("/actuator/health").exchange().expectStatus().isOk();
+        client().get().uri("/actuator/info").exchange().expectStatus().isOk();
+        client().get().uri("/actuator/metrics").exchange().expectStatus().isOk();
+
+        client().get().uri("/actuator/env").exchange().expectStatus().isNotFound();
+        client().get().uri("/actuator/beans").exchange().expectStatus().isNotFound();
+        client().get().uri("/actuator/gateway/routes").exchange().expectStatus().isNotFound();
+    }
+
+    @Test
+    void exposesLivenessAndReadinessProbesIndependentOfBackendCircuitState() {
+        CircuitBreaker employeesBreaker =
+                circuitBreakerRegistry.circuitBreaker("emsEmployeesCircuitBreaker");
+        employeesBreaker.transitionToOpenState();
+
+        try {
+            client().get().uri("/actuator/health/liveness")
+                    .exchange().expectStatus().isOk()
+                    .expectBody().jsonPath("$.status").isEqualTo("UP");
+            client().get().uri("/actuator/health/readiness")
+                    .exchange().expectStatus().isOk()
+                    .expectBody().jsonPath("$.status").isEqualTo("UP");
+            client().get().uri("/livez")
+                    .exchange().expectStatus().isOk()
+                    .expectBody().jsonPath("$.status").isEqualTo("UP");
+            client().get().uri("/readyz")
+                    .exchange().expectStatus().isOk()
+                    .expectBody().jsonPath("$.status").isEqualTo("UP");
+        } finally {
+            employeesBreaker.reset();
+        }
+    }
+
+    @Test
+    void recordsGatewayRequestCountLatencyAndBoundedOutcomeTags() {
+        client().get()
+                .uri("/api/employees/metrics-check")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted();
+
+        String metric = client().get()
+                .uri("/actuator/metrics/spring.cloud.gateway.requests")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .returnResult()
+                .getResponseBody();
+
+        assertThat(metric).contains(
+                "spring.cloud.gateway.requests",
+                "COUNT",
+                "TOTAL_TIME",
+                "routeId",
+                "httpMethod",
+                "outcome",
+                "status");
+        assertThat(metric).doesNotContain("\"tag\":\"path\"");
     }
 
     @Test
