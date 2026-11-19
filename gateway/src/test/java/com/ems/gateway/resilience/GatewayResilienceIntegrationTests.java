@@ -143,7 +143,7 @@ class GatewayResilienceIntegrationTests {
                 .uri("/api/employees/retry-exhausted")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
                 .exchange()
-                .expectStatus().isServiceUnavailable()
+                .expectStatus().isEqualTo(503)
                 .expectBody()
                 .jsonPath("$.code").isEqualTo("UPSTREAM_UNAVAILABLE");
 
@@ -158,7 +158,7 @@ class GatewayResilienceIntegrationTests {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
                 .bodyValue("{}")
                 .exchange()
-                .expectStatus().isServiceUnavailable();
+                .expectStatus().isEqualTo(503);
 
         assertThat(POST_FAILURE_REQUESTS).hasValue(1);
         assertThat(BACKEND_REQUESTS).hasValue(1);
@@ -190,7 +190,7 @@ class GatewayResilienceIntegrationTests {
                 .uri("/api/employees/circuit-open")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
                 .exchange()
-                .expectStatus().isServiceUnavailable()
+                .expectStatus().isEqualTo(503)
                 .expectBody()
                 .jsonPath("$.code").isEqualTo("UPSTREAM_UNAVAILABLE");
 
