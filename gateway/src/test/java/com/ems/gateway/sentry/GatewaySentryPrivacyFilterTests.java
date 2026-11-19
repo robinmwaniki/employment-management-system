@@ -61,6 +61,7 @@ class GatewaySentryPrivacyFilterTests {
 
         SentryStackFrame frame = new SentryStackFrame();
         frame.setVars(Map.of("password", "local-secret"));
+        frame.setAbsPath("/home/employee/private/project/Source.java");
         SentryStackTrace stackTrace = new SentryStackTrace();
         stackTrace.setFrames(List.of(frame));
         SentryException exception = new SentryException();
@@ -87,6 +88,7 @@ class GatewaySentryPrivacyFilterTests {
         assertThat(exception.getValue()).isNull();
         assertThat(exception.getUnknown()).isNull();
         assertThat(frame.getVars()).isNull();
+        assertThat(frame.getAbsPath()).isNull();
         assertThat(stackTrace.getRegisters()).isNull();
     }
 
