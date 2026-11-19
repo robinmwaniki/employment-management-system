@@ -23,6 +23,8 @@ spring:
             tags:
               path:
                 enabled: false
+          observability:
+            enabled: true
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Allow-Headers Access-Control-Expose-Headers, RETAIN_FIRST
             # Reject oversized payloads before they reach the EMS backend.
@@ -430,6 +432,30 @@ resilience4j:
         base-config: default
 
 management:
+  tracing:
+    sampling:
+      probability: ${EMS_TRACING_SAMPLING_PROBABILITY:0.1}
+    propagation:
+      type: W3C
+    baggage:
+      enabled: false
+    export:
+      otlp:
+        enabled: ${EMS_TRACING_EXPORT_ENABLED:false}
+  opentelemetry:
+    enabled: ${EMS_TRACING_ENABLED:true}
+    resource-attributes:
+      service.name: ${OTEL_SERVICE_NAME:ems-api-gateway}
+      service.namespace: employee-management-system
+      deployment.environment: ${EMS_ENVIRONMENT:local}
+    tracing:
+      sampler: ${EMS_TRACING_SAMPLER:parent-based-trace-id-ratio}
+      limits:
+        max-attributes: 64
+        max-attribute-value-length: 128
+      export:
+        otlp:
+          timeout: ${EMS_TRACING_EXPORT_TIMEOUT:10s}
   endpoints:
     enabled-by-default: false
     web:
