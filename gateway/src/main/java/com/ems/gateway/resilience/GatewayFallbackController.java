@@ -58,8 +58,10 @@ public class GatewayFallbackController {
     private boolean isTimeout(Throwable failure) {
         Throwable current = failure;
         while (current != null) {
+            String exceptionType = current.getClass().getSimpleName();
             if (current instanceof TimeoutException || current instanceof SocketTimeoutException
-                    || current instanceof ReadTimeoutException) {
+                    || current instanceof ReadTimeoutException
+                    || exceptionType.contains("Timeout")) {
                 return true;
             }
             current = current.getCause();
