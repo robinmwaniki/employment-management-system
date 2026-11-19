@@ -73,3 +73,10 @@ The gateway tests start an ephemeral local HTTP backend and verify GET forwardin
 ## Current scope
 
 This delivery adds explicit centralized API routing while leaving the existing MVC backend unchanged. JWT validation, role authorization, CORS/security headers, resilience, rate limiting and observability are tracked in separate issues and pull requests.
+
+
+## Request correlation and logging
+
+The gateway accepts a canonical UUID in `X-Correlation-ID`. Missing or malformed values are replaced with a server-generated UUID. The value is returned in the response and forwarded to the backend so services can correlate related events.
+
+Gateway completion logs contain only the route ID, HTTP method, response status, elapsed milliseconds and correlation ID. Request/response bodies, query strings, authorization headers, cookies, credentials and employee identifiers are deliberately excluded. Client-provided correlation values are validated before use to prevent log injection.
