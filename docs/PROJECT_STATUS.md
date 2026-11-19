@@ -31,9 +31,9 @@ The Employee Management System combines a Spring MVC HR backend, a separate Reac
 
 | Issue | Priority | Scope | Status |
 | --- | --- | --- | --- |
-| #22 | P1 | Gateway CORS policy and secure response headers | Next |
-| #23 | P1 | Consistent gateway error responses and global exception handling | Open |
-| #24 | P1 | Redis-backed gateway rate limiting | Open |
+| #22 | P1 | Gateway CORS policy and secure response headers | Completed — PR #44 |
+| #23 | P1 | Consistent gateway error responses and global exception handling | Completed — PR #41 |
+| #24 | P1 | Redis-backed gateway rate limiting | In progress — PR pending CI |
 | #25 | P1 | Resilience4j circuit breakers, timeouts and controlled retries | Open |
 | #27 | P1 | Actuator health and Micrometer metrics | Open |
 | #28 | P2 | Distributed tracing with Micrometer and OpenTelemetry | Open |
@@ -53,7 +53,10 @@ Deployment work is not being started as part of the current feature sequence. Is
 - Merged PR #36: correlation ID validation/propagation and privacy-safe structured logs, including tests that exclude query values, authorization credentials, cookies and payloads.
 - Merged PR #37: shared EMS JWT signature/issuer/expiry validation, authenticated API forwarding and CORS preflight handling.
 - Merged PR #38: signed role claims and gateway route policy matching the existing backend SecurityConfig.
-- Validation across the feature PRs included gateway Maven tests, backend test suite and Docker image builds; all required checks passed before merge.
+- Merged PR #44: exact-origin gateway CORS, edge-handled preflight, duplicate-header prevention and browser security headers.
+- Merged PR #41: standardized privacy-safe JSON gateway errors, deterministic HTTP status mapping and structured JWT 401/403 responses.
+- Issue #24 is now being implemented with Redis token buckets, hashed identity keys, trusted-proxy CIDR validation, dedicated login/registration/report quotas and fail-closed Redis outage handling.
+- Validation for merged PRs included gateway Maven tests and backend CI; all required checks passed before merge.
 
 ## Delivery rules
 
