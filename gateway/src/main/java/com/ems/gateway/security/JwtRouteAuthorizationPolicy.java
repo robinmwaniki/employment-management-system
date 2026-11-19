@@ -32,7 +32,8 @@ public class JwtRouteAuthorizationPolicy {
      *   <li>OPTIONS preflight requests are forwarded to backend CORS handling.</li>
      *   <li>/api/auth/register requires ROLE_ADMIN.</li>
      *   <li>/api/departments/** requires any known authenticated EMS role.</li>
-     *   <li>All other routed API paths require ROLE_ADMIN or ROLE_HR_MANAGER.\n *   <li>The OpenAPI JSON document requires ROLE_ADMIN.</li></li>
+     *   <li>All other routed API paths require ROLE_ADMIN or ROLE_HR_MANAGER.</li>
+     *   <li>The OpenAPI JSON document requires ROLE_ADMIN.</li>
      * </ul>
      *
      * @param exchange current request
