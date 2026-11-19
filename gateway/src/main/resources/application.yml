@@ -46,7 +46,7 @@ spring:
               filters:
                 - name: RequestRateLimiter
                   args:
-                    key-resolver: "#{@emsRateLimitKeyResolver}"
+                    key-resolver: "#{@emsLoginRateLimitKeyResolver}"
                     redis-rate-limiter.replenishRate: ${EMS_LOGIN_RATE_LIMIT_REPLENISH_RATE:1}
                     redis-rate-limiter.burstCapacity: ${EMS_LOGIN_RATE_LIMIT_BURST_CAPACITY:5}
                     redis-rate-limiter.requestedTokens: 1
@@ -60,7 +60,7 @@ spring:
               filters:
                 - name: RequestRateLimiter
                   args:
-                    key-resolver: "#{@emsRateLimitKeyResolver}"
+                    key-resolver: "#{@emsRegistrationRateLimitKeyResolver}"
                     redis-rate-limiter.replenishRate: ${EMS_REGISTER_RATE_LIMIT_REPLENISH_RATE:1}
                     redis-rate-limiter.burstCapacity: ${EMS_REGISTER_RATE_LIMIT_BURST_CAPACITY:3}
                     redis-rate-limiter.requestedTokens: 1
@@ -73,7 +73,7 @@ spring:
               filters:
                 - name: RequestRateLimiter
                   args:
-                    key-resolver: "#{@emsRateLimitKeyResolver}"
+                    key-resolver: "#{@emsReportsRateLimitKeyResolver}"
                     redis-rate-limiter.replenishRate: ${EMS_REPORTS_RATE_LIMIT_REPLENISH_RATE:2}
                     redis-rate-limiter.burstCapacity: ${EMS_REPORTS_RATE_LIMIT_BURST_CAPACITY:4}
                     redis-rate-limiter.requestedTokens: 1
