@@ -1,5 +1,6 @@
 package com.ems.gateway.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -24,14 +25,18 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
     private static final String PUBLIC_LOGIN_PATH = "/api/auth/login";
 
     private final JwtTokenValidator tokenValidator;
+    private final JwtRouteAuthorizationPolicy authorizationPolicy;
 
     /**
      * Creates the gateway authentication filter.
      *
      * @param tokenValidator EMS-compatible JWT validator
      */
-    public JwtAuthenticationGlobalFilter(JwtTokenValidator tokenValidator) {
+    public JwtAuthenticationGlobalFilter(
+            JwtTokenValidator tokenValidator,
+            JwtRouteAuthorizationPolicy authorizationPolicy) {
         this.tokenValidator = tokenValidator;
+        this.authorizationPolicy = authorizationPolicy;
     }
 
     /**
@@ -61,15 +66,20 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
         }
 
         String token = authorization.substring(BEARER_PREFIX.length()).trim();
+        final Claims claims;
         try {
-            tokenValidator.validate(token);
+            claims = tokenValidator.validate(token);
         } catch (JwtException | IllegalArgumentException exception) {
             // Never expose parser details or token contents to callers or logs.
             return unauthorized(exchange);
         }
 
+        if (!authorizationPolicy.isAuthorized(exchange, claims)) {
+            return forbidden(exchange);
+        }
+
         // Forward the original Authorization header unchanged. The backend
-        // independently validates the token and checks account state/permissions.
+        // independently validates the token and checks current account state/roles.
         return chain.filter(exchange);
     }
 
@@ -92,6 +102,12 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
     private Mono<Void> unauthorized(ServerWebExchange exchange) {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         exchange.getResponse().getHeaders().set(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+        exchange.getResponse().getHeaders().setCacheControl("no-store");
+        return exchange.getResponse().setComplete();
+    }
+
+    private Mono<Void> forbidden(ServerWebExchange exchange) {
+        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
         exchange.getResponse().getHeaders().setCacheControl("no-store");
         return exchange.getResponse().setComplete();
     }
