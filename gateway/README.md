@@ -313,7 +313,7 @@ docker build --file gateway/Dockerfile --tag ems-api-gateway:local .
 2. Start the gateway container and confirm `/livez`, `/readyz` and `/actuator/health` respond as documented.
 3. Authenticate through the gateway's public login route and use the returned bearer token on a protected API request.
 4. Verify an invalid/expired token receives 401, an insufficient role receives 403, and a backend resource-level 403 remains a 403 through the gateway.
-5. Verify an oversized body receives 413 without reaching the backend; exercise login/general/report limits and confirm 429 plus `Retry-After`.
+5. Verify an oversized body receives 413 without reaching the backend (`EMS_GATEWAY_MAX_REQUEST_SIZE`, default `1MB`); exercise login/general/report limits and confirm 429 plus `Retry-After`.
 6. Stop Redis in a controlled test environment and confirm rate-limited API traffic fails closed with 503 rather than bypassing the limiter.
 7. Confirm a valid `X-Correlation-ID` is returned and propagated, while gateway logs contain no token, cookie, query string or body data.
 8. Confirm `/actuator/metrics` requires the management key and that `/actuator/env`, `/actuator/beans`, `/actuator/gateway/routes` and `/actuator/prometheus` are not publicly exposed.
