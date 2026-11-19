@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.crypto.SecretKey;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -48,6 +49,7 @@ class ApiGatewayApplicationTests {
     private static DisposableServer mockBackend;
     private static final AtomicInteger BACKEND_REQUEST_COUNT = new AtomicInteger();
     private static final ConcurrentHashMap<String, AtomicInteger> RETRY_REQUESTS = new ConcurrentHashMap<>();
+    private static final AtomicReference<String> BACKEND_AUTHORIZATION = new AtomicReference<>();
 
     @LocalServerPort
     private int gatewayPort;
@@ -79,6 +81,11 @@ class ApiGatewayApplicationTests {
                                         .incrementAndGet()
                                 : 0;
                         int responseStatus = retryScenario && retryAttempt == 1 ? 503 : 202;
+                        if (requestPath.endsWith("/backend-auth-check")) {
+                            BACKEND_AUTHORIZATION.set(request.requestHeaders().get("Authorization"));
+                            responseStatus = BACKEND_AUTHORIZATION.get() != null
+                                    && BACKEND_AUTHORIZATION.get().startsWith("Bearer ") ? 202 : 401;
+                        }
                         String origin = request.requestHeaders().get("Origin");
                         if (origin != null) {
                             // Simulate the legacy backend CORS response so the
@@ -108,6 +115,7 @@ class ApiGatewayApplicationTests {
     void resetBackendRequestCount() {
         BACKEND_REQUEST_COUNT.set(0);
         RETRY_REQUESTS.clear();
+        BACKEND_AUTHORIZATION.set(null);
     }
 
     /**
@@ -286,6 +294,45 @@ class ApiGatewayApplicationTests {
     }
 
 
+
+    @Test
+    void forwardsTheOriginalBearerTokenForBackendRevalidation() {
+        String token = validToken();
+
+        client().get()
+                .uri("/api/employees/backend-auth-check")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                .exchange()
+                .expectStatus().isAccepted();
+
+        assertThat(BACKEND_AUTHORIZATION.get()).isEqualTo("Bearer " + token);
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
+    }
+
+    @Test
+    void rejectsInvalidJwtBeforeBackendForwarding() {
+        client().get()
+                .uri("/api/employees/invalid-jwt")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer not-a-valid-jwt")
+                .exchange()
+                .expectStatus().isUnauthorized();
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+    }
+
+    @Test
+    void rejectsEmployeeRoleBypassAttemptBeforeBackendForwarding() {
+        String employeeToken = tokenWithRoles("ROLE_EMPLOYEE");
+
+        client().get()
+                .uri("/api/employees/role-bypass")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken)
+                .exchange()
+                .expectStatus().isForbidden();
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+    }
+
     @Test
     void rejectsOversizedRequestBeforeForwardingToBackend() {
         String oversizedBody = "x".repeat(1025);
@@ -416,6 +463,18 @@ class ApiGatewayApplicationTests {
                 .expectHeader().exists("Strict-Transport-Security");
 
         assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
+    }
+
+
+    private String tokenWithRoles(String... roles) {
+        return Jwts.builder()
+                .issuer("employee-management-system")
+                .subject("employee@example.test")
+                .claim("roles", List.of(roles))
+                .issuedAt(new Date())
+                .expiration(Date.from(Instant.now().plusSeconds(300)))
+                .signWith(SIGNING_KEY)
+                .compact();
     }
 
     private String validToken() {
