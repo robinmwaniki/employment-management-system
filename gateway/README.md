@@ -428,3 +428,25 @@ The Prometheus configuration reads the management key from a mounted credentials
 The dashboard uses bounded labels only: route ID, HTTP method, outcome, HTTP status and circuit-breaker name/state. It does not use URL paths, query strings, usernames, JWTs, request bodies or employee identifiers. Latency histograms are enabled for the gateway's custom request-duration timer so percentile panels can be calculated by Prometheus. Panels may remain empty until the corresponding route or circuit breaker has emitted measurements.
 
 For Render or another hosted deployment, configure Prometheus to scrape the gateway's private service address and mount the management key as a secret file. Do not expose the management endpoint publicly. Configure Grafana authentication and restrict its UI to administrators or the internal operations network.
+
+
+## Centralized OpenAPI documentation
+
+The gateway exposes the backend's existing OpenAPI JSON contract at:
+
+- `GET /v3/api-docs` — canonical OpenAPI 3 document from the EMS backend.
+
+The gateway proxies this document from the backend; it does not maintain a duplicate schema or rewrite operation definitions. The backend's OpenAPI metadata remains the source of truth, including API title/version and the HTTP Bearer JWT security scheme. Future services should publish their own versioned OpenAPI documents and receive explicit gateway routes rather than silently merging unrelated schemas.
+
+The document is protected twice: the gateway validates the bearer token and requires the signed `ROLE_ADMIN` claim, and the backend's stateless JWT security chain independently validates the same token and requires its current administrator role from the database. HR-manager and employee tokens are denied. The original Authorization header is forwarded unchanged so backend authorization remains authoritative.
+
+Swagger UI is disabled by default through the backend's `SWAGGER_ENABLED=false` setting. The gateway does not proxy the interactive Swagger UI. If a trusted development environment explicitly enables `SWAGGER_ENABLED=true`, the backend's existing web UI remains restricted to administrators by its session-based security chain; do not enable it on a public production deployment unless the UI is intentionally protected and access is monitored.
+
+To retrieve the document with an administrator token:
+
+```bash
+curl --fail --header "Authorization: Bearer $EMS_ADMIN_JWT" \
+  http://localhost:8081/v3/api-docs
+```
+
+Do not put bearer tokens in shell history, logs or shared command output. API clients can import the returned JSON into their own tooling without exposing an interactive documentation console.
