@@ -36,7 +36,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         "JWT_SECRET=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=",
         "EMS_CORS_ALLOWED_ORIGINS=http://localhost:5173",
         "EMS_RATE_LIMIT_ENABLED=false",
-        "EMS_MANAGEMENT_API_KEY=test-management-key"
+        "EMS_MANAGEMENT_API_KEY=test-management-key",
+        "EMS_GATEWAY_MAX_REQUEST_SIZE=1KB"
 })
 class ApiGatewayApplicationTests {
 
@@ -282,6 +283,24 @@ class ApiGatewayApplicationTests {
                 .expectStatus().isOk()
                 .expectBody()
                 .jsonPath("$.name").isEqualTo("ems.gateway.requests");
+    }
+
+
+    @Test
+    void rejectsOversizedRequestBeforeForwardingToBackend() {
+        String oversizedBody = "x".repeat(1025);
+
+        client().post()
+                .uri("/api/employees/oversized")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .header(HttpHeaders.CONTENT_TYPE, "application/octet-stream")
+                .header(HttpHeaders.CONTENT_LENGTH,
+                        Integer.toString(oversizedBody.getBytes(java.nio.charset.StandardCharsets.UTF_8).length))
+                .bodyValue(oversizedBody)
+                .exchange()
+                .expectStatus().isEqualTo(413);
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(0);
     }
 
     @Test
