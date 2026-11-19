@@ -246,6 +246,6 @@ The gateway retries only `GET` and `HEAD` requests; CORS `OPTIONS` preflight is 
 
 Each route's circuit breaker uses a count-based sliding window, a configurable failure threshold and a timed open state before half-open probes are allowed. The Resilience4j time limiter bounds reactive execution. Circuit transitions are logged with the breaker name and state transition only; request bodies, tokens and personal data are not logged. Circuit-breaker health indicators are enabled under the existing Actuator health endpoint.
 
-When an upstream circuit is open, a request times out or a configured upstream failure status is returned, the gateway forwards internally to `/gateway/fallback`. The fallback returns the standard JSON error schema with a safe 503 or 504 message and preserves the request correlation ID. It never returns exception messages or stack traces.
+When an upstream circuit is open, a request times out or a configured upstream failure status is returned, the gateway forwards internally to `/internal/fallback/ems`. The fallback returns the standard JSON error schema with a safe 503 or 504 message and preserves the request correlation ID. It never returns exception messages or stack traces.
 
 The gateway integration tests use an isolated local backend and test fallback status/body behavior, per-route timeout metadata and the presence of retry/circuit-breaker filters. No live downstream service or production credentials are required.
