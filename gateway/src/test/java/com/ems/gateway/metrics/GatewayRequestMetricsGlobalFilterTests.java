@@ -67,7 +67,7 @@ class GatewayRequestMetricsGlobalFilterTests {
         SimpleMeterRegistry registry = new SimpleMeterRegistry();
         GatewayRequestMetricsGlobalFilter filter = new GatewayRequestMetricsGlobalFilter(registry);
         var exchange = MockServerWebExchange.from(
-                MockServerHttpRequest.method(HttpMethod.valueOf("BREW"), "/api/employees").build());
+                MockServerHttpRequest.method(HttpMethod.TRACE, "/api/employees").build());
         exchange.getAttributes().put(
                 ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR,
                 route("ems-employees-api"));
