@@ -69,7 +69,7 @@ public class PayrollServiceImpl implements PayrollService {
                 .netSalary(netSalary)
                 .build();
 
-        Payroll savedPayroll = payrollRepository.save(payroll);
+        Payroll savedPayroll = payrollRepository.saveAndFlush(payroll);
 
         systemLogService.saveLog(
                 "HR Admin",
@@ -162,7 +162,7 @@ public class PayrollServiceImpl implements PayrollService {
 
         payroll.setNetSalary(netSalary);
 
-        Payroll updatedPayroll = payrollRepository.save(payroll);
+        Payroll updatedPayroll = payrollRepository.saveAndFlush(payroll);
 
         systemLogService.saveLog(
                 "HR Admin",
