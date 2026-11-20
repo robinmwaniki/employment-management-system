@@ -61,7 +61,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 .overtime(false)
                 .build();
 
-        Attendance savedAttendance = attendanceRepository.save(attendance);
+        Attendance savedAttendance = attendanceRepository.saveAndFlush(attendance);
 
         // ===== System Log =====
         systemLogService.saveLog(
@@ -111,7 +111,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         );
 
         Attendance updatedAttendance =
-                attendanceRepository.save(attendance);
+                attendanceRepository.saveAndFlush(attendance);
 
         // ===== System Log =====
         systemLogService.saveLog(

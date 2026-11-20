@@ -1,0 +1,515 @@
+spring:
+  application:
+    name: ems-api-gateway
+  main:
+    web-application-type: reactive
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:2s}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # The gateway owns browser CORS. Deduplicate legacy backend CORS headers,
+          # keeping the gateway's first, environment-validated values.
+          httpclient:
+            connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+            response-timeout: ${EMS_GATEWAY_RESPONSE_TIMEOUT:5s}
+          metrics:
+            enabled: true
+            tags:
+              path:
+                enabled: false
+          observability:
+            enabled: true
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin Access-Control-Allow-Methods Access-Control-Allow-Headers Access-Control-Expose-Headers, RETAIN_FIRST
+            # Reject oversized payloads before they reach the EMS backend.
+            - name: RequestSize
+              args:
+                maxSize: ${EMS_GATEWAY_MAX_REQUEST_SIZE:10MB}
+            # Retry only idempotent reads after transient upstream failures.
+            - name: Retry
+              args:
+                retries: ${EMS_GATEWAY_SAFE_RETRIES:2}
+                statuses:
+                  - INTERNAL_SERVER_ERROR
+                  - BAD_GATEWAY
+                  - SERVICE_UNAVAILABLE
+                  - GATEWAY_TIMEOUT
+                methods:
+                  - GET
+                  - HEAD
+                exceptions:
+                  - java.io.IOException
+                  - java.util.concurrent.TimeoutException
+                  - io.netty.handler.timeout.ReadTimeoutException
+                backoff:
+                  firstBackoff: ${EMS_GATEWAY_RETRY_FIRST_BACKOFF:100ms}
+                  maxBackoff: ${EMS_GATEWAY_RETRY_MAX_BACKOFF:500ms}
+                  factor: 2
+                  basedOnPreviousValue: false
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+            cors-configurations:
+              '[/api/**]':
+                allowedOrigins: ${ems.gateway.cors.allowed-origins}
+                allowedMethods: ${ems.gateway.cors.allowed-methods}
+                allowedHeaders: ${ems.gateway.cors.allowed-headers}
+                exposedHeaders: ${ems.gateway.cors.exposed-headers}
+                allowCredentials: false
+                maxAge: ${ems.gateway.cors.max-age}
+          routes:
+            - id: ems-auth-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/auth/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_AUTH_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsAuthCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - INTERNAL_SERVER_ERROR
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-employees-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/employees/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_EMPLOYEES_RESPONSE_TIMEOUT_MS:4000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsEmployeesCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-departments-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/departments/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_DEPARTMENTS_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsDepartmentsCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-attendance-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/attendance/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_ATTENDANCE_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsAttendanceCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-leaves-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/leaves/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_LEAVES_RESPONSE_TIMEOUT_MS:4000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsLeavesCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-payroll-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/payroll/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_PAYROLL_RESPONSE_TIMEOUT_MS:5000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsPayrollCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-payslips-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/payslips/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_PAYSLIPS_RESPONSE_TIMEOUT_MS:8000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsPayslipsCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-reports-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/reports/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_REPORTS_RESPONSE_TIMEOUT_MS:8000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsReportsCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-performance-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/performance/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_PERFORMANCE_RESPONSE_TIMEOUT_MS:5000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsPerformanceCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-announcements-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/announcements/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_ANNOUNCEMENTS_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsAnnouncementsCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-notifications-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/notifications/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_NOTIFICATIONS_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsNotificationsCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-dashboard-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/dashboard/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_DASHBOARD_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsDashboardCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-users-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/users/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_USERS_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsUsersCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-self-service-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/me/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_SELF_SERVICE_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsSelfServiceCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            - id: ems-system-logs-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/system-logs/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_SYSTEM_LOGS_RESPONSE_TIMEOUT_MS:5000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsSystemLogsCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - INTERNAL_SERVER_ERROR
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
+            # Proxy the backend's canonical OpenAPI JSON; no second API schema is maintained.
+            - id: ems-openapi-docs
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/v3/api-docs,/v3/api-docs/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_OPENAPI_RESPONSE_TIMEOUT_MS:5000}
+
+server:
+  port: ${GATEWAY_PORT:8081}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+
+# The gateway and backend must receive the same environment-provided signing key.
+ems:
+  backend:
+    uri: ${EMS_BACKEND_URI:http://localhost:8080}
+  jwt:
+    secret: ${JWT_SECRET}
+  gateway:
+    tracing:
+      enabled: ${EMS_TRACING_ENABLED:true}
+    cors:
+      # Comma-separated exact origins; wildcard origins and credentials are disabled.
+      allowed-origins: ${EMS_CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+      allowed-methods: ${EMS_CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+      allowed-headers: ${EMS_CORS_ALLOWED_HEADERS:Authorization,Content-Type,Accept,X-Correlation-ID}
+      exposed-headers: ${EMS_CORS_EXPOSED_HEADERS:Authorization,X-Correlation-ID,X-RateLimit-Limit,X-RateLimit-Remaining,Retry-After}
+      max-age: ${EMS_CORS_MAX_AGE:3600}
+    rate-limit:
+      enabled: ${EMS_RATE_LIMIT_ENABLED:true}
+      trusted-proxy-cidrs: ${EMS_TRUSTED_PROXY_CIDRS:}
+      retry-after-seconds: ${EMS_RATE_LIMIT_RETRY_AFTER_SECONDS:5}
+      login:
+        replenish-rate: ${EMS_RATE_LIMIT_LOGIN_PER_SECOND:2}
+        burst-capacity: ${EMS_RATE_LIMIT_LOGIN_BURST:5}
+        requested-tokens: ${EMS_RATE_LIMIT_LOGIN_TOKENS:1}
+      registration:
+        replenish-rate: ${EMS_RATE_LIMIT_REGISTRATION_PER_SECOND:1}
+        burst-capacity: ${EMS_RATE_LIMIT_REGISTRATION_BURST:2}
+        requested-tokens: ${EMS_RATE_LIMIT_REGISTRATION_TOKENS:1}
+      general:
+        replenish-rate: ${EMS_RATE_LIMIT_GENERAL_PER_SECOND:20}
+        burst-capacity: ${EMS_RATE_LIMIT_GENERAL_BURST:40}
+        requested-tokens: ${EMS_RATE_LIMIT_GENERAL_TOKENS:1}
+      reports:
+        replenish-rate: ${EMS_RATE_LIMIT_REPORTS_PER_SECOND:2}
+        burst-capacity: ${EMS_RATE_LIMIT_REPORTS_BURST:4}
+        requested-tokens: ${EMS_RATE_LIMIT_REPORTS_TOKENS:1}
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: ${EMS_GATEWAY_CB_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${EMS_GATEWAY_CB_MIN_CALLS:10}
+        permitted-number-of-calls-in-half-open-state: ${EMS_GATEWAY_CB_HALF_OPEN_CALLS:3}
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: ${EMS_GATEWAY_CB_OPEN_WAIT:10s}
+        failure-rate-threshold: ${EMS_GATEWAY_CB_FAILURE_THRESHOLD:50}
+        slow-call-duration-threshold: ${EMS_GATEWAY_CB_SLOW_CALL_DURATION:2s}
+        slow-call-rate-threshold: ${EMS_GATEWAY_CB_SLOW_CALL_THRESHOLD:50}
+    instances:
+      emsAuthCircuitBreaker:
+        base-config: default
+      emsEmployeesCircuitBreaker:
+        base-config: default
+      emsDepartmentsCircuitBreaker:
+        base-config: default
+      emsAttendanceCircuitBreaker:
+        base-config: default
+      emsLeavesCircuitBreaker:
+        base-config: default
+      emsPayrollCircuitBreaker:
+        base-config: default
+      emsPayslipsCircuitBreaker:
+        base-config: default
+      emsReportsCircuitBreaker:
+        base-config: default
+      emsPerformanceCircuitBreaker:
+        base-config: default
+      emsAnnouncementsCircuitBreaker:
+        base-config: default
+      emsNotificationsCircuitBreaker:
+        base-config: default
+      emsDashboardCircuitBreaker:
+        base-config: default
+      emsUsersCircuitBreaker:
+        base-config: default
+      emsSelfServiceCircuitBreaker:
+        base-config: default
+      emsSystemLogsCircuitBreaker:
+        base-config: default
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: ${EMS_GATEWAY_CB_TIMEOUT:15s}
+        cancel-running-future: true
+    instances:
+      emsAuthCircuitBreaker:
+        base-config: default
+      emsEmployeesCircuitBreaker:
+        base-config: default
+      emsDepartmentsCircuitBreaker:
+        base-config: default
+      emsAttendanceCircuitBreaker:
+        base-config: default
+      emsLeavesCircuitBreaker:
+        base-config: default
+      emsPayrollCircuitBreaker:
+        base-config: default
+      emsPayslipsCircuitBreaker:
+        base-config: default
+      emsReportsCircuitBreaker:
+        base-config: default
+      emsPerformanceCircuitBreaker:
+        base-config: default
+      emsAnnouncementsCircuitBreaker:
+        base-config: default
+      emsNotificationsCircuitBreaker:
+        base-config: default
+      emsDashboardCircuitBreaker:
+        base-config: default
+      emsUsersCircuitBreaker:
+        base-config: default
+      emsSelfServiceCircuitBreaker:
+        base-config: default
+      emsSystemLogsCircuitBreaker:
+        base-config: default
+
+management:
+  tracing:
+    sampling:
+      probability: ${EMS_TRACING_SAMPLING_PROBABILITY:0.1}
+    propagation:
+      type: W3C
+    baggage:
+      enabled: false
+    export:
+      otlp:
+        enabled: ${EMS_TRACING_EXPORT_ENABLED:false}
+  opentelemetry:
+    enabled: ${EMS_TRACING_ENABLED:true}
+    resource-attributes:
+      service.name: ${OTEL_SERVICE_NAME:ems-api-gateway}
+      service.namespace: employee-management-system
+      deployment.environment: ${EMS_ENVIRONMENT:local}
+    tracing:
+      sampler: ${EMS_TRACING_SAMPLER:parent-based-trace-id-ratio}
+      limits:
+        max-attributes: 64
+        max-attribute-value-length: 128
+      export:
+        otlp:
+          timeout: ${EMS_TRACING_EXPORT_TIMEOUT:10s}
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      enabled: true
+      probes:
+        enabled: true
+        add-additional-paths: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          # Redis is required for distributed rate limiting; backend health is
+          # deliberately excluded so downstream outages do not affect liveness.
+          include: readinessState,redis
+      show-details: never
+      show-components: never
+    info:
+      enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        ems.gateway.request.duration: true
+      percentiles:
+        ems.gateway.request.duration: [0.5, 0.95, 0.99]
+  health:
+    circuitbreakers:
+      enabled: true
+
+# Sentry auto-configuration is activated only when SENTRY_DSN is supplied.
+# Do not define a default DSN: local/test environments stay disconnected by default.
+sentry:
+  environment: ${EMS_ENVIRONMENT:local}
+  send-default-pii: false
+  traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.0}
+
+info:
+  app:
+    name: EMS API Gateway
+    status: IN PROGRESS

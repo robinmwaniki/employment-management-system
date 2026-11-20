@@ -17,107 +17,65 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-    @Transactional
+@Transactional
 public class AnnouncementServiceImpl implements AnnouncementService {
 
     private final AnnouncementRepository repository;
 
     @Override
     public AnnouncementResponse createAnnouncement(AnnouncementRequest request) {
-
         Announcement announcement = AnnouncementMapper.toEntity(request);
-
-        return AnnouncementMapper.toResponse(
-                repository.save(announcement)
-        );
+        return AnnouncementMapper.toResponse(repository.save(announcement));
     }
 
     @Override
-    public AnnouncementResponse updateAnnouncement(
-            Long id,
-            AnnouncementRequest request) {
-
-        Announcement announcement = repository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Announcement not found"));
-
+    public AnnouncementResponse updateAnnouncement(Long id, AnnouncementRequest request) {
+        Announcement announcement = findAnnouncement(id);
         announcement.setTitle(request.getTitle());
         announcement.setMessage(request.getMessage());
         announcement.setPublishDate(request.getPublishDate());
         announcement.setExpiryDate(request.getExpiryDate());
-
-        return AnnouncementMapper.toResponse(
-                repository.save(announcement)
-        );
+        return AnnouncementMapper.toResponse(repository.save(announcement));
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AnnouncementResponse getAnnouncement(Long id) {
-
-        Announcement announcement = repository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Announcement not found"));
-
-        return AnnouncementMapper.toResponse(announcement);
+        return AnnouncementMapper.toResponse(findAnnouncement(id));
     }
 
     @Override
-    public Page<AnnouncementResponse> getAllAnnouncements(
-            int page,
-            int size) {
+    @Transactional(readOnly = true)
+    public AnnouncementResponse getAnnouncementById(Long id) {
+        return AnnouncementMapper.toResponse(findAnnouncement(id));
+    }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AnnouncementResponse> getAllAnnouncements(int page, int size) {
         return repository.findAll(PageRequest.of(page, size))
                 .map(AnnouncementMapper::toResponse);
     }
 
     @Override
     public void deleteAnnouncement(Long id) {
-
-        if (!repository.existsById(id)) {
-            throw new ResourceNotFoundException("Announcement not found");
-        }
-
-        repository.deleteById(id);
+        Announcement announcement = findAnnouncement(id);
+        repository.delete(announcement);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AnnouncementResponse> getLatestAnnouncements() {
-
-        return repository
-                .findAllByOrderByCreatedAtDesc()
+        return repository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .map(AnnouncementMapper::toResponse)
                 .toList();
     }
 
-    @Override
-@Transactional(readOnly = true)
-public AnnouncementResponse getAnnouncementById(Long id) {
-
-    Announcement announcement = announcementRepository.findById(id)
-            .orElseThrow(() ->
-                    new ResourceNotFoundException(
-                            "Announcement not found with id: " + id));
-
-    return AnnouncementMapper.toResponse(announcement);
-}
-
-@Override
-public AnnouncementResponse updateAnnouncement(
-        Long id,
-        AnnouncementRequest request) {
-
-    Announcement announcement = announcementRepository.findById(id)
-            .orElseThrow(() ->
-                    new ResourceNotFoundException(
-                            "Announcement not found with id: " + id));
-
-    announcement.setTitle(request.getTitle());
-    announcement.setMessage(request.getMessage());
-    announcement.setPublishDate(request.getPublishDate());
-    announcement.setExpiryDate(request.getExpiryDate());
-
-    return AnnouncementMapper.toResponse(
-            announcementRepository.save(announcement));
-}
+    /** Centralizes not-found handling so all read and write paths behave consistently. */
+    private Announcement findAnnouncement(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Announcement not found with id: " + id));
+    }
 }

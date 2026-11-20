@@ -38,4 +38,9 @@ public class Attendance {
 
     @Column(nullable = false)
     private boolean overtime;
+
+    /** Prevents concurrent check-out operations from overwriting one another. */
+    @Version
+    @Column(nullable = false)
+    private long version;
 }

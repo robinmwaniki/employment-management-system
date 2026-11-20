@@ -2,11 +2,36 @@
 
 A role-based HR and workforce management application built with **Java 21, Spring Boot, Spring Security, PostgreSQL, and Thymeleaf**. It combines server-rendered pages with REST endpoints for client integrations.
 
-> **Status:** Portfolio project. Review the security, privacy, and operational configuration before using real employee data.
+> **Project status: IN PROGRESS.** The Employee Management System backend, React frontend and standalone reactive API Gateway are under active development. Feature work integrates through `develop`; each feature has its own issue and pull request, and merges are gated on passing CI.
+>
+> **Latest update — 19 November 2026:** the gateway foundation, centralized routing, correlation IDs/privacy-safe logs, EMS JWT and role authorization, CORS/security headers, standardized JSON errors and Redis-backed rate limiting (issues #18–#24) have been merged into `develop`. Resilience controls were merged in PR #49 (issue #25). Actuator health probes and protected Micrometer metrics were merged in PR #50 (issue #27). P0 gateway end-to-end, security and performance verification was completed in PR #52. Distributed tracing with Micrometer/OpenTelemetry is now in progress (issue #28).
 
 ## Overview
 
 The system separates administration and HR workflows from employee self-service. A separate React client is maintained in [ems_frontend](https://github.com/robinmwaniki/ems_frontend).
+
+## Current delivery status
+
+| Area | Status | Notes |
+| --- | --- | --- |
+| Existing HR/employee management backend | In progress | Spring MVC backend remains the source of truth for account state, role checks and resource authorization |
+| Standalone reactive gateway foundation | Completed | Isolated Spring Boot 4.1.1 / Spring Cloud Gateway WebFlux application under `gateway/` |
+| Centralized API routing | Completed | Explicit API route table and deterministic forwarding tests |
+| JWT authentication | Completed | Shared EMS HMAC signing secret, issuer/expiry validation and backend revalidation |
+| Gateway role authorization | Completed | Signed `roles` claims mirror current backend route rules; backend still rechecks current roles |
+| Correlation IDs and privacy-safe logging | Completed | Validated UUID propagation and redaction tests |
+| CORS and secure response headers | Completed | Exact-origin policy, edge preflight and browser security headers (PR #44) |
+| Global error responses | Completed | Stable JSON error contract, safe status mapping and correlation IDs (PR #41) |
+| Redis rate limiting | Completed | Distributed token buckets, hashed identities and trusted-proxy validation (PR #47) |
+| Resilience4j | Completed | Per-route circuit breakers, timeouts, safe retries and controlled fallback (PR #49) |
+| Actuator health and Micrometer metrics | Completed | Liveness/readiness probes, protected operational metrics and bounded-cardinality request measurements (PR #50) |
+| Gateway end-to-end, security and performance verification | Completed | 89 gateway tests, Redis integration, backend token/authorization contract, request-size controls, k6 smoke script and gateway image validation (PR #52) |
+| Distributed tracing | In progress | W3C context propagation, OTLP export and span privacy controls (issue #28) |
+| Prometheus/Grafana and Sentry | Planned | Issues #29–#30 |
+| OpenAPI documentation | Planned | Issue #31 |
+| Gateway containerization and deployment documentation | On hold | Issue #32 — deployment remains paused |
+
+See [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) for the detailed change log and next steps. The gateway implementation details are in [gateway/README.md](gateway/README.md).
 
 ## Features
 

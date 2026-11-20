@@ -52,7 +52,7 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .department(department)
                 .build();
 
-        Employee savedEmployee = employeeRepository.save(employee);
+        Employee savedEmployee = employeeRepository.saveAndFlush(employee);
 
         systemLogService.saveLog(
                 "HR Admin",
@@ -117,7 +117,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setHireDate(request.getHireDate());
         employee.setDepartment(department);
 
-        Employee updatedEmployee = employeeRepository.save(employee);
+        Employee updatedEmployee = employeeRepository.saveAndFlush(employee);
 
         systemLogService.saveLog(
                 "HR Admin",
