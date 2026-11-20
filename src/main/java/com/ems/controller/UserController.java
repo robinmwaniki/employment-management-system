@@ -2,7 +2,7 @@ package com.ems.controller;
 
 import com.ems.dto.request.UserRequest;
 import com.ems.dto.response.UserResponse;
-import com.ems.service.interfaces.SystemUserService;
+import com.ems.service.interfaces.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('ADMIN')")
 public class UserController {
 
-    private final SystemUserService systemUserService;
+    private final UserService systemUserService;
 
     @GetMapping
     public Page<UserResponse> getAll(

@@ -65,6 +65,11 @@ public class JwtService {
         return Jwts.builder()
                 .issuer(ISSUER)
                 .subject(userDetails.getUsername())
+                // Signed role claims let the gateway mirror the backend's current
+                // route policy; the backend still reloads roles from the database.
+                .claim("roles", userDetails.getAuthorities().stream()
+                        .map(authority -> authority.getAuthority())
+                        .toList())
                 .issuedAt(now)
                 .expiration(new Date(now.getTime() + jwtExpiration))
                 .signWith(signingKey)

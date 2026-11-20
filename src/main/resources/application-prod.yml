@@ -16,3 +16,11 @@ logging:
   level:
     root: INFO
     com.ems: INFO
+
+management:
+  tracing:
+    sampling:
+      probability: ${EMS_TRACING_SAMPLING_PROBABILITY:0.05}
+
+sentry:
+  traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.05}

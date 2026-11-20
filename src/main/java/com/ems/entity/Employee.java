@@ -43,4 +43,9 @@ public class Employee extends BaseEntity{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
+
+    /** Rejects stale concurrent employee profile or HR updates. */
+    @Version
+    @Column(nullable = false)
+    private long version;
 }

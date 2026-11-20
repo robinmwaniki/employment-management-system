@@ -35,7 +35,7 @@ public class LeaveServiceImpl implements LeaveService {
     @Override
     public LeaveResponse applyLeave(LeaveRequest request) {
 
-        Employee employee = employeeRepository.findById(request.getEmployeeId())
+        Employee employee = employeeRepository.findByIdForUpdate(request.getEmployeeId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Employee not found with id: " + request.getEmployeeId()));
@@ -68,7 +68,7 @@ public class LeaveServiceImpl implements LeaveService {
                 .appliedDate(LocalDate.now())
                 .build();
 
-        LeaveRequestEntity savedLeave = leaveRepository.save(leave);
+        LeaveRequestEntity savedLeave = leaveRepository.saveAndFlush(leave);
 
         systemLogService.saveLog(
                 employee.getFirstName() + " " + employee.getLastName(),
@@ -117,7 +117,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         leave.setStatus(LeaveStatus.APPROVED);
 
-        LeaveRequestEntity saved = leaveRepository.save(leave);
+        LeaveRequestEntity saved = leaveRepository.saveAndFlush(leave);
 
         systemLogService.saveLog(
                 "HR Admin",
@@ -150,7 +150,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         leave.setStatus(LeaveStatus.REJECTED);
 
-        LeaveRequestEntity saved = leaveRepository.save(leave);
+        LeaveRequestEntity saved = leaveRepository.saveAndFlush(leave);
 
         systemLogService.saveLog(
                 "HR Admin",
@@ -248,7 +248,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         leave.setStatus(LeaveStatus.CANCELLED);
 
-        LeaveRequestEntity saved = leaveRepository.save(leave);
+        LeaveRequestEntity saved = leaveRepository.saveAndFlush(leave);
 
         systemLogService.saveLog(
                 leave.getEmployee().getFirstName()

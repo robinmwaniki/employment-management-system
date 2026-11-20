@@ -15,10 +15,13 @@ import com.ems.service.interfaces.EmployeeService;
 import com.ems.service.interfaces.LeaveService;
 import com.ems.service.interfaces.NotificationService;
 import com.ems.service.interfaces.PayrollService;
+import com.ems.service.interfaces.PdfService;
 import com.ems.service.interfaces.PhotoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +37,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Duration;
 import java.util.List;
 
 /**
@@ -52,6 +54,7 @@ public class MeController {
     private final LeaveService leaveService;
     private final AttendanceService attendanceService;
     private final PayrollService payrollService;
+    private final PdfService pdfService;
     private final NotificationService notificationService;
 
     // ----- Profile -----
@@ -169,6 +172,34 @@ public class MeController {
                 currentEmployeeId(authentication),
                 page,
                 size);
+    }
+
+    /**
+     * Generates a payslip only after verifying that the requested payroll
+     * record belongs to the employee identified by the authenticated token.
+     */
+    @GetMapping("/payroll/{payrollId}/payslip")
+    public ResponseEntity<byte[]> downloadMyPayslip(
+            Authentication authentication,
+            @PathVariable Long payrollId) {
+
+        Long employeeId = currentEmployeeId(authentication);
+
+        // This service method enforces employee ownership and returns 404
+        // when the record is absent or belongs to another employee.
+        payrollService.getEmployeePayroll(employeeId, payrollId);
+
+        byte[] pdf = pdfService.generatePayslip(payrollId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(
+                ContentDisposition.attachment()
+                        .filename("Payslip-" + payrollId + ".pdf")
+                        .build());
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdf);
     }
 
     // ----- Notifications -----

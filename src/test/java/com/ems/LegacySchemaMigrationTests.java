@@ -18,6 +18,7 @@ import java.sql.Statement;
 import java.time.YearMonth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Recreates the shape of a database that Hibernate built with ddl-auto=update
@@ -82,10 +83,70 @@ class LegacySchemaMigrationTests {
                 + "WHERE table_name = 'employee_photos'"))
                 .isEqualTo("1");
 
+        // Leave decisions use a version column for optimistic locking.
+        assertThat(query("SELECT count(*) FROM information_schema.columns "
+                + "WHERE table_name = 'leave_requests' AND column_name = 'version' "
+                + "AND is_nullable = 'NO'"))
+                .isEqualTo("1");
+
+        // Attendance check-in is unique per employee and calendar day.
+        assertThat(query("SELECT count(*) FROM pg_indexes WHERE indexname = 'uk_attendance_employee_date'"))
+                .isEqualTo("1");
+
+        // Mutable HR records carry optimistic-lock versions.
+        assertNotNullVersionColumn("employees");
+        assertNotNullVersionColumn("attendance");
+        assertNotNullVersionColumn("payroll");
+
+        // Payroll natural key is enforced even when V1 previously skipped it
+        // because legacy data contained duplicates.
+        assertThat(query("SELECT count(*) FROM pg_indexes "
+                + "WHERE indexname = 'uq_payroll_employee_month'"))
+                .isEqualTo("1");
+
+        assertDuplicatePayrollIsRejected();
+        assertDuplicateAttendanceIsRejected();
+
         // Attendance durations are stored as nanoseconds, as Hibernate expects.
         assertThat(query("SELECT data_type FROM information_schema.columns "
                 + "WHERE table_name = 'attendance' AND column_name = 'working_hours'"))
                 .isEqualTo("numeric");
+    }
+
+    private void assertNotNullVersionColumn(String table) throws SQLException {
+        assertThat(query("SELECT count(*) FROM information_schema.columns "
+                + "WHERE table_name = '" + table + "' AND column_name = 'version' "
+                + "AND is_nullable = 'NO'"))
+                .isEqualTo("1");
+    }
+
+    private void assertDuplicatePayrollIsRejected() {
+        assertThatThrownBy(() -> {
+            try (Connection connection = connection();
+                 PreparedStatement statement = connection.prepareStatement("""
+                         INSERT INTO payroll
+                         (employee_id, payroll_month, basic_salary, house_allowance,
+                          transport_allowance, bonus, deductions, tax, net_salary)
+                         VALUES (1, '2026-10', 1, 1, 1, 1, 1, 1, 1)
+                         """)) {
+                statement.executeUpdate();
+            }
+        }).isInstanceOf(SQLException.class)
+                .hasMessageContaining("uq_payroll_employee_month");
+    }
+
+    private void assertDuplicateAttendanceIsRejected() {
+        assertThatThrownBy(() -> {
+            try (Connection connection = connection();
+                 PreparedStatement statement = connection.prepareStatement("""
+                         INSERT INTO attendance
+                         (employee_id, attendance_date, late, overtime)
+                         VALUES (1, DATE '2026-11-20', false, false)
+                         """)) {
+                statement.executeUpdate();
+                statement.executeUpdate();
+            }
+        }).isInstanceOf(SQLException.class);
     }
 
     private void createLegacySchemaWithData() throws Exception {
