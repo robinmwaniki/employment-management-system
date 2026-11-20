@@ -63,18 +63,43 @@ public class Payroll extends BaseEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal netSalary;
 
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal grossPay;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal taxablePay;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal nssf;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal shif;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal housingLevy;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal employerNssf;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal employerHousingLevy;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal pensionContribution;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal personalRelief;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal insuranceRelief;
-    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal insurancePremium;
-    @Column(nullable = false) private boolean residentTaxpayer;
+    // Defaults keep older builder call sites compatible with the V6 NOT NULL columns.
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal grossPay = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal taxablePay = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal nssf = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal shif = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal housingLevy = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal employerNssf = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal employerHousingLevy = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal pensionContribution = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal personalRelief = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal insuranceRelief = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal insurancePremium = BigDecimal.ZERO.setScale(2);
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean residentTaxpayer = true;
 
     /** Rejects stale concurrent payroll edits. */
     @Version
