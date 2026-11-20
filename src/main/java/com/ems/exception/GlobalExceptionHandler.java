@@ -1,5 +1,6 @@
 package com.ems.exception;
 
+import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -124,7 +125,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleException(Exception ex) {
 
-        log.error("Unhandled exception", ex);
+        // The Sentry before-send callback strips request/user context and exception
+        // messages before transmission. Never put exception messages or stack traces
+        // into application logs because they can contain HR or payroll values.
+        log.error("Unhandled request failure exceptionType={}",
+                ex.getClass().getSimpleName());
+        Sentry.captureException(ex);
 
         return build(HttpStatus.INTERNAL_SERVER_ERROR,
                 "An unexpected error occurred.");
