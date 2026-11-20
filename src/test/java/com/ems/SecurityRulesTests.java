@@ -132,6 +132,7 @@ class SecurityRulesTests {
         mockMvc.perform(get("/employees")).andExpect(status().isForbidden());
         mockMvc.perform(get("/payroll")).andExpect(status().isForbidden());
         mockMvc.perform(get("/api/employees")).andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/payslips/1")).andExpect(status().isForbidden());
     }
 
     @Test
@@ -141,6 +142,9 @@ class SecurityRulesTests {
         // The test user is not seeded in this test database, so the controller
         // correctly returns 404 after authorization instead of a security 403.
         mockMvc.perform(get("/api/me/profile"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/me/payroll/1/payslip"))
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(get("/api/employees"))
