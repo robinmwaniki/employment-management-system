@@ -87,10 +87,10 @@ management:
       service.name: ${OTEL_SERVICE_NAME:ems-backend}
       service.namespace: employee-management-system
       deployment.environment: ${EMS_ENVIRONMENT:local}
-    tracing:
-      export:
-        otlp:
-          enabled: ${EMS_TRACING_EXPORT_ENABLED:false}
+  tracing:
+    export:
+      otlp:
+        enabled: ${EMS_TRACING_EXPORT_ENABLED:false}
   observations:
     key-values:
       application: employee-management-system
