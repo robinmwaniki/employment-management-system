@@ -62,7 +62,7 @@ class EmployeeServiceImplTest {
         when(employeeRepository.existsByEmail(request.getEmail())).thenReturn(false);
         when(employeeRepository.existsByPhoneNumber(request.getPhoneNumber())).thenReturn(false);
         when(departmentRepository.findById(3L)).thenReturn(Optional.of(department));
-        when(employeeRepository.save(any(Employee.class))).thenAnswer(invocation -> {
+        when(employeeRepository.saveAndFlush(any(Employee.class))).thenAnswer(invocation -> {
             Employee employee = invocation.getArgument(0);
             employee.setId(10L);
             return employee;
@@ -127,7 +127,7 @@ class EmployeeServiceImplTest {
         when(departmentRepository.findById(3L)).thenReturn(Optional.of(department));
         when(employeeRepository.findByEmail(request.getEmail())).thenReturn(Optional.empty());
         when(employeeRepository.findByPhoneNumber(request.getPhoneNumber())).thenReturn(Optional.empty());
-        when(employeeRepository.save(employee)).thenReturn(employee);
+        when(employeeRepository.saveAndFlush(employee)).thenReturn(employee);
 
         EmployeeResponse response = employeeService.updateEmployee(10L, request);
 
