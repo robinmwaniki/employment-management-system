@@ -65,7 +65,8 @@ public class PayrollPageController {
         request.setTransportAllowance(payroll.getTransportAllowance());
         request.setBonus(payroll.getBonus());
         request.setDeductions(payroll.getDeductions());
-        request.setTax(payroll.getTax());
+        request.setPensionContribution(payroll.getPensionContribution());
+        request.setResidentTaxpayer(payroll.isResidentTaxpayer());
 
         model.addAttribute("payroll", request);
         model.addAttribute("payrollId", id);
