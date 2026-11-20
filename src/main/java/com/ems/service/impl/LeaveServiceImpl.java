@@ -117,7 +117,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         leave.setStatus(LeaveStatus.APPROVED);
 
-        LeaveRequestEntity saved = leaveRepository.save(leave);
+        LeaveRequestEntity saved = leaveRepository.saveAndFlush(leave);
 
         systemLogService.saveLog(
                 "HR Admin",
@@ -150,7 +150,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         leave.setStatus(LeaveStatus.REJECTED);
 
-        LeaveRequestEntity saved = leaveRepository.save(leave);
+        LeaveRequestEntity saved = leaveRepository.saveAndFlush(leave);
 
         systemLogService.saveLog(
                 "HR Admin",
@@ -248,7 +248,7 @@ public class LeaveServiceImpl implements LeaveService {
 
         leave.setStatus(LeaveStatus.CANCELLED);
 
-        LeaveRequestEntity saved = leaveRepository.save(leave);
+        LeaveRequestEntity saved = leaveRepository.saveAndFlush(leave);
 
         systemLogService.saveLog(
                 leave.getEmployee().getFirstName()
