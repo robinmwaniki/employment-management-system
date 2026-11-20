@@ -63,6 +63,18 @@ public class Payroll extends BaseEntity {
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal netSalary;
 
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal grossPay;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal taxablePay;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal nssf;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal shif;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal housingLevy;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal employerNssf;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal employerHousingLevy;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal pensionContribution;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal personalRelief;
+    @Column(nullable = false, precision = 12, scale = 2) private BigDecimal insuranceRelief;
+    @Column(nullable = false) private boolean residentTaxpayer;
+
     /** Rejects stale concurrent payroll edits. */
     @Version
     @Column(nullable = false)

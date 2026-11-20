@@ -31,6 +31,7 @@ public class PayrollServiceImpl implements PayrollService {
     private final EmployeeRepository employeeRepository;
     private final SystemLogService systemLogService;
     private final EmailService emailService;
+    private final KenyanPayrollCalculator payrollCalculator;
 
     @Override
     public PayrollResponse generatePayroll(PayrollRequest request) {
@@ -50,12 +51,8 @@ public class PayrollServiceImpl implements PayrollService {
 
         BigDecimal basicSalary = employee.getSalary();
 
-        BigDecimal netSalary = basicSalary
-                .add(request.getHouseAllowance())
-                .add(request.getTransportAllowance())
-                .add(request.getBonus())
-                .subtract(request.getDeductions())
-                .subtract(request.getTax());
+        KenyanPayrollCalculator.Result calculation = calculate(request, basicSalary);
+        BigDecimal netSalary = calculation.net();
 
         Payroll payroll = Payroll.builder()
                 .employee(employee)
@@ -64,9 +61,13 @@ public class PayrollServiceImpl implements PayrollService {
                 .houseAllowance(request.getHouseAllowance())
                 .transportAllowance(request.getTransportAllowance())
                 .bonus(request.getBonus())
-                .deductions(request.getDeductions())
-                .tax(request.getTax())
-                .netSalary(netSalary)
+                .deductions(calculation.otherDeductions())
+                .tax(calculation.paye()).netSalary(netSalary)
+                .grossPay(calculation.gross()).taxablePay(calculation.taxable())
+                .nssf(calculation.nssf()).shif(calculation.shif()).housingLevy(calculation.housing())
+                .employerNssf(calculation.employerNssf()).employerHousingLevy(calculation.employerHousing())
+                .pensionContribution(calculation.pension()).personalRelief(calculation.personalRelief())
+                .insuranceRelief(calculation.insuranceRelief()).residentTaxpayer(request.isResidentTaxpayer())
                 .build();
 
         Payroll savedPayroll = payrollRepository.saveAndFlush(payroll);
@@ -93,6 +94,13 @@ public class PayrollServiceImpl implements PayrollService {
                         + netSalary);
 
         return PayrollMapper.toResponse(savedPayroll);
+    }
+
+    private KenyanPayrollCalculator.Result calculate(PayrollRequest request, BigDecimal basicSalary) {
+        return payrollCalculator.calculate(request.getPayrollMonth(), basicSalary,
+                request.getHouseAllowance(), request.getTransportAllowance(), request.getBonus(),
+                request.getDeductions(), request.getPensionContribution(), request.getInsurancePremium(),
+                request.isResidentTaxpayer());
     }
 
     @Override
@@ -150,17 +158,22 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setHouseAllowance(request.getHouseAllowance());
         payroll.setTransportAllowance(request.getTransportAllowance());
         payroll.setBonus(request.getBonus());
-        payroll.setDeductions(request.getDeductions());
-        payroll.setTax(request.getTax());
-
-        BigDecimal netSalary = basicSalary
-                .add(request.getHouseAllowance())
-                .add(request.getTransportAllowance())
-                .add(request.getBonus())
-                .subtract(request.getDeductions())
-                .subtract(request.getTax());
-
-        payroll.setNetSalary(netSalary);
+        KenyanPayrollCalculator.Result calculation = calculate(request, basicSalary);
+        payroll.setDeductions(calculation.otherDeductions());
+        payroll.setTax(calculation.paye());
+        payroll.setNetSalary(calculation.net());
+        payroll.setGrossPay(calculation.gross());
+        payroll.setTaxablePay(calculation.taxable());
+        payroll.setNssf(calculation.nssf());
+        payroll.setShif(calculation.shif());
+        payroll.setHousingLevy(calculation.housing());
+        payroll.setEmployerNssf(calculation.employerNssf());
+        payroll.setEmployerHousingLevy(calculation.employerHousing());
+        payroll.setPensionContribution(calculation.pension());
+        payroll.setPersonalRelief(calculation.personalRelief());
+        payroll.setInsuranceRelief(calculation.insuranceRelief());
+        payroll.setResidentTaxpayer(request.isResidentTaxpayer());
+        BigDecimal netSalary = calculation.net();
 
         Payroll updatedPayroll = payrollRepository.saveAndFlush(payroll);
 
