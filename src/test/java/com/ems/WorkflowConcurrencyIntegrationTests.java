@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -109,7 +108,9 @@ class WorkflowConcurrencyIntegrationTests {
             assertThat(losingFailure).isInstanceOf(DataIntegrityViolationException.class);
             assertThat(payrollRepository.findByEmployeeAndPayrollMonth(employee, month))
                     .isPresent();
-            assertThat(payrollRepository.count()).isEqualTo(1L);
+            assertThat(payrollRepository.findByEmployee(employee).stream()
+                    .filter(payroll -> payroll.getPayrollMonth().equals(month))
+                    .count()).isEqualTo(1L);
         } finally {
             executor.shutdownNow();
         }
@@ -163,7 +164,9 @@ class WorkflowConcurrencyIntegrationTests {
 
             assertThat(first.get(10, TimeUnit.SECONDS)).isFalse();
             assertThat(second.get(10, TimeUnit.SECONDS)).isTrue();
-            assertThat(leaveRepository.count()).isEqualTo(1L);
+            assertThat(leaveRepository.findByEmployee(employee,
+                    org.springframework.data.domain.PageRequest.of(0, 10)).getTotalElements())
+                    .isEqualTo(1L);
         } finally {
             releaseFirst.countDown();
             executor.shutdownNow();
