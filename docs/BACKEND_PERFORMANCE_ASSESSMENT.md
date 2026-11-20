@@ -10,12 +10,16 @@ No employee, leave, attendance, or payroll response is cached by this change. Th
 | Static role/permission metadata | Avoid repeated reads of immutable application metadata | Prefer application-level constants/security configuration; no distributed cache needed |
 | Dashboard aggregates | Reduce expensive repeated aggregate queries | Do not cache yet; first measure query latency and define a user/role-aware cache key and mutation invalidation rules |
 
-## Concurrency controls delivered in this increment
+## Concurrency controls delivered
 
 - Leave requests carry a JPA optimistic-lock version. Concurrent decisions against the same request cannot silently overwrite a newer status.
-- Attendance rows are unique by employee and attendance date. Concurrent check-ins cannot create duplicate daily records.
+- Leave application takes a short pessimistic lock on the employee row before checking overlapping pending/approved leave. Two concurrent requests for the same employee therefore cannot both pass the overlap check.
+- Attendance rows are unique by employee and attendance date. Concurrent check-ins cannot create duplicate daily records; attendance also has an optimistic-lock version to prevent competing check-outs from overwriting one another.
+- Employees and payroll rows carry optimistic-lock versions so stale HR edits cannot silently overwrite newer values.
+- Payroll is unique by employee and payroll month. The database constraint is the final idempotency guard when two generation requests race.
+- Guarded mutations are flushed before audit/email side effects where a stale version or uniqueness conflict must be detected first.
 - Stale writes and database uniqueness violations return HTTP 409 with a generic message that does not expose SQL, entity identifiers, or personal data.
-- The migration checks for existing duplicate attendance rows before creating the unique index and fails with an actionable message instead of deleting or merging records.
+- Migrations fail with actionable messages when existing attendance or payroll duplicates would prevent safe uniqueness enforcement; they never delete or merge records.
 
 ## Follow-up measurement
 
