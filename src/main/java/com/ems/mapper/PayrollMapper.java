@@ -16,7 +16,7 @@ public final class PayrollMapper {
             .nssf(p.getNssf()).shif(p.getShif()).housingLevy(p.getHousingLevy())
             .employerNssf(p.getEmployerNssf()).employerHousingLevy(p.getEmployerHousingLevy())
             .pensionContribution(p.getPensionContribution()).personalRelief(p.getPersonalRelief())
-            .insuranceRelief(p.getInsuranceRelief()).tax(p.getTax()).deductions(p.getDeductions())
+            .insuranceRelief(p.getInsuranceRelief()).insurancePremium(p.getInsurancePremium()).tax(p.getTax()).deductions(p.getDeductions())
             .netSalary(p.getNetSalary()).residentTaxpayer(p.isResidentTaxpayer()).build();
     }
 }

@@ -27,6 +27,7 @@ public class PayrollResponse {
     private BigDecimal pensionContribution;
     private BigDecimal personalRelief;
     private BigDecimal insuranceRelief;
+    private BigDecimal insurancePremium;
     private BigDecimal tax;
     private BigDecimal deductions;
     private BigDecimal netSalary;

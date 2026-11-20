@@ -10,6 +10,7 @@ ALTER TABLE payroll
     ADD COLUMN IF NOT EXISTS pension_contribution numeric(12,2) NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS personal_relief numeric(12,2) NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS insurance_relief numeric(12,2) NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS insurance_premium numeric(12,2) NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS resident_taxpayer boolean NOT NULL DEFAULT true;
 
 UPDATE payroll

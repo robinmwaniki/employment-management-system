@@ -67,7 +67,8 @@ public class PayrollServiceImpl implements PayrollService {
                 .nssf(calculation.nssf()).shif(calculation.shif()).housingLevy(calculation.housing())
                 .employerNssf(calculation.employerNssf()).employerHousingLevy(calculation.employerHousing())
                 .pensionContribution(calculation.pension()).personalRelief(calculation.personalRelief())
-                .insuranceRelief(calculation.insuranceRelief()).residentTaxpayer(request.isResidentTaxpayer())
+                .insuranceRelief(calculation.insuranceRelief()).insurancePremium(request.getInsurancePremium())
+                .residentTaxpayer(request.isResidentTaxpayer())
                 .build();
 
         Payroll savedPayroll = payrollRepository.saveAndFlush(payroll);
@@ -172,6 +173,7 @@ public class PayrollServiceImpl implements PayrollService {
         payroll.setPensionContribution(calculation.pension());
         payroll.setPersonalRelief(calculation.personalRelief());
         payroll.setInsuranceRelief(calculation.insuranceRelief());
+        payroll.setInsurancePremium(request.getInsurancePremium());
         payroll.setResidentTaxpayer(request.isResidentTaxpayer());
         BigDecimal netSalary = calculation.net();
 
