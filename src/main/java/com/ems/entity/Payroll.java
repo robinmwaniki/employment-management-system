@@ -67,4 +67,9 @@ public class Payroll extends BaseEntity {
     @Version
     @Column(nullable = false)
     private long version;
+
+    /** Explicit accessor used by payroll response mapping. */
+    public BigDecimal getBonus() {
+        return bonus;
+    }
 }
