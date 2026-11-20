@@ -12,7 +12,7 @@ public class KenyanPayrollCalculator {
   BigDecimal gross=add(basic,house,transport,bonus);
   BigDecimal upper=month.isBefore(YearMonth.of(2026,2))?new BigDecimal("72000"):new BigDecimal("108000");
   BigDecimal nssf=gross.min(upper).multiply(SIX).setScale(2,RoundingMode.HALF_UP);
-  BigDecimal shif=gross.multiply(SHIF_RATE).max(SHIF_MIN).setScale(2,RoundingMode.HALF_UP);
+  BigDecimal shif=(gross.compareTo(new BigDecimal("6000"))<0?SHIF_MIN:gross.multiply(SHIF_RATE)).setScale(2,RoundingMode.HALF_UP);
   BigDecimal housing=gross.multiply(HOUSING_RATE).setScale(2,RoundingMode.HALF_UP);
   BigDecimal pension=zero(pensionContribution);
   BigDecimal taxable=gross.subtract(nssf.add(pension).min(PENSION_LIMIT)).subtract(shif).subtract(housing).max(ZERO);

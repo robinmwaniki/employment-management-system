@@ -30,6 +30,18 @@ class KenyanPayrollCalculatorTest {
     }
 
     @Test
+    void appliesKraShifLowIncomeMinimumOnlyBelowSixThousand() {
+        var low = calculator.calculate(YearMonth.of(2026, 2),
+            new BigDecimal("5000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, true);
+        var aboveThreshold = calculator.calculate(YearMonth.of(2026, 2),
+            new BigDecimal("8000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, true);
+        assertEquals(new BigDecimal("300.00"), low.shif());
+        assertEquals(new BigDecimal("220.00"), aboveThreshold.shif());
+    }
+
+    @Test
     void doesNotApplyResidentPersonalReliefToNonResident() {
         var result = calculator.calculate(YearMonth.of(2026, 2),
             new BigDecimal("50000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
