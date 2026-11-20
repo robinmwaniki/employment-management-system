@@ -61,4 +61,9 @@ public class Payroll extends BaseEntity {
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal netSalary;
+
+    /** Explicit accessor used by payroll response mapping. */
+    public BigDecimal getBonus() {
+        return bonus;
+    }
 }
