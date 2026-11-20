@@ -4,6 +4,9 @@ import com.ems.entity.Employee;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.Query;
 
 import java.math.BigDecimal;
@@ -14,6 +17,11 @@ import java.util.Optional;
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     Optional<Employee> findByEmail(String email);
+
+    /** Serializes leave-period checks for the same employee inside a transaction. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from Employee e where e.id = :employeeId")
+    Optional<Employee> findByIdForUpdate(@Param("employeeId") Long employeeId);
 
     Optional<Employee> findByPhoneNumber(String phoneNumber);
 

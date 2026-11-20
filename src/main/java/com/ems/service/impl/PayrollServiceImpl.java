@@ -69,7 +69,7 @@ public class PayrollServiceImpl implements PayrollService {
                 .netSalary(netSalary)
                 .build();
 
-        Payroll savedPayroll = payrollRepository.save(payroll);
+        Payroll savedPayroll = payrollRepository.saveAndFlush(payroll);
 
         systemLogService.saveLog(
                 "HR Admin",
@@ -162,7 +162,7 @@ public class PayrollServiceImpl implements PayrollService {
 
         payroll.setNetSalary(netSalary);
 
-        Payroll updatedPayroll = payrollRepository.save(payroll);
+        Payroll updatedPayroll = payrollRepository.saveAndFlush(payroll);
 
         systemLogService.saveLog(
                 "HR Admin",
@@ -203,6 +203,10 @@ public class PayrollServiceImpl implements PayrollService {
                         + " "
                         + payroll.getEmployee().getLastName());
 
+        payrollRepository.delete(payroll);
+        // Force the version-checked delete before notifying the employee.
+        payrollRepository.flush();
+
         emailService.sendEmail(
                 payroll.getEmployee().getEmail(),
                 "Payroll Deleted",
@@ -212,8 +216,6 @@ public class PayrollServiceImpl implements PayrollService {
                         + "Your payroll record for "
                         + payroll.getPayrollMonth()
                         + " has been removed by HR.");
-
-        payrollRepository.delete(payroll);
     }
 
     @Override
