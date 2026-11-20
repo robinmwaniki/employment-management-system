@@ -83,9 +83,10 @@ class LegacySchemaMigrationTests {
                 .isEqualTo("1");
 
         // Leave decisions use a version column for optimistic locking.
-        assertThat(query("SELECT column_default FROM information_schema.columns "
-                + "WHERE table_name = 'leave_requests' AND column_name = 'version'"))
-                .isEqualTo("0");
+        assertThat(query("SELECT count(*) FROM information_schema.columns "
+                + "WHERE table_name = 'leave_requests' AND column_name = 'version' "
+                + "AND is_nullable = 'NO'"))
+                .isEqualTo("1");
 
         // Attendance check-in is unique per employee and calendar day.
         assertThat(query("SELECT count(*) FROM pg_indexes WHERE indexname = 'uk_attendance_employee_date'"))
