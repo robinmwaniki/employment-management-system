@@ -49,6 +49,12 @@ spring:
       mail.smtp.timeout: 5000
       mail.smtp.writetimeout: 5000
 
+logging:
+  pattern:
+    # Keep request identifiers in standard console logs without logging paths,
+    # query strings, headers, bodies, usernames or employee data.
+    correlation: "[correlationId=%X{correlationId:-},traceId=%X{traceId:-}] "
+
 server:
   port: ${PORT:8080}
   shutdown: graceful
