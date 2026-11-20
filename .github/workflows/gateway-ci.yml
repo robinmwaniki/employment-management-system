@@ -2,7 +2,7 @@ name: EMS Gateway CI
 
 on:
   pull_request:
-    branches: ["develop", "main"]
+    branches: ["develop", "main", "master"]
     paths:
       - "gateway/**"
       - "docker-compose.yml"
@@ -10,7 +10,7 @@ on:
       - "mvnw"
       - ".mvn/**"
   push:
-    branches: ["develop"]
+    branches: ["develop", "master"]
     paths:
       - "gateway/**"
       - ".github/workflows/gateway-ci.yml"
