@@ -22,3 +22,11 @@ springdoc:
 logging:
   level:
     com.ems: DEBUG
+
+ems:
+  tracing:
+    sampling:
+      probability: ${EMS_TRACING_SAMPLING_PROBABILITY:0.0}
+
+sentry:
+  traces-sample-rate: ${SENTRY_TRACES_SAMPLE_RATE:0.0}
