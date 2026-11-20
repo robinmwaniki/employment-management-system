@@ -17,7 +17,7 @@ logging:
     root: INFO
     com.ems: INFO
 
-ems:
+management:
   tracing:
     sampling:
       probability: ${EMS_TRACING_SAMPLING_PROBABILITY:0.05}
