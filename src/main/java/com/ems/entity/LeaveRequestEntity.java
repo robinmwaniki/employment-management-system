@@ -5,6 +5,9 @@ import lombok.*;
 
 import java.time.LocalDate;
 
+/**
+ * A leave request with optimistic locking to reject stale concurrent decisions.
+ */
 @Entity
 @Table(name = "leave_requests")
 @Getter
@@ -12,7 +15,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LeaveRequestEntity extends BaseEntity{
+public class LeaveRequestEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,4 +44,10 @@ public class LeaveRequestEntity extends BaseEntity{
 
     private LocalDate appliedDate;
 
+    /**
+     * JPA increments this value on updates and rejects writes based on stale versions.
+     */
+    @Version
+    @Column(nullable = false)
+    private long version;
 }
