@@ -203,6 +203,10 @@ public class PayrollServiceImpl implements PayrollService {
                         + " "
                         + payroll.getEmployee().getLastName());
 
+        payrollRepository.delete(payroll);
+        // Force the version-checked delete before notifying the employee.
+        payrollRepository.flush();
+
         emailService.sendEmail(
                 payroll.getEmployee().getEmail(),
                 "Payroll Deleted",
@@ -212,8 +216,6 @@ public class PayrollServiceImpl implements PayrollService {
                         + "Your payroll record for "
                         + payroll.getPayrollMonth()
                         + " has been removed by HR.");
-
-        payrollRepository.delete(payroll);
     }
 
     @Override
