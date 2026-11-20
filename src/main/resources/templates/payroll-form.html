@@ -158,11 +158,7 @@
 
                         <div class="col-md-4">
 
-                            <label>
-
-                                Deductions
-
-                            </label>
+                            <label>Other Deductions</label>
 
                             <input
 
@@ -176,25 +172,7 @@
 
                         </div>
 
-                        <div class="col-md-4">
-
-                            <label>
-
-                                Tax
-
-                            </label>
-
-                            <input
-
-                                    type="number"
-
-                                    step="0.01"
-
-                                    class="form-control"
-
-                                    th:field="*{tax}">
-
-                        </div>
+                        <div class="col-md-4"><label>Voluntary Pension Contribution</label><input type="number" step="0.01" class="form-control" th:field="*{pensionContribution}"></div><div class="col-md-4"><label>Insurance Premiums Eligible for Relief</label><input type="number" step="0.01" class="form-control" th:field="*{insurancePremium}"></div>
 
                     </div>
 
@@ -216,6 +194,7 @@
 
                     </a>
 
+                <div class="form-check mt-3"><input class="form-check-input" type="checkbox" th:field="*{residentTaxpayer}"><label class="form-check-label">Resident taxpayer (eligible for personal relief)</label></div>
                 </form>
 
             </div>
