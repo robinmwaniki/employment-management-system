@@ -133,6 +133,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register")
                         .hasRole(ADMIN)
 
+                        // Employee self-service is scoped to the authenticated
+                        // identity inside MeController. These routes must be reachable
+                        // by ROLE_EMPLOYEE as well as staff.
+                        .requestMatchers(
+                                "/api/auth/me",
+                                "/api/auth/change-password",
+                                "/api/me/**"
+                        )
+                        .authenticated()
+
                         // Department endpoints carry their own @PreAuthorize rules
                         // (employees may read departments).
                         .requestMatchers("/api/departments", "/api/departments/**")

@@ -135,6 +135,19 @@ class SecurityRulesTests {
     }
 
     @Test
+    @WithMockUser(roles = "EMPLOYEE")
+    void employeeCanReachOwnSelfServiceApiWithoutAccessingStaffApis() throws Exception {
+
+        // The test user is not seeded in this test database, so the controller
+        // correctly returns 404 after authorization instead of a security 403.
+        mockMvc.perform(get("/api/me/profile"))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/api/employees"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(roles = "HR_MANAGER")
     void hrManagerCannotOpenAdministratorPages() throws Exception {
 
