@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -61,4 +62,9 @@ public class Payroll extends BaseEntity {
 
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal netSalary;
+
+    /** Rejects stale concurrent payroll edits. */
+    @Version
+    @Column(nullable = false)
+    private long version;
 }
