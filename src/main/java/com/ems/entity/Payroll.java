@@ -68,7 +68,15 @@ public class Payroll extends BaseEntity {
     @Column(nullable = false)
     private long version;
 
-    /** Explicit accessor used by payroll response mapping. */
+    /** Explicit accessors used by payroll response mapping. */
+    public BigDecimal getHouseAllowance() {
+        return houseAllowance;
+    }
+
+    public BigDecimal getTransportAllowance() {
+        return transportAllowance;
+    }
+
     public BigDecimal getBonus() {
         return bonus;
     }
