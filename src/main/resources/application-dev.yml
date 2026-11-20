@@ -23,7 +23,7 @@ logging:
   level:
     com.ems: DEBUG
 
-ems:
+management:
   tracing:
     sampling:
       probability: ${EMS_TRACING_SAMPLING_PROBABILITY:0.0}
