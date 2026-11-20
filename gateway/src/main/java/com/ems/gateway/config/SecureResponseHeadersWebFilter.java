@@ -51,7 +51,7 @@ public class SecureResponseHeadersWebFilter implements WebFilter {
     }
 
     private void setIfAbsent(HttpHeaders headers, String name, String value) {
-        if (headers.getFirst(name) == null) {
+        if (!headers.containsKey(name)) {
             headers.set(name, value);
         }
     }
