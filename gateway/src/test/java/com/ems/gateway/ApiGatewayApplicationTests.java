@@ -169,7 +169,7 @@ class ApiGatewayApplicationTests {
     void configuresTimeoutRetryAndCircuitBreakerForEveryApiRoute() {
         var routes = routeLocator.getRoutes().collectList().block();
 
-        assertThat(routes).hasSize(16);
+        assertThat(routes).hasSize(17);
         assertThat(routes).allSatisfy(route -> {
             assertThat(route.getMetadata()).containsKey("response-timeout");
             assertThat(route.getFilters()).hasSizeGreaterThanOrEqualTo(3);
