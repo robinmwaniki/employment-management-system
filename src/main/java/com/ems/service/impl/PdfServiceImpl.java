@@ -51,11 +51,11 @@ public class PdfServiceImpl implements PdfService {
 
         Table banner=new Table(UnitValue.createPercentArray(new float[]{68,32})).useAllAvailableWidth();
         banner.addCell(new Cell().setBackgroundColor(PURPLE).setBorder(Border.NO_BORDER).setPadding(18)
-            .add(new Paragraph(safe(companyName)).setFontColor(WHITE).setBold().setFontSize(17))
-            .add(new Paragraph("EMPLOYEE PAYSLIP").setFontColor(new DeviceRgb(225,222,255)).setFontSize(9).setBold()));
+            .add(new Paragraph(safe(companyName)).setFontColor(WHITE).setFontSize(17))
+            .add(new Paragraph("EMPLOYEE PAYSLIP").setFontColor(new DeviceRgb(225,222,255)).setFontSize(9)));
         banner.addCell(new Cell().setBackgroundColor(INK).setBorder(Border.NO_BORDER).setPadding(18).setTextAlignment(TextAlignment.RIGHT)
-            .add(new Paragraph("PAY PERIOD").setFontColor(new DeviceRgb(190,192,215)).setFontSize(8).setBold())
-            .add(new Paragraph(month).setFontColor(WHITE).setFontSize(15).setBold()));
+            .add(new Paragraph("PAY PERIOD").setFontColor(new DeviceRgb(190,192,215)).setFontSize(8))
+            .add(new Paragraph(month).setFontColor(WHITE).setFontSize(15)));
         doc.add(banner).add(new Paragraph(" "));
 
         Table details=new Table(UnitValue.createPercentArray(new float[]{50,50})).useAllAvailableWidth();
@@ -87,10 +87,10 @@ public class PdfServiceImpl implements PdfService {
 
         Table net=new Table(UnitValue.createPercentArray(new float[]{58,42})).useAllAvailableWidth();
         net.addCell(new Cell().setBorder(Border.NO_BORDER).setBackgroundColor(INK).setPadding(15)
-            .add(new Paragraph("NET PAY").setFontColor(WHITE).setBold().setFontSize(9))
+            .add(new Paragraph("NET PAY").setFontColor(WHITE).setFontSize(9))
             .add(new Paragraph("Amount payable to employee").setFontColor(new DeviceRgb(202,204,226)).setFontSize(8)));
         net.addCell(new Cell().setBorder(Border.NO_BORDER).setBackgroundColor(TEAL).setPadding(15).setTextAlignment(TextAlignment.RIGHT)
-            .add(new Paragraph("KES "+money(p.getNetSalary())).setFontColor(WHITE).setBold().setFontSize(19)));
+            .add(new Paragraph("KES "+money(p.getNetSalary())).setFontColor(WHITE).setFontSize(19)));
         doc.add(net).add(new Paragraph(" "));
 
         Table notes=new Table(UnitValue.createPercentArray(new float[]{50,50})).useAllAvailableWidth();
@@ -112,7 +112,7 @@ public class PdfServiceImpl implements PdfService {
     private static Table section(String title,Color accent) {
         Table t=new Table(UnitValue.createPercentArray(new float[]{68,32})).useAllAvailableWidth();
         t.addHeaderCell(new Cell(1,2).setBackgroundColor(accent).setBorder(Border.NO_BORDER).setPadding(9)
-            .add(new Paragraph(title).setFontColor(WHITE).setBold().setFontSize(9)));
+            .add(new Paragraph(title).setFontColor(WHITE).setFontSize(9)));
         return t;
     }
     private static void amount(Table t,String label,BigDecimal value) {
@@ -123,18 +123,18 @@ public class PdfServiceImpl implements PdfService {
     }
     private static void total(Table t,String label,BigDecimal value,Color bg,Color fg) {
         t.addCell(new Cell().setBackgroundColor(bg).setBorder(Border.NO_BORDER).setPadding(9)
-            .add(new Paragraph(label).setFontColor(fg).setBold().setFontSize(8)));
+            .add(new Paragraph(label).setFontColor(fg).setFontSize(8)));
         t.addCell(new Cell().setBackgroundColor(bg).setBorder(Border.NO_BORDER).setPadding(9).setTextAlignment(TextAlignment.RIGHT)
-            .add(new Paragraph("KES "+money(value)).setFontColor(fg).setBold().setFontSize(9)));
+            .add(new Paragraph("KES "+money(value)).setFontColor(fg).setFontSize(9)));
     }
     private static Cell info(String label,String value) {
         return new Cell().setBorder(new SolidBorder(LINE,.6f)).setPadding(10)
-            .add(new Paragraph(label).setFontColor(MUTED).setBold().setFontSize(7))
+            .add(new Paragraph(label).setFontColor(MUTED).setFontSize(7))
             .add(new Paragraph(value).setFontColor(INK).setFontSize(9));
     }
     private static Cell note(String label,BigDecimal value) {
         return new Cell().setBorder(new SolidBorder(LINE,.5f)).setPadding(8)
-            .add(new Paragraph(label).setFontColor(MUTED).setBold().setFontSize(7))
+            .add(new Paragraph(label).setFontColor(MUTED).setFontSize(7))
             .add(new Paragraph("KES "+money(value)).setFontColor(INK).setFontSize(9));
     }
     private static BigDecimal sum(BigDecimal... values) {
