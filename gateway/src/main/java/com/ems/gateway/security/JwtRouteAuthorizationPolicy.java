@@ -31,8 +31,9 @@ public class JwtRouteAuthorizationPolicy {
      *   <li>POST /api/auth/login is public.</li>
      *   <li>OPTIONS preflight requests are forwarded to backend CORS handling.</li>
      *   <li>/api/auth/register requires ROLE_ADMIN.</li>
+     *   <li>/api/auth/me, /api/auth/change-password and /api/me/** require any known authenticated EMS role.</li>
      *   <li>/api/departments/** requires any known authenticated EMS role.</li>
-     *   <li>All other routed API paths require ROLE_ADMIN or ROLE_HR_MANAGER.</li>
+     *   <li>Other routed API paths require ROLE_ADMIN or ROLE_HR_MANAGER.</li>
      *   <li>The OpenAPI JSON document requires ROLE_ADMIN.</li>
      * </ul>
      *
@@ -56,11 +57,22 @@ public class JwtRouteAuthorizationPolicy {
             return roles.contains(ROLE_ADMIN);
         }
 
+        if (isAuthenticatedSelfServicePath(path)) {
+            return roles.stream().anyMatch(KNOWN_ROLES::contains);
+        }
+
         if ("/api/departments".equals(path) || path.startsWith("/api/departments/")) {
             return roles.stream().anyMatch(KNOWN_ROLES::contains);
         }
 
         return roles.contains(ROLE_ADMIN) || roles.contains(ROLE_HR_MANAGER);
+    }
+
+    private boolean isAuthenticatedSelfServicePath(String path) {
+        return "/api/auth/me".equals(path)
+                || "/api/auth/change-password".equals(path)
+                || "/api/me".equals(path)
+                || path.startsWith("/api/me/");
     }
 
     private boolean isOpenApiDocumentationPath(String path) {

@@ -179,6 +179,44 @@ class JwtAuthenticationGlobalFilterTests {
     }
 
     @Test
+    void allowsEmployeeRoleOnAuthenticatedSelfServiceRoutesButNotStaffRoutes() {
+        String employeeToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_EMPLOYEE");
+        for (ServerWebExchange exchange : List.of(
+                MockServerWebExchange.from(MockServerHttpRequest.get("/api/auth/me")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken).build()),
+                MockServerWebExchange.from(MockServerHttpRequest.post("/api/auth/change-password")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken).build()),
+                MockServerWebExchange.from(MockServerHttpRequest.get("/api/me/announcements")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken).build()),
+                MockServerWebExchange.from(MockServerHttpRequest.get("/api/me/performance?page=0&size=10")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken).build()))) {
+            AtomicBoolean forwarded = new AtomicBoolean();
+
+            filter.filter(exchange, ignored -> {
+                forwarded.set(true);
+                return Mono.empty();
+            }).block();
+
+            assertThat(forwarded).isTrue();
+            assertThat(exchange.getResponse().getStatusCode()).isNull();
+        }
+
+        MockServerWebExchange payroll = MockServerWebExchange.from(
+                MockServerHttpRequest.get("/api/payroll")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + employeeToken)
+                        .build());
+        AtomicBoolean payrollForwarded = new AtomicBoolean();
+
+        filter.filter(payroll, ignored -> {
+            payrollForwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(payrollForwarded).isFalse();
+        assertThat(payroll.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     void openApiDocumentRequiresAdministratorRole() {
         String hrToken = tokenWithRoles(Instant.now().plusSeconds(300), "ROLE_HR_MANAGER");
         MockServerWebExchange hrRequest = MockServerWebExchange.from(
