@@ -1,8 +1,10 @@
 package com.ems.service.impl;
 
 import org.junit.jupiter.api.Test;
+
 import java.math.BigDecimal;
 import java.time.YearMonth;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class KenyanPayrollCalculatorTest {
@@ -30,15 +32,35 @@ class KenyanPayrollCalculatorTest {
     }
 
     @Test
-    void appliesKraShifLowIncomeMinimumOnlyBelowSixThousand() {
+    void appliesShifMinimumToAllSalariesWherePercentageIsBelowMinimum() {
         var low = calculator.calculate(YearMonth.of(2026, 2),
             new BigDecimal("5000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
             BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, true);
-        var aboveThreshold = calculator.calculate(YearMonth.of(2026, 2),
+        var belowMinimum = calculator.calculate(YearMonth.of(2026, 2),
             new BigDecimal("8000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
             BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, true);
+        var aboveMinimum = calculator.calculate(YearMonth.of(2026, 2),
+            new BigDecimal("12000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, true);
+
         assertEquals(new BigDecimal("300.00"), low.shif());
-        assertEquals(new BigDecimal("220.00"), aboveThreshold.shif());
+        assertEquals(new BigDecimal("300.00"), belowMinimum.shif());
+        assertEquals(new BigDecimal("330.00"), aboveMinimum.shif());
+    }
+
+    @Test
+    void excludesIrregularBonusFromRegularPayStatutoryContributionsButIncludesItInPayeGross() {
+        var result = calculator.calculate(YearMonth.of(2026, 2),
+            new BigDecimal("50000"), BigDecimal.ZERO, BigDecimal.ZERO, new BigDecimal("10000"),
+            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, true);
+
+        assertEquals(new BigDecimal("60000.00"), result.gross());
+        assertEquals(new BigDecimal("3000.00"), result.nssf());
+        assertEquals(new BigDecimal("1375.00"), result.shif());
+        assertEquals(new BigDecimal("750.00"), result.housing());
+        assertEquals(new BigDecimal("54875.00"), result.taxable());
+        assertEquals(new BigDecimal("8845.85"), result.paye());
+        assertEquals(new BigDecimal("46029.15"), result.net());
     }
 
     @Test
