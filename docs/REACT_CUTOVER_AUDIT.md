@@ -83,3 +83,12 @@ The repository confirms that the API and Thymeleaf UI currently use separate sec
 The React frontend already has distinct staff and employee route groups, and the backend exposes a JWT authentication contract plus self-scoped employee endpoints. However, route presence alone does not prove workflow parity: staff API coverage, page-controller/template inventory, frontend API wiring and negative authorization tests still need verification.
 
 **No production code or database schema has been removed or changed in this phase.** The next phase is a complete controller/template inventory matched to frontend API modules, followed by targeted integration tests. Only then can the web chain and Thymeleaf artifacts be retired safely.
+
+
+## Cross-repository deployment integration finding
+
+The frontend Axios client uses `import.meta.env.VITE_API_URL` and falls back to an empty base URL. The frontend `Develop` branch CI workflow currently builds with `VITE_API_URL=https://employment-management-system-49la.onrender.com`, while the active backend Render service URL verified for this release is `https://ems-backend-vo1z.onrender.com`.
+
+The Render static-site service metadata confirms the frontend build command and publish directory, but does not expose its configured environment-variable values. Therefore this audit cannot infer whether the live Render frontend was built with the current backend URL. Backend request logs show successful traffic after the deployment, but the privacy-safe request logs omit request paths, so they do not prove that every current React API module is reaching the intended backend.
+
+**Required release check:** verify the Render static-site environment has `VITE_API_URL=https://ems-backend-vo1z.onrender.com`, trigger a frontend rebuild only if it is wrong, then perform authenticated smoke tests for login, employee self-service, company profile and statutory remittance report/CSV. Do not change production environment variables without confirming the existing configuration first.
