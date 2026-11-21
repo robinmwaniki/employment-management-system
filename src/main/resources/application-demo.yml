@@ -1,0 +1,23 @@
+# Isolated demo profile. Use only with a dedicated demo database and demo-only secrets.
+# The demo API security chain is read-only; only the demo role-token endpoint accepts POST.
+ems:
+  demo:
+    enabled: true
+jwt:
+  expiration: ${DEMO_JWT_EXPIRATION_MS:900000}
+spring:
+  jpa:
+    show-sql: false
+  mail:
+    host: localhost
+    username: ""
+    password: ""
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+logging:
+  level:
+    root: INFO
+    com.ems: INFO
