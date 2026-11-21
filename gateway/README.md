@@ -1,8 +1,10 @@
 # EMS API Gateway
 
-> **Status: IN PROGRESS.** The gateway foundation, centralized routing, correlation logging, JWT validation, role-aware authorization, CORS, secure response headers and standardized JSON errors are merged into `develop`. Redis-backed rate limiting is merged into `develop` (issue #24). Resilience4j circuit breakers, safe retries and route timeouts are merged into `develop` (issue #25). Actuator health probes and protected Micrometer metrics are merged in PR #50 (issue #27). P0 end-to-end, security and performance verification is complete (PR #52). Distributed tracing and OTLP integration are in progress (issue #28).
+> **Implementation status: COMPLETE ON `develop`; PRODUCTION CUTOVER: NOT YET VERIFIED.** The gateway foundation, centralized routing, JWT validation and role-aware authorization, CORS, secure response headers, standardized JSON errors, Redis-backed rate limiting, Resilience4j resilience, Actuator probes, protected Micrometer/Prometheus metrics, Grafana dashboard assets, W3C trace-context propagation with optional OTLP export, privacy-filtered Sentry integration, centralized backend OpenAPI proxying, Docker packaging and automated security/integration tests are implemented on `develop`. The related implementation issues #28–#32 are closed as completed. The remaining end-to-end production integration and cutover work is tracked in issue #85.
 >
-> **Last updated: 19 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
+> **Deployment status:** No production gateway service or frontend traffic cutover has been verified. Keep the frontend pointed at its currently working backend API until the gateway is deployed with private Redis, shared backend JWT configuration, the dedicated management key and the exact production CORS origin, then passes the manual smoke-test checklist below.
+>
+> **Last updated: 21 November 2026.** Feature PRs target `develop` and merge only after gateway CI, backend tests and Docker checks pass.
 
 The EMS API Gateway is a separately deployable Spring Boot application and the external entry point for the Employee Management System REST API.
 
@@ -406,11 +408,13 @@ To remove local persistent data as well (destructive):
 docker compose down --volumes
 ```
 
-### Render deployment topology
+### Render deployment topology — planned, not yet verified
 
-Deploy the backend and gateway as separate Render services. Keep PostgreSQL and Redis private; configure the gateway's `EMS_BACKEND_URI` using the backend's private service URL and set the same `JWT_SECRET` on both services. Configure `REDIS_HOST`, `REDIS_PORT`, and optional `REDIS_PASSWORD` using the private Redis connection details. Set `EMS_MANAGEMENT_API_KEY` only on the gateway. Use Render's assigned `PORT`/gateway port setting and the `/livez` health check path. Do not route public traffic to the backend directly once the gateway is ready; retain the backend private URL for gateway-to-backend traffic.
+The intended topology is a separately deployed gateway with private connectivity to the existing backend and Redis. This section is deployment guidance only; it does not mean a gateway service has already been created or deployed. Before provisioning, confirm the current Render plan supports the required private networking and Redis service, review any cost/resource impact, and obtain approval for any new paid or resource-consuming service.
 
-For a safe rollout, deploy the gateway independently, verify health, login, protected API forwarding, CORS, 429 handling and backend 401/403 propagation, then switch the frontend's API base URL to the gateway. Roll back by restoring the previous frontend API base URL; the backend service and database schema are not changed by gateway deployment. Confirm current Render plan limits and private-service availability in the Render dashboard before production deployment.
+When approved, configure the gateway's `EMS_BACKEND_URI` using the backend's private service URL and set the exact same `JWT_SECRET` on both services. Configure `REDIS_HOST`, `REDIS_PORT`, and optional `REDIS_PASSWORD` using private Redis connection details. Set `EMS_MANAGEMENT_API_KEY` only on the gateway and configure the exact React production origin in `EMS_CORS_ALLOWED_ORIGINS`. Use Render's assigned `PORT` and the `/livez` health check path. Keep Redis private and do not route public traffic to the backend directly after the gateway cutover.
+
+For a safe rollout, deploy the gateway independently, verify health, login, protected API forwarding, CORS, 429 handling, backend 401/403 propagation, PDF and multipart behavior, and Redis failure handling. Only then switch the frontend API base URL to the gateway. Roll back by restoring the previous frontend API base URL; the backend service and database schema are not changed by gateway deployment.
 
 
 ## Prometheus and Grafana monitoring
