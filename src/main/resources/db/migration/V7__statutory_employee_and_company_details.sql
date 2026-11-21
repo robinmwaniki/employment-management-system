@@ -16,7 +16,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_employees_sha_number
     WHERE sha_number IS NOT NULL AND btrim(sha_number) <> '';
 
 CREATE TABLE IF NOT EXISTS company_profile (
-    id smallint PRIMARY KEY CHECK (id = 1),
+    id integer PRIMARY KEY CHECK (id = 1),
     company_name varchar(150) NOT NULL,
     kra_pin varchar(11),
     nssf_employer_number varchar(50),
