@@ -1,6 +1,14 @@
 package com.ems.demo;
 
 import com.ems.TestcontainersConfiguration;
+import com.ems.repository.AnnouncementRepository;
+import com.ems.repository.AttendanceRepository;
+import com.ems.repository.DepartmentRepository;
+import com.ems.repository.EmployeeRepository;
+import com.ems.repository.LeaveRepository;
+import com.ems.repository.PayrollRepository;
+import com.ems.repository.PerformanceRepository;
+import org.springframework.boot.DefaultApplicationArguments;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -34,6 +42,30 @@ class DemoReadOnlySecurityTests {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private DemoDataInitializer demoDataInitializer;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private AnnouncementRepository announcementRepository;
+
+    @Autowired
+    private AttendanceRepository attendanceRepository;
+
+    @Autowired
+    private LeaveRepository leaveRepository;
+
+    @Autowired
+    private PayrollRepository payrollRepository;
+
+    @Autowired
+    private PerformanceRepository performanceRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -71,6 +103,22 @@ class DemoReadOnlySecurityTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void syntheticDemoSeedCanBeRepeatedWithoutCreatingDuplicates() throws Exception {
+        DefaultApplicationArguments arguments = new DefaultApplicationArguments(new String[0]);
+
+        demoDataInitializer.run(arguments);
+        demoDataInitializer.run(arguments);
+
+        org.assertj.core.api.Assertions.assertThat(departmentRepository.count()).isEqualTo(3);
+        org.assertj.core.api.Assertions.assertThat(employeeRepository.count()).isEqualTo(4);
+        org.assertj.core.api.Assertions.assertThat(announcementRepository.count()).isEqualTo(2);
+        org.assertj.core.api.Assertions.assertThat(attendanceRepository.count()).isEqualTo(5);
+        org.assertj.core.api.Assertions.assertThat(leaveRepository.count()).isEqualTo(2);
+        org.assertj.core.api.Assertions.assertThat(payrollRepository.count()).isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThat(performanceRepository.count()).isEqualTo(1);
     }
 
     @Test
