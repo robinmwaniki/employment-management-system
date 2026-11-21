@@ -43,7 +43,12 @@ public class CompanyProfileServiceImpl {
                 p.getAddress(), p.getPhoneNumber(), p.getEmail());
     }
 
-    private static String normalizePin(String value) {\n        String normalized = normalize(value);\n        return normalized == null ? null : normalized.toUpperCase();\n    }\n\n    private static String normalize(String value) {
+    private static String normalizePin(String value) {
+        String normalized = normalize(value);
+        return normalized == null ? null : normalized.toUpperCase();
+    }
+
+    private static String normalize(String value) {
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
