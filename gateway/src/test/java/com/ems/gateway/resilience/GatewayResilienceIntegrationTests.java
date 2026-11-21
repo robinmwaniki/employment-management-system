@@ -133,7 +133,7 @@ class GatewayResilienceIntegrationTests {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
                 .exchange()
                 .expectStatus().isAccepted()
-                .expectBody().isEqualTo("ok");
+                .expectBody(String.class).isEqualTo("ok");
 
         assertThat(BACKEND_REQUESTS).hasValue(1);
     }
