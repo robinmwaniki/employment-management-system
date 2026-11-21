@@ -2,7 +2,7 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 
 const baseUrl = (__ENV.BASE_URL || "http://localhost:8081").replace(/\/$/, "");
-const token = __ENV.EMS_TOKEN;
+const tokens = (__ENV.EMS_TOKENS || "").split(",").map((value) => value.trim()).filter(Boolean);
 const environment = (__ENV.LOAD_TEST_ENV || "").toLowerCase();
 const acknowledgement = __ENV.LOAD_TEST_ACK;
 const targetVus = Number(__ENV.TARGET_VUS || 25);
@@ -10,8 +10,8 @@ const rampDuration = __ENV.RAMP_DURATION || "2m";
 const holdDuration = __ENV.HOLD_DURATION || "5m";
 const drainDuration = __ENV.DRAIN_DURATION || "2m";
 
-if (!token) {
-  throw new Error("Set EMS_TOKEN to a short-lived synthetic employee JWT.");
+if (tokens.length === 0) {
+  throw new Error("Set EMS_TOKENS to comma-separated short-lived JWTs for distinct synthetic employee accounts.");
 }
 
 if (!["local", "staging"].includes(environment) || acknowledgement !== "I_CONFIRM_NON_PRODUCTION") {
@@ -24,6 +24,10 @@ if (/\.onrender\.com(?::\d+)?(?:\/|$)/i.test(baseUrl) || /production|prod-api/i.
 
 if (!Number.isInteger(targetVus) || targetVus < 1) {
   throw new Error("TARGET_VUS must be a positive integer.");
+}
+
+if (tokens.length < targetVus) {
+  throw new Error("Provide at least one distinct employee token per target VU so the gateway per-user rate limiter is measured realistically.");
 }
 
 if (targetVus > 1000 && __ENV.DISTRIBUTED_LOAD_TEST !== "true") {
@@ -59,6 +63,7 @@ const readEndpoints = [
 
 export default function () {
   const endpoint = readEndpoints[Math.floor(Math.random() * readEndpoints.length)];
+  const token = tokens[(__VU - 1) % tokens.length];
   const response = http.get(`${baseUrl}${endpoint}`, {
     headers: {
       Authorization: `Bearer ${token}`,
