@@ -18,6 +18,7 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.UUID;
+import com.ems.service.impl.KenyanPayrollCalculator;
 
 /**
  * Creates repeatable synthetic demo data. Never runs outside the demo profile.
@@ -41,6 +42,7 @@ public class DemoDataInitializer implements ApplicationRunner {
     private final PerformanceRepository performanceRepository;
     private final CompanyProfileRepository companyProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final KenyanPayrollCalculator payrollCalculator;
 
     @Override
     @Transactional
@@ -190,16 +192,13 @@ public class DemoDataInitializer implements ApplicationRunner {
         if (payrollRepository.findByEmployeeAndPayrollMonth(employee, month).isPresent()) {
             return;
         }
-        BigDecimal basic = new BigDecimal("85000.00");
+        BigDecimal basic = employee.getSalary();
         BigDecimal house = new BigDecimal("10000.00");
         BigDecimal transport = new BigDecimal("5000.00");
-        BigDecimal bonus = new BigDecimal("0.00");
-        BigDecimal gross = basic.add(house).add(transport).add(bonus);
-        BigDecimal nssf = new BigDecimal("6000.00");
-        BigDecimal shif = new BigDecimal("2750.00");
-        BigDecimal housing = new BigDecimal("1500.00");
-        BigDecimal paye = new BigDecimal("9500.00");
-        BigDecimal deductions = nssf.add(shif).add(housing).add(paye);
+        BigDecimal bonus = BigDecimal.ZERO;
+        KenyanPayrollCalculator.Result calculation = payrollCalculator.calculate(
+                month, basic, house, transport, bonus, BigDecimal.ZERO,
+                BigDecimal.ZERO, BigDecimal.ZERO, true);
         payrollRepository.save(Payroll.builder()
                 .employee(employee)
                 .payrollMonth(month)
@@ -207,20 +206,20 @@ public class DemoDataInitializer implements ApplicationRunner {
                 .houseAllowance(house)
                 .transportAllowance(transport)
                 .bonus(bonus)
-                .grossPay(gross)
-                .taxablePay(gross.subtract(nssf))
-                .nssf(nssf)
-                .shif(shif)
-                .housingLevy(housing)
-                .tax(paye)
-                .deductions(deductions)
-                .netSalary(gross.subtract(deductions))
-                .personalRelief(new BigDecimal("2400.00"))
-                .insuranceRelief(BigDecimal.ZERO)
+                .grossPay(calculation.gross())
+                .taxablePay(calculation.taxable())
+                .nssf(calculation.nssf())
+                .shif(calculation.shif())
+                .housingLevy(calculation.housing())
+                .tax(calculation.paye())
+                .deductions(calculation.otherDeductions())
+                .netSalary(calculation.net())
+                .personalRelief(calculation.personalRelief())
+                .insuranceRelief(calculation.insuranceRelief())
                 .insurancePremium(BigDecimal.ZERO)
-                .employerNssf(new BigDecimal("6000.00"))
-                .employerHousingLevy(housing)
-                .pensionContribution(BigDecimal.ZERO)
+                .employerNssf(calculation.employerNssf())
+                .employerHousingLevy(calculation.employerHousing())
+                .pensionContribution(calculation.pension())
                 .residentTaxpayer(true)
                 .build());
     }
