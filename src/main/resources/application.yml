@@ -131,3 +131,8 @@ springdoc:
 
 cors:
  allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:5173}
+
+# Company identity printed on employee payslips. Set EMS_COMPANY_NAME in Render for the legal name.
+ems:
+  company:
+    name: ${EMS_COMPANY_NAME:EMS Workforce}
