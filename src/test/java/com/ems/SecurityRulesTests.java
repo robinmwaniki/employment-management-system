@@ -10,6 +10,7 @@ import com.ems.repository.DepartmentRepository;
 import com.ems.repository.EmployeeRepository;
 import com.ems.repository.PerformanceRepository;
 import com.ems.repository.UserRepository;
+import com.ems.service.interfaces.PhotoService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -30,11 +31,13 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -63,6 +66,9 @@ class SecurityRulesTests {
 
     @Autowired
     private PerformanceRepository performanceRepository;
+
+    @Autowired
+    private PhotoService photoService;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -260,6 +266,96 @@ class SecurityRulesTests {
                         .value(employeeA.getId()))
                 .andExpect(jsonPath("$.content[0].comments")
                         .value("Employee A private review"));
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser(username = "employee-a-photo@example.test", roles = "EMPLOYEE")
+    void employeeCanReadOwnPhotoButCannotReadAnotherEmployeesPhoto() throws Exception {
+
+        Department department = departmentRepository.save(Department.builder()
+                .name("Photo Security Test")
+                .code("PHOTO-SEC")
+                .build());
+
+        Employee employeeA = employeeRepository.save(Employee.builder()
+                .firstName("Photo")
+                .lastName("Owner")
+                .email("photo-owner@example.test")
+                .phoneNumber("+254700000201")
+                .salary(new BigDecimal("50000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        Employee employeeB = employeeRepository.save(Employee.builder()
+                .firstName("Photo")
+                .lastName("Other")
+                .email("photo-other@example.test")
+                .phoneNumber("+254700000202")
+                .salary(new BigDecimal("60000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        userRepository.save(User.builder()
+                .employee(employeeA)
+                .username("employee-a-photo@example.test")
+                .password("not-used-in-mock-authentication")
+                .role(Role.ROLE_EMPLOYEE)
+                .enabled(true)
+                .build());
+
+        byte[] ownPhoto = new byte[] {
+                (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 1
+        };
+        byte[] otherPhoto = new byte[] {
+                (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 2
+        };
+        photoService.storePhoto(employeeA.getId(),
+                new MockMultipartFile("file", "own.png", "image/png", ownPhoto));
+        photoService.storePhoto(employeeB.getId(),
+                new MockMultipartFile("file", "other.png", "image/png", otherPhoto));
+
+        mockMvc.perform(get("/api/me/photo"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_PNG))
+                .andExpect(content().bytes(ownPhoto));
+
+        mockMvc.perform(get("/api/employees/" + employeeB.getId() + "/photo"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser(roles = "HR_MANAGER")
+    void hrManagerCanReadEmployeePhotoForStaffWorkflows() throws Exception {
+
+        Department department = departmentRepository.save(Department.builder()
+                .name("Staff Photo Access Test")
+                .code("STAFF-PHOTO")
+                .build());
+
+        Employee employee = employeeRepository.save(Employee.builder()
+                .firstName("Staff")
+                .lastName("Photo")
+                .email("staff-photo@example.test")
+                .phoneNumber("+254700000203")
+                .salary(new BigDecimal("55000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        byte[] photo = new byte[] {
+                (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 3
+        };
+        photoService.storePhoto(employee.getId(),
+                new MockMultipartFile("file", "staff.png", "image/png", photo));
+
+        mockMvc.perform(get("/api/employees/" + employee.getId() + "/photo"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_PNG))
+                .andExpect(content().bytes(photo));
     }
 
     @Test
