@@ -151,6 +151,26 @@ class SecurityRulesTests {
                 .andExpect(status().isForbidden());
     }
 
+
+    @Test
+    @WithMockUser(roles = "EMPLOYEE")
+    void employeeAnnouncementsEndpointIsReachableWithoutStaffPrivileges() throws Exception {
+
+        mockMvc.perform(get("/api/me/announcements"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "EMPLOYEE")
+    void employeePerformanceEndpointRequiresALinkedEmployeeProfile() throws Exception {
+
+        // The test user is not seeded. The endpoint resolves employee identity
+        // from the authenticated principal rather than trusting employeeId input.
+        mockMvc.perform(get("/api/me/performance")
+                        .param("employeeId", "999"))
+                .andExpect(status().isNotFound());
+    }
+
     @Test
     @WithMockUser(roles = "HR_MANAGER")
     void hrManagerCannotOpenAdministratorPages() throws Exception {
