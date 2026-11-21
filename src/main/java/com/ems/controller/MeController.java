@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -69,7 +70,13 @@ public class MeController {
     @GetMapping("/announcements")
     public List<AnnouncementResponse> myAnnouncements() {
 
-        return announcementService.getLatestAnnouncements();
+        LocalDate today = LocalDate.now();
+        return announcementService.getLatestAnnouncements().stream()
+                .filter(announcement -> announcement.getPublishDate() == null
+                        || !announcement.getPublishDate().isAfter(today))
+                .filter(announcement -> announcement.getExpiryDate() == null
+                        || !announcement.getExpiryDate().isBefore(today))
+                .toList();
     }
 
     /**
