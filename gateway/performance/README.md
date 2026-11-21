@@ -6,7 +6,7 @@ This k6 script provides a small, repeatable authenticated read-path smoke test. 
 
 - Gateway running at `http://localhost:8081`.
 - Local Redis running for rate limiting and readiness.
-- A short-lived JWT for a dedicated test account with permission to list employees.
+- Short-lived JWTs for distinct synthetic employee accounts; the capacity profile requires at least one distinct account/token per target virtual user.
 - [k6](https://grafana.com/docs/k6/latest/set-up/install-k6/) installed.
 
 ## Run
@@ -59,13 +59,15 @@ These are proposed progression checkpoints, not measured capacity or promised pe
 **PowerShell (local or isolated staging only)**
 
 ```powershell
-$env:EMS_TOKEN = "<short-lived-synthetic-employee-jwt>"
+$env:EMS_TOKENS = "<jwt-account-1>,<jwt-account-2>,<jwt-account-3>,..."
 $env:LOAD_TEST_ENV = "staging" # or local
 $env:LOAD_TEST_ACK = "I_CONFIRM_NON_PRODUCTION"
 k6 run --env BASE_URL=https://<isolated-staging-gateway> --env TARGET_VUS=100 --env RAMP_DURATION=2m --env HOLD_DURATION=10m --env DRAIN_DURATION=2m gateway/performance/gateway-capacity.js
 ```
 
 For a local gateway use `BASE_URL=http://localhost:8081` and `LOAD_TEST_ENV=local`. The script blocks Render hosts and production-like hostnames. A single k6 generator is capped at 1,000 VUs; larger runs require an explicitly configured distributed runner and `DISTRIBUTED_LOAD_TEST=true`. That flag is not a substitute for staging isolation or capacity planning.
+
+The gateway applies its general API rate limit per verified JWT subject. Reusing one token across all virtual users would put every VU in the same 20-requests/second bucket and produce an artificial 429 bottleneck. Supply a separate synthetic employee identity/token for each VU; distributed workers must use disjoint token sets. Do not disable rate limiting to make a benchmark pass.
 
 The initial thresholds (less than 1% failed requests, p95 below 1 second and p99 below 2 seconds) are provisional guardrails. Agree on service-level objectives before treating a run as acceptance evidence. Record achieved request rate, p50/p95/p99, errors, gateway/backend CPU and memory, JVM GC, database pool wait/active connections, slow queries/locks, Redis latency and resource saturation for every run.
 
