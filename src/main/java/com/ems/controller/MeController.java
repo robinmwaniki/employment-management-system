@@ -2,6 +2,8 @@ package com.ems.controller;
 
 import com.ems.dto.request.LeaveRequest;
 import com.ems.dto.request.ProfileUpdateRequest;
+import com.ems.dto.response.AnnouncementResponse;
+import com.ems.dto.response.PerformanceResponse;
 import com.ems.dto.response.AttendanceResponse;
 import com.ems.dto.response.EmployeeResponse;
 import com.ems.dto.response.LeaveResponse;
@@ -10,6 +12,8 @@ import com.ems.dto.response.PayrollResponse;
 import com.ems.entity.User;
 import com.ems.exception.ResourceNotFoundException;
 import com.ems.repository.UserRepository;
+import com.ems.service.interfaces.AnnouncementService;
+import com.ems.service.interfaces.PerformanceService;
 import com.ems.service.interfaces.AttendanceService;
 import com.ems.service.interfaces.EmployeeService;
 import com.ems.service.interfaces.LeaveService;
@@ -49,6 +53,8 @@ import java.util.List;
 public class MeController {
 
     private final UserRepository userRepository;
+    private final AnnouncementService announcementService;
+    private final PerformanceService performanceService;
     private final EmployeeService employeeService;
     private final PhotoService photoService;
     private final LeaveService leaveService;
@@ -56,6 +62,32 @@ public class MeController {
     private final PayrollService payrollService;
     private final PdfService pdfService;
     private final NotificationService notificationService;
+
+    // ----- Employee announcements and performance -----
+
+    /** Returns the announcements visible to the signed-in employee. */
+    @GetMapping("/announcements")
+    public List<AnnouncementResponse> myAnnouncements() {
+
+        return announcementService.getLatestAnnouncements();
+    }
+
+    /**
+     * Returns only the signed-in employee's performance reviews. The employee
+     * identifier is resolved from the authenticated principal, never supplied
+     * by the browser.
+     */
+    @GetMapping("/performance")
+    public Page<PerformanceResponse> myPerformance(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        return performanceService.getEmployeeReviews(
+                currentEmployeeId(authentication),
+                page,
+                size);
+    }
 
     // ----- Profile -----
 
