@@ -21,7 +21,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
 
@@ -71,7 +70,7 @@ class SecurityRulesTests {
 
     @Test
     void generatedJwtContainsSignedCurrentAuthorities() {
-        UserDetails user = User.withUsername("admin@example.test")
+        UserDetails user = org.springframework.security.core.userdetails.User.withUsername("admin@example.test")
                 .password("not-used-in-this-test")
                 .authorities("ROLE_ADMIN", "ROLE_HR_MANAGER")
                 .build();
