@@ -16,6 +16,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.http.HttpHeaders;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -159,6 +160,7 @@ class ApiGatewayApplicationTests {
     private WebTestClient client() {
         return WebTestClient.bindToServer()
                 .baseUrl("http://localhost:" + gatewayPort)
+                .responseTimeout(Duration.ofSeconds(15))
                 .build();
     }
 
