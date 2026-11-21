@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.YearMonth;
 
-/** Calculates Kenyan monthly statutory payroll deductions using the rates effective for the pay period. */
+/** Calculates Kenyan monthly payroll deductions using the statutory rates effective for the pay period. */
 @Component
 public class KenyanPayrollCalculator {
     private static final BigDecimal ZERO = new BigDecimal("0.00");
@@ -17,6 +17,7 @@ public class KenyanPayrollCalculator {
     private static final BigDecimal PENSION_LIMIT = new BigDecimal("30000.00");
     private static final BigDecimal SHIF_MINIMUM = new BigDecimal("300.00");
 
+    /** Immutable breakdown of employee deductions, employer contributions and take-home pay. */
     public record Result(
             BigDecimal gross,
             BigDecimal nssf,
@@ -33,6 +34,20 @@ public class KenyanPayrollCalculator {
             BigDecimal net) {
     }
 
+    /**
+     * Calculates monthly payroll using cash earnings and the statutory rules applicable to the month.
+     *
+     * @param month payroll month used to select the NSSF earnings ceiling
+     * @param basic employee basic salary
+     * @param house regular monthly housing allowance
+     * @param transport regular monthly transport allowance
+     * @param bonus irregular bonus, included in PAYE gross earnings but excluded from regular-pay levies
+     * @param otherDeductions additional employee deductions
+     * @param pensionContribution employee pension contribution
+     * @param insurancePremium qualifying monthly insurance premiums
+     * @param resident whether the employee qualifies for resident personal relief
+     * @return calculated payroll breakdown
+     */
     public Result calculate(
             YearMonth month,
             BigDecimal basic,
@@ -44,19 +59,24 @@ public class KenyanPayrollCalculator {
             BigDecimal insurancePremium,
             boolean resident) {
 
+        // PAYE applies to cash employment income, including bonuses.
         BigDecimal gross = add(basic, house, transport, bonus);
+
+        // SHIF and Housing Levy use basic salary plus regular monthly cash allowances.
+        // NSSF pensionable wages exclude fluctuating emoluments such as irregular bonuses.
+        BigDecimal regularMonthlyPay = add(basic, house, transport);
+
         BigDecimal upperNssfLimit = month.isBefore(YearMonth.of(2026, 2))
                 ? new BigDecimal("72000.00")
                 : new BigDecimal("108000.00");
 
-        BigDecimal nssf = gross.min(upperNssfLimit)
+        BigDecimal nssf = regularMonthlyPay.min(upperNssfLimit)
                 .multiply(SIX_PERCENT)
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal shif = (gross.compareTo(new BigDecimal("6000.00")) < 0
-                ? SHIF_MINIMUM
-                : gross.multiply(SHIF_RATE))
+        BigDecimal shif = regularMonthlyPay.multiply(SHIF_RATE)
+                .max(SHIF_MINIMUM)
                 .setScale(2, RoundingMode.HALF_UP);
-        BigDecimal housing = gross.multiply(HOUSING_RATE)
+        BigDecimal housing = regularMonthlyPay.multiply(HOUSING_RATE)
                 .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal pension = zero(pensionContribution);
