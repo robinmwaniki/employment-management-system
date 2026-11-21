@@ -22,93 +22,50 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class EmployeeServiceImpl implements EmployeeService {
-
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final SystemLogService systemLogService;
 
     @Override
     public EmployeeResponse createEmployee(EmployeeRequest request) {
-
-        if (employeeRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists.");
-        }
-
-        if (employeeRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-            throw new IllegalArgumentException("Phone number already exists.");
-        }
-
+        if (employeeRepository.existsByEmail(request.getEmail())) throw new IllegalArgumentException("Email already exists.");
+        if (employeeRepository.existsByPhoneNumber(request.getPhoneNumber())) throw new IllegalArgumentException("Phone number already exists.");
         Department department = departmentRepository.findById(request.getDepartmentId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Department not found with id: " + request.getDepartmentId()));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + request.getDepartmentId()));
         Employee employee = Employee.builder()
-                .firstName(request.getFirstName())
-                .lastName(request.getLastName())
-                .email(request.getEmail())
-                .phoneNumber(request.getPhoneNumber())
-                .salary(request.getSalary())
-                .hireDate(request.getHireDate())
-                .department(department)
-                .build();
-
-        Employee savedEmployee = employeeRepository.saveAndFlush(employee);
-
-        systemLogService.saveLog(
-                "HR Admin",
-                "ADMIN",
-                "CREATE EMPLOYEE",
-                "Created employee "
-                        + savedEmployee.getFirstName()
-                        + " "
-                        + savedEmployee.getLastName());
-
-        return EmployeeMapper.toResponse(savedEmployee);
+                .firstName(request.getFirstName()).lastName(request.getLastName())
+                .email(request.getEmail()).phoneNumber(request.getPhoneNumber())
+                .salary(request.getSalary()).hireDate(request.getHireDate()).department(department)
+                .kraPin(normalizeIdentifier(request.getKraPin()))
+                .nssfNumber(normalizeIdentifier(request.getNssfNumber()))
+                .shaNumber(normalizeIdentifier(request.getShaNumber())).build();
+        Employee saved = employeeRepository.saveAndFlush(employee);
+        systemLogService.saveLog("HR Admin", "ADMIN", "CREATE EMPLOYEE",
+                "Created employee " + saved.getFirstName() + " " + saved.getLastName());
+        return EmployeeMapper.toResponse(saved);
     }
 
-    @Override
-    @Transactional(readOnly = true)
+    @Override @Transactional(readOnly = true)
     public Page<EmployeeResponse> getAllEmployees(int page, int size) {
-
-        Pageable pageable = PageRequest.of(page, size);
-
-        return employeeRepository.findAll(pageable)
-                .map(EmployeeMapper::toResponse);
+        return employeeRepository.findAll(PageRequest.of(page, size)).map(EmployeeMapper::toResponse);
     }
 
-    @Override
-    @Transactional(readOnly = true)
+    @Override @Transactional(readOnly = true)
     public Page<EmployeeResponse> searchEmployees(String keyword, int page, int size) {
-
         Pageable pageable = PageRequest.of(page, size);
-
-        return employeeRepository
-                .findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-                        keyword,
-                        keyword,
-                        pageable)
-                .map(EmployeeMapper::toResponse);
+        return employeeRepository.findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+                keyword, keyword, pageable).map(EmployeeMapper::toResponse);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public EmployeeResponse getEmployeeById(Long id) {
-
-        return EmployeeMapper.toResponse(findEmployee(id));
-    }
+    @Override @Transactional(readOnly = true)
+    public EmployeeResponse getEmployeeById(Long id) { return EmployeeMapper.toResponse(findEmployee(id)); }
 
     @Override
     public EmployeeResponse updateEmployee(Long id, EmployeeRequest request) {
-
         Employee employee = findEmployee(id);
-
         Department department = departmentRepository.findById(request.getDepartmentId())
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Department not found with id: " + request.getDepartmentId()));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + request.getDepartmentId()));
         requireUniqueContact(id, request.getEmail(), request.getPhoneNumber());
-
         employee.setFirstName(request.getFirstName());
         employee.setLastName(request.getLastName());
         employee.setEmail(request.getEmail());
@@ -116,91 +73,52 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setSalary(request.getSalary());
         employee.setHireDate(request.getHireDate());
         employee.setDepartment(department);
-
-        Employee updatedEmployee = employeeRepository.saveAndFlush(employee);
-
-        systemLogService.saveLog(
-                "HR Admin",
-                "ADMIN",
-                "UPDATE EMPLOYEE",
-                "Updated employee "
-                        + updatedEmployee.getFirstName()
-                        + " "
-                        + updatedEmployee.getLastName());
-
-        return EmployeeMapper.toResponse(updatedEmployee);
+        // Null means an older client omitted the new field; preserve it. Empty explicitly clears it.
+        if (request.getKraPin() != null) employee.setKraPin(normalizeIdentifier(request.getKraPin()));
+        if (request.getNssfNumber() != null) employee.setNssfNumber(normalizeIdentifier(request.getNssfNumber()));
+        if (request.getShaNumber() != null) employee.setShaNumber(normalizeIdentifier(request.getShaNumber()));
+        Employee saved = employeeRepository.saveAndFlush(employee);
+        systemLogService.saveLog("HR Admin", "ADMIN", "UPDATE EMPLOYEE",
+                "Updated employee " + saved.getFirstName() + " " + saved.getLastName());
+        return EmployeeMapper.toResponse(saved);
     }
 
-    /**
-     * Only name, email and phone number are touched, so an employee can never
-     * change their own salary, department or hire date through this path.
-     */
+    /** Self-service edits cannot change salary, department, hire date or statutory identifiers. */
     @Override
-    public EmployeeResponse updateOwnProfile(
-            Long employeeId,
-            ProfileUpdateRequest request) {
-
+    public EmployeeResponse updateOwnProfile(Long employeeId, ProfileUpdateRequest request) {
         Employee employee = findEmployee(employeeId);
-
         requireUniqueContact(employeeId, request.getEmail(), request.getPhoneNumber());
-
         employee.setFirstName(request.getFirstName().trim());
         employee.setLastName(request.getLastName().trim());
         employee.setEmail(request.getEmail().trim());
         employee.setPhoneNumber(request.getPhoneNumber().trim());
-
-        systemLogService.saveLog(
-                "System",
-                "EMPLOYEE",
-                "UPDATE PROFILE",
-                "Employee updated their own contact details");
-
+        systemLogService.saveLog("System", "EMPLOYEE", "UPDATE PROFILE", "Employee updated their own contact details");
         return EmployeeMapper.toResponse(employee);
     }
 
     @Override
     public void deleteEmployee(Long id) {
-
         Employee employee = findEmployee(id);
-
-        systemLogService.saveLog(
-                "HR Admin",
-                "ADMIN",
-                "DELETE EMPLOYEE",
-                "Deleted employee "
-                        + employee.getFirstName()
-                        + " "
-                        + employee.getLastName());
-
+        systemLogService.saveLog("HR Admin", "ADMIN", "DELETE EMPLOYEE",
+                "Deleted employee " + employee.getFirstName() + " " + employee.getLastName());
         employeeRepository.delete(employee);
     }
 
     private Employee findEmployee(Long id) {
-
         return employeeRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Employee not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id: " + id));
     }
 
-    /**
-     * The email and phone number must not belong to a different employee.
-     */
-    private void requireUniqueContact(
-            Long employeeId,
-            String email,
-            String phoneNumber) {
+    private void requireUniqueContact(Long employeeId, String email, String phoneNumber) {
+        employeeRepository.findByEmail(email.trim()).filter(other -> !other.getId().equals(employeeId))
+                .ifPresent(other -> { throw new IllegalArgumentException("Email already exists."); });
+        employeeRepository.findByPhoneNumber(phoneNumber.trim()).filter(other -> !other.getId().equals(employeeId))
+                .ifPresent(other -> { throw new IllegalArgumentException("Phone number already exists."); });
+    }
 
-        employeeRepository.findByEmail(email.trim())
-                .filter(other -> !other.getId().equals(employeeId))
-                .ifPresent(other -> {
-                    throw new IllegalArgumentException("Email already exists.");
-                });
-
-        employeeRepository.findByPhoneNumber(phoneNumber.trim())
-                .filter(other -> !other.getId().equals(employeeId))
-                .ifPresent(other -> {
-                    throw new IllegalArgumentException("Phone number already exists.");
-                });
+    private static String normalizeIdentifier(String value) {
+        if (value == null) return null;
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
