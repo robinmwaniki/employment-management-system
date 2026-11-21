@@ -1,6 +1,15 @@
 package com.ems;
 
 import com.ems.security.jwt.JwtService;
+import com.ems.entity.Department;
+import com.ems.entity.Employee;
+import com.ems.entity.PerformanceReview;
+import com.ems.entity.Role;
+import com.ems.entity.User;
+import com.ems.repository.DepartmentRepository;
+import com.ems.repository.EmployeeRepository;
+import com.ems.repository.PerformanceRepository;
+import com.ems.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -18,6 +27,9 @@ import org.springframework.security.test.context.support.WithMockUser;
 
 import javax.crypto.SecretKey;
 import java.util.List;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +52,18 @@ class SecurityRulesTests {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PerformanceRepository performanceRepository;
 
     @Value("${jwt.secret}")
     private String jwtSecret;
@@ -169,6 +193,74 @@ class SecurityRulesTests {
         mockMvc.perform(get("/api/me/performance")
                         .param("employeeId", "999"))
                 .andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    @Transactional
+    @WithMockUser(username = "employee-a@example.test", roles = "EMPLOYEE")
+    void employeePerformanceEndpointReturnsOnlyTheAuthenticatedEmployeesReviews()
+            throws Exception {
+
+        Department department = departmentRepository.save(Department.builder()
+                .name("Cutover Security Test")
+                .code("CUTOVER-SEC")
+                .build());
+
+        Employee employeeA = employeeRepository.save(Employee.builder()
+                .firstName("Employee")
+                .lastName("A")
+                .email("employee-a@example.test")
+                .phoneNumber("+254700000101")
+                .salary(new BigDecimal("50000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        Employee employeeB = employeeRepository.save(Employee.builder()
+                .firstName("Employee")
+                .lastName("B")
+                .email("employee-b@example.test")
+                .phoneNumber("+254700000102")
+                .salary(new BigDecimal("60000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        userRepository.save(User.builder()
+                .employee(employeeA)
+                .username("employee-a@example.test")
+                .password("not-used-in-mock-authentication")
+                .role(Role.ROLE_EMPLOYEE)
+                .enabled(true)
+                .build());
+
+        performanceRepository.save(PerformanceReview.builder()
+                .employee(employeeA)
+                .reviewDate(LocalDate.of(2026, 10, 1))
+                .reviewer("HR")
+                .rating(5)
+                .comments("Employee A private review")
+                .goals("Employee A goals")
+                .build());
+
+        performanceRepository.save(PerformanceReview.builder()
+                .employee(employeeB)
+                .reviewDate(LocalDate.of(2026, 10, 1))
+                .reviewer("HR")
+                .rating(1)
+                .comments("Employee B private review")
+                .goals("Employee B goals")
+                .build());
+
+        mockMvc.perform(get("/api/me/performance")
+                        .param("employeeId", employeeB.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].employeeId")
+                        .value(employeeA.getId()))
+                .andExpect(jsonPath("$.content[0].comments")
+                        .value("Employee A private review"));
     }
 
     @Test
