@@ -4,12 +4,8 @@ import com.ems.dto.response.EmployeeResponse;
 import com.ems.entity.Employee;
 
 public class EmployeeMapper {
-
-    private EmployeeMapper() {
-    }
-
+    private EmployeeMapper() {}
     public static EmployeeResponse toResponse(Employee employee) {
-
         return EmployeeResponse.builder()
                 .id(employee.getId())
                 .firstName(employee.getFirstName())
@@ -21,6 +17,9 @@ public class EmployeeMapper {
                 .departmentId(employee.getDepartment().getId())
                 .departmentName(employee.getDepartment().getName())
                 .profilePhoto(employee.getProfilePhoto())
+                .kraPin(employee.getKraPin())
+                .nssfNumber(employee.getNssfNumber())
+                .shaNumber(employee.getShaNumber())
                 .build();
     }
 }
