@@ -115,6 +115,7 @@ class GatewayResilienceIntegrationTests {
         POST_FAILURE_REQUESTS.set(0);
         SLOW_REQUESTS.set(0);
         circuitBreakerRegistry.circuitBreaker("emsEmployeesCircuitBreaker").reset();
+        circuitBreakerRegistry.circuitBreaker("emsCompanyProfileCircuitBreaker").reset();
     }
 
     @AfterAll
@@ -123,6 +124,18 @@ class GatewayResilienceIntegrationTests {
             mockBackend.disposeNow();
             mockBackend = null;
         }
+    }
+
+    @Test
+    void forwardsCompanyProfileApiThroughDedicatedRoute() {
+        client().get()
+                .uri("/api/company-profile")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validToken())
+                .exchange()
+                .expectStatus().isAccepted()
+                .expectBody(String.class).isEqualTo("ok");
+
+        assertThat(BACKEND_REQUESTS).hasValue(1);
     }
 
     @Test

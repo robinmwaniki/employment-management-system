@@ -1,6 +1,16 @@
 package com.ems;
 
 import com.ems.security.jwt.JwtService;
+import com.ems.entity.Department;
+import com.ems.entity.Employee;
+import com.ems.entity.PerformanceReview;
+import com.ems.entity.Role;
+import com.ems.entity.User;
+import com.ems.repository.DepartmentRepository;
+import com.ems.repository.EmployeeRepository;
+import com.ems.repository.PerformanceRepository;
+import com.ems.repository.UserRepository;
+import com.ems.service.interfaces.PhotoService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -12,18 +22,22 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.test.context.support.WithMockUser;
 
 import javax.crypto.SecretKey;
 import java.util.List;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -41,13 +55,28 @@ class SecurityRulesTests {
     @Autowired
     private JwtService jwtService;
 
+    @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PerformanceRepository performanceRepository;
+
+    @Autowired
+    private PhotoService photoService;
+
     @Value("${jwt.secret}")
     private String jwtSecret;
 
 
     @Test
     void generatedJwtContainsSignedCurrentAuthorities() {
-        UserDetails user = User.withUsername("admin@example.test")
+        UserDetails user = org.springframework.security.core.userdetails.User.withUsername("admin@example.test")
                 .password("not-used-in-this-test")
                 .authorities("ROLE_ADMIN", "ROLE_HR_MANAGER")
                 .build();
@@ -149,6 +178,184 @@ class SecurityRulesTests {
 
         mockMvc.perform(get("/api/employees"))
                 .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    @WithMockUser(roles = "EMPLOYEE")
+    void employeeAnnouncementsEndpointIsReachableWithoutStaffPrivileges() throws Exception {
+
+        mockMvc.perform(get("/api/me/announcements"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "EMPLOYEE")
+    void employeePerformanceEndpointRequiresALinkedEmployeeProfile() throws Exception {
+
+        // The test user is not seeded. The endpoint resolves employee identity
+        // from the authenticated principal rather than trusting employeeId input.
+        mockMvc.perform(get("/api/me/performance")
+                        .param("employeeId", "999"))
+                .andExpect(status().isNotFound());
+    }
+
+
+    @Test
+    @Transactional
+    @WithMockUser(username = "employee-a@example.test", roles = "EMPLOYEE")
+    void employeePerformanceEndpointReturnsOnlyTheAuthenticatedEmployeesReviews()
+            throws Exception {
+
+        Department department = departmentRepository.save(Department.builder()
+                .name("Cutover Security Test")
+                .code("CUTOVER-SEC")
+                .build());
+
+        Employee employeeA = employeeRepository.save(Employee.builder()
+                .firstName("Employee")
+                .lastName("A")
+                .email("employee-a@example.test")
+                .phoneNumber("+254700000101")
+                .salary(new BigDecimal("50000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        Employee employeeB = employeeRepository.save(Employee.builder()
+                .firstName("Employee")
+                .lastName("B")
+                .email("employee-b@example.test")
+                .phoneNumber("+254700000102")
+                .salary(new BigDecimal("60000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        userRepository.save(User.builder()
+                .employee(employeeA)
+                .username("employee-a@example.test")
+                .password("not-used-in-mock-authentication")
+                .role(Role.ROLE_EMPLOYEE)
+                .enabled(true)
+                .build());
+
+        performanceRepository.save(PerformanceReview.builder()
+                .employee(employeeA)
+                .reviewDate(LocalDate.of(2026, 10, 1))
+                .reviewer("HR")
+                .rating(5)
+                .comments("Employee A private review")
+                .goals("Employee A goals")
+                .build());
+
+        performanceRepository.save(PerformanceReview.builder()
+                .employee(employeeB)
+                .reviewDate(LocalDate.of(2026, 10, 1))
+                .reviewer("HR")
+                .rating(1)
+                .comments("Employee B private review")
+                .goals("Employee B goals")
+                .build());
+
+        mockMvc.perform(get("/api/me/performance")
+                        .param("employeeId", employeeB.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].employeeId")
+                        .value(employeeA.getId()))
+                .andExpect(jsonPath("$.content[0].comments")
+                        .value("Employee A private review"));
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser(username = "employee-a-photo@example.test", roles = "EMPLOYEE")
+    void employeeCanReadOwnPhotoButCannotReadAnotherEmployeesPhoto() throws Exception {
+
+        Department department = departmentRepository.save(Department.builder()
+                .name("Photo Security Test")
+                .code("PHOTO-SEC")
+                .build());
+
+        Employee employeeA = employeeRepository.save(Employee.builder()
+                .firstName("Photo")
+                .lastName("Owner")
+                .email("photo-owner@example.test")
+                .phoneNumber("+254700000201")
+                .salary(new BigDecimal("50000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        Employee employeeB = employeeRepository.save(Employee.builder()
+                .firstName("Photo")
+                .lastName("Other")
+                .email("photo-other@example.test")
+                .phoneNumber("+254700000202")
+                .salary(new BigDecimal("60000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        userRepository.save(User.builder()
+                .employee(employeeA)
+                .username("employee-a-photo@example.test")
+                .password("not-used-in-mock-authentication")
+                .role(Role.ROLE_EMPLOYEE)
+                .enabled(true)
+                .build());
+
+        byte[] ownPhoto = new byte[] {
+                (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 1
+        };
+        byte[] otherPhoto = new byte[] {
+                (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 2
+        };
+        photoService.storePhoto(employeeA.getId(),
+                new MockMultipartFile("file", "own.png", "image/png", ownPhoto));
+        photoService.storePhoto(employeeB.getId(),
+                new MockMultipartFile("file", "other.png", "image/png", otherPhoto));
+
+        mockMvc.perform(get("/api/me/photo"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_PNG))
+                .andExpect(content().bytes(ownPhoto));
+
+        mockMvc.perform(get("/api/employees/" + employeeB.getId() + "/photo"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @Transactional
+    @WithMockUser(roles = "HR_MANAGER")
+    void hrManagerCanReadEmployeePhotoForStaffWorkflows() throws Exception {
+
+        Department department = departmentRepository.save(Department.builder()
+                .name("Staff Photo Access Test")
+                .code("STAFF-PHOTO")
+                .build());
+
+        Employee employee = employeeRepository.save(Employee.builder()
+                .firstName("Staff")
+                .lastName("Photo")
+                .email("staff-photo@example.test")
+                .phoneNumber("+254700000203")
+                .salary(new BigDecimal("55000.00"))
+                .hireDate(LocalDate.of(2025, 1, 1))
+                .department(department)
+                .build());
+
+        byte[] photo = new byte[] {
+                (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, 3
+        };
+        photoService.storePhoto(employee.getId(),
+                new MockMultipartFile("file", "staff.png", "image/png", photo));
+
+        mockMvc.perform(get("/api/employees/" + employee.getId() + "/photo"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_PNG))
+                .andExpect(content().bytes(photo));
     }
 
     @Test

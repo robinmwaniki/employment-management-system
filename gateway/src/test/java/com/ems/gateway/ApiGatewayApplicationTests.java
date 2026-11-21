@@ -16,6 +16,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.http.HttpHeaders;
 import java.time.Instant;
+import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -159,6 +160,7 @@ class ApiGatewayApplicationTests {
     private WebTestClient client() {
         return WebTestClient.bindToServer()
                 .baseUrl("http://localhost:" + gatewayPort)
+                .responseTimeout(Duration.ofSeconds(15))
                 .build();
     }
 
@@ -169,7 +171,7 @@ class ApiGatewayApplicationTests {
     void configuresTimeoutRetryAndCircuitBreakerForEveryApiRoute() {
         var routes = routeLocator.getRoutes().collectList().block();
 
-        assertThat(routes).hasSize(16);
+        assertThat(routes).hasSize(17);
         assertThat(routes).allSatisfy(route -> {
             assertThat(route.getMetadata()).containsKey("response-timeout");
             assertThat(route.getFilters()).hasSizeGreaterThanOrEqualTo(3);

@@ -256,6 +256,22 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+            - id: ems-company-profile-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/company-profile,/api/company-profile/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_COMPANY_PROFILE_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsCompanyProfileCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-users-api
               uri: ${ems.backend.uri}
               predicates:
@@ -398,6 +414,8 @@ resilience4j:
         base-config: default
       emsDashboardCircuitBreaker:
         base-config: default
+      emsCompanyProfileCircuitBreaker:
+        base-config: default
       emsUsersCircuitBreaker:
         base-config: default
       emsSelfServiceCircuitBreaker:
@@ -410,6 +428,8 @@ resilience4j:
         timeout-duration: ${EMS_GATEWAY_CB_TIMEOUT:15s}
         cancel-running-future: true
     instances:
+      emsCompanyProfileCircuitBreaker:
+        base-config: default
       emsAuthCircuitBreaker:
         base-config: default
       emsEmployeesCircuitBreaker:

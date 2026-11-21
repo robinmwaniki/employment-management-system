@@ -1,4 +1,4 @@
-# Runs the build and all tests on every pull request into develop or main.
+# Runs the build and all tests on every pull request into develop or master.
 # This is the check that must be green before a pull request can be merged.
 #
 # The integration tests use Testcontainers, which starts its own throwaway
@@ -9,7 +9,7 @@ name: Code Test
 
 on:
   pull_request:
-    branches: [ "develop", "main" ]
+    branches: [ "develop", "master" ]
   workflow_dispatch:
 
 permissions:

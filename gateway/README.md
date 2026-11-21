@@ -72,6 +72,7 @@ All listed paths are forwarded to the same configured backend destination. The g
 | `/api/notifications/**` | Notifications |
 | `/api/dashboard/**` | Dashboard statistics |
 | `/api/users/**` | User administration |
+| `/api/company-profile` | Company statutory and legal profile |
 | `/api/me/**` | Authenticated employee self-service |
 | `/api/system-logs/**` | System audit logs |
 
@@ -90,7 +91,7 @@ The gateway validates the existing EMS backend JWT format before forwarding prot
 
 Set `JWT_SECRET` to exactly the same value used by the backend. The gateway has no default key and fails startup if the value is missing, invalid or too weak. Do not create a second key for the gateway. Generate a strong shared key for new environments with `openssl rand -base64 48`, then configure the same secret in both services through environment variables. Never commit the value.
 
-Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. Other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
+Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. All other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
 
 | Route | Gateway role policy |
 | --- | --- |
@@ -100,7 +101,7 @@ Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed wi
 | `/api/departments/**` | Any known EMS role (`ROLE_ADMIN`, `ROLE_HR_MANAGER`, `ROLE_EMPLOYEE`) |
 | Other routed `/api/**` paths | `ROLE_ADMIN` or `ROLE_HR_MANAGER` |
 
-The role claim is a signed snapshot from login. When an employee's role changes, the backend immediately rechecks the current database role, while the gateway role snapshot is refreshed at the next login. Tokens minted before the roles claim was introduced are denied on protected gateway routes (403); users must sign in again to obtain a token with roles. The gateway forwards the original Authorization header unchanged; the backend independently validates the token and remains authoritative for account status, role checks and resource authorization. Role-aware gateway rules are tracked separately in issue #21.
+The role claim is a signed snapshot from login. When an employee's role changes, the backend immediately rechecks the current database role, while the gateway role snapshot is refreshed at the next login. Tokens minted before the roles claim was introduced are denied on protected gateway routes (403); users must sign in again to obtain a token with roles. The gateway forwards the original Authorization header unchanged; the backend independently validates the token and remains authoritative for account status, role checks and resource authorization. The gateway's self-service allowlist mirrors the backend's authenticated access for `/api/auth/me`, `/api/auth/change-password` and `/api/me/**`; it does not grant employees access to staff-only routes.
 
 For local PowerShell runs, set the environment variable in the current shell from the local secret manager or `.env` value before starting the gateway:
 
