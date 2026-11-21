@@ -23,7 +23,7 @@ public class CompanyProfileServiceImpl {
     public CompanyProfileResponse updateProfile(CompanyProfileRequest request) {
         CompanyProfile profile = findProfile();
         profile.setCompanyName(request.getCompanyName().trim());
-        if (request.getKraPin() != null) profile.setKraPin(normalize(request.getKraPin()).toUpperCase());
+        if (request.getKraPin() != null) profile.setKraPin(normalizePin(request.getKraPin()));
         if (request.getNssfEmployerNumber() != null) profile.setNssfEmployerNumber(normalize(request.getNssfEmployerNumber()));
         if (request.getShaEmployerNumber() != null) profile.setShaEmployerNumber(normalize(request.getShaEmployerNumber()));
         if (request.getAddress() != null) profile.setAddress(normalize(request.getAddress()));
@@ -43,7 +43,7 @@ public class CompanyProfileServiceImpl {
                 p.getAddress(), p.getPhoneNumber(), p.getEmail());
     }
 
-    private static String normalize(String value) {
+    private static String normalizePin(String value) {\n        String normalized = normalize(value);\n        return normalized == null ? null : normalized.toUpperCase();\n    }\n\n    private static String normalize(String value) {
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
     }
