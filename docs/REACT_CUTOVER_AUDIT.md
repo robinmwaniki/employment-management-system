@@ -135,3 +135,25 @@ The Render static-site metadata confirms its build command and branch but does n
 - Smoke-test login, staff dashboard, employee self-service, company profile and statutory remittance CSV using real role-separated test accounts.
 
 No live Render environment variable has been changed as part of this audit.
+
+
+## Newly confirmed React parity gaps (must be implemented before Thymeleaf removal)
+
+The complete page-controller inventory surfaced employee pages that do not currently have React routes:
+
+| Legacy employee page | Existing server-rendered behavior | React/API parity status |
+| --- | --- | --- |
+| `/employee/announcements` | Displays latest announcements through `EmployeeAnnouncementController`. | No employee announcements route/page in `App.tsx`; current `/api/announcements` falls under the staff-only default API rule. |
+| `/employee/performance` | Resolves the signed-in employee ID and loads only that employee's performance reviews. | No employee performance route/page in `App.tsx`; `/api/performance/employee/{employeeId}` is in the staff-only API boundary and accepts a caller-supplied employee ID. A JWT-derived self-service endpoint is required. |
+| `/photos/employee/{id}` | Shared photo endpoint allows staff to view any employee photo and an employee to view only their own photo. | React uses `/api/me/photo` for own profile photo and `/api/employees/{id}/photo` for staff photo. Verify staff/employee photo display across all screens before removing the shared route. |
+
+The React employee route group currently includes dashboard, profile, leave, attendance, payroll, notifications and change password, but not announcements or performance. These are **real feature gaps**, not merely documentation differences.
+
+### Required implementation before the cutover
+- [ ] Add employee announcements React route/page and a read-only endpoint that is reachable by authenticated employees.
+- [ ] Add employee performance React route/page and a self-service endpoint that derives employee ID from the JWT principal; do not accept an employee ID from the browser for this route.
+- [ ] Add tests proving employee A cannot retrieve employee B's performance data.
+- [ ] Confirm photo route parity for staff and employees and test access denial for other employees.
+- [ ] Add the missing routes to employee navigation and update frontend route tests.
+
+Do not delete `EmployeeAnnouncementController` or `EmployeePerformanceController` until these React pages and their security tests are deployed and verified.
