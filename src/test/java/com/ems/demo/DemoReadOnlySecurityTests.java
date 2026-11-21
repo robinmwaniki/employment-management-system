@@ -23,6 +23,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(properties = {
         "spring.profiles.active=demo",
+        "DB_URL=jdbc:postgresql://localhost:5432/ems_demo_test",
+        "DB_USERNAME=ems_demo_test",
+        "DB_PASSWORD=ems_demo_test",
         "jwt.secret=bW9jay1kZW1vLXRlc3Qta2V5LWZvci1qd3Qtc2lnbmluZy0zMi1ieXRlcy1taW4="
 })
 @AutoConfigureMockMvc
