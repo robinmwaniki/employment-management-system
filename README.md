@@ -205,6 +205,41 @@ The repository includes security-rule, migration, page-rendering, and Spring Boo
 
 Actuator exposes health and info endpoints. OpenAPI is disabled by default and can be enabled with `SWAGGER_ENABLED` in a trusted development environment. The Swagger UI path is typically `/swagger-ui/index.html`.
 
+## Isolated read-only demo
+
+The backend includes an opt-in `demo` Spring profile for a **separate demo deployment and database**. It is not enabled by default and must never point at production data.
+
+The demo profile:
+- Seeds synthetic departments, employees, attendance, leave, announcements, performance reviews and one illustrative payroll snapshot.
+- Creates the demo roles `ADMIN`, `HR_MANAGER` and `EMPLOYEE` with synthetic accounts.
+- Issues short-lived JWTs through `POST /api/demo/login?role=ADMIN`, `HR_MANAGER` or `EMPLOYEE`; no demo password is embedded in the React bundle.
+- Allows read-only API requests and denies all other API write methods. The demo login token exchange is the only permitted POST.
+- Disables the legacy Thymeleaf UI and keeps health probes available.
+
+**Never activate this profile against production resources.** Provision a dedicated PostgreSQL database, use a dedicated JWT secret and set a dedicated CORS origin before deploying with `SPRING_PROFILES_ACTIVE=demo`. The sample payroll row is synthetic demonstration data and is not a statutory payroll reference or a government filing.
+
+Local profile example (after creating an isolated demo database and environment variables):
+
+```bash
+SPRING_PROFILES_ACTIVE=demo \
+DB_URL=jdbc:postgresql://localhost:5432/ems_demo \
+DB_USERNAME=ems_demo \
+DB_PASSWORD=replace-me \
+JWT_SECRET="$(openssl rand -base64 48)" \
+CORS_ALLOWED_ORIGIN=http://localhost:5173 \
+./mvnw spring-boot:run
+```
+
+Demo role token exchange examples:
+
+```http
+POST /api/demo/login?role=ADMIN
+POST /api/demo/login?role=HR_MANAGER
+POST /api/demo/login?role=EMPLOYEE
+```
+
+All records use reserved `.test` email addresses and synthetic contact details. Resetting the demo means recreating its database from migrations and allowing the demo profile to seed it again.
+
 ## Deployment
 
 For a hosted environment, provision managed PostgreSQL, configure secrets through the host's secret manager, use HTTPS, restrict CORS to trusted frontend origins, and provide persistent or object storage for uploaded files. Do not reuse local Compose credentials or development settings in production.
