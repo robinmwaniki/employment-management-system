@@ -42,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 /**
@@ -70,7 +71,7 @@ public class MeController {
     @GetMapping("/announcements")
     public List<AnnouncementResponse> myAnnouncements() {
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("Africa/Nairobi"));
         return announcementService.getLatestAnnouncements().stream()
                 .filter(announcement -> announcement.getPublishDate() == null
                         || !announcement.getPublishDate().isAfter(today))
