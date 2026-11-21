@@ -416,8 +416,6 @@ resilience4j:
         base-config: default
       emsCompanyProfileCircuitBreaker:
         base-config: default
-      emsCompanyProfileCircuitBreaker:
-        base-config: default
       emsUsersCircuitBreaker:
         base-config: default
       emsSelfServiceCircuitBreaker:
@@ -430,6 +428,8 @@ resilience4j:
         timeout-duration: ${EMS_GATEWAY_CB_TIMEOUT:15s}
         cancel-running-future: true
     instances:
+      emsCompanyProfileCircuitBreaker:
+        base-config: default
       emsAuthCircuitBreaker:
         base-config: default
       emsEmployeesCircuitBreaker:
