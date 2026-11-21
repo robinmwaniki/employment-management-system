@@ -3,6 +3,8 @@
 ems:
   demo:
     enabled: true
+jwt:
+  expiration: ${DEMO_JWT_EXPIRATION_MS:900000}
 spring:
   jpa:
     show-sql: false
