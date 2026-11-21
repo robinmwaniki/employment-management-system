@@ -21,7 +21,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * Exercises the actual demo security chains against an isolated Testcontainers database.
  */
-@SpringBootTest(properties = "spring.profiles.active=demo")
+@SpringBootTest(properties = {
+        "spring.profiles.active=demo",
+        "jwt.secret=bW9jay1kZW1vLXRlc3Qta2V5LWZvci1qd3Qtc2lnbmluZy0zMi1ieXRlcy1taW4="
+})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 class DemoReadOnlySecurityTests {
