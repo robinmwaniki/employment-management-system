@@ -95,10 +95,81 @@ public class SecurityConfig {
     }
 
     /**
+     * Demo API chain: only synthetic read access is available. The only permitted
+     * write request is the public role-token exchange for the demo accounts.
+     */
+    @Bean
+    @Order(1)
+    @Profile("demo")
+    public SecurityFilterChain demoApiFilterChain(HttpSecurity http)
+            throws Exception {
+
+        http
+                .securityMatcher("/api/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint(apiSecurityErrorHandler)
+                        .accessDeniedHandler(apiSecurityErrorHandler))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/demo/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/me/**")
+                        .authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/departments", "/api/departments/**")
+                        .hasAnyRole(ADMIN, HR_MANAGER, "EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/api/**")
+                        .hasAnyRole(ADMIN, HR_MANAGER)
+                        .anyRequest().denyAll())
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(
+                        new JwtAuthenticationFilter(jwtService, userDetailsService),
+                        UsernamePasswordAuthenticationFilter.class)
+                .headers(headers -> headers
+                        .referrerPolicy(referrer -> referrer.policy(
+                                ReferrerPolicyHeaderWriter.ReferrerPolicy
+                                        .STRICT_ORIGIN_WHEN_CROSS_ORIGIN)));
+
+        return http.build();
+    }
+
+    /**
+     * The public demo uses the React client only. Do not expose the legacy
+     * session-based Thymeleaf workflows from the demo deployment.
+     */
+    @Bean
+    @Order(2)
+    @Profile("demo")
+    public SecurityFilterChain demoWebFilterChain(HttpSecurity http)
+            throws Exception {
+
+        http
+                .securityMatcher("/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/actuator/health", "/actuator/health/**",
+                                "/actuator/info")
+                        .permitAll()
+                        .anyRequest().denyAll());
+
+        return http.build();
+    }
+
+    /**
      * REST API chain: stateless JWT authentication.
      */
     @Bean
     @Order(1)
+    @Profile("!demo")
     public SecurityFilterChain apiFilterChain(HttpSecurity http)
             throws Exception {
 
@@ -175,6 +246,7 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
+    @Profile("!demo")
     public SecurityFilterChain webFilterChain(HttpSecurity http)
             throws Exception {
 
