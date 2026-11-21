@@ -1,15 +1,19 @@
 # syntax=docker/dockerfile:1
 
 # ---- Build stage ----
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 
-# Resolve dependencies first so this layer is cached until the pom changes.
+# Use the repository-pinned Maven distribution for reproducible builds.
+COPY .mvn/ .mvn/
+COPY mvnw .
 COPY pom.xml .
-RUN --mount=type=cache,target=/root/.m2 mvn -B -q dependency:go-offline
+
+RUN --mount=type=cache,target=/root/.m2 chmod +x ./mvnw \
+    && ./mvnw -B -q dependency:go-offline
 
 COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 mvn -B -q clean package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -q clean package -DskipTests
 
 # ---- Runtime stage ----
 FROM eclipse-temurin:21-jre
