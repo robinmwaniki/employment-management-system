@@ -64,6 +64,31 @@ class KenyanPayrollCalculatorTest {
     }
 
     @Test
+    void includesRegularMonthlyAllowancesInStatutoryContributionBases() {
+        var result = calculator.calculate(YearMonth.of(2026, 2),
+            new BigDecimal("50000"), new BigDecimal("5000"), new BigDecimal("2000"),
+            new BigDecimal("10000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, true);
+
+        assertEquals(new BigDecimal("67000.00"), result.gross());
+        assertEquals(new BigDecimal("3420.00"), result.nssf());
+        assertEquals(new BigDecimal("1567.50"), result.shif());
+        assertEquals(new BigDecimal("855.00"), result.housing());
+        assertEquals(new BigDecimal("61157.50"), result.taxable());
+        assertEquals(new BigDecimal("10730.60"), result.paye());
+        assertEquals(new BigDecimal("50426.90"), result.net());
+    }
+
+    @Test
+    void capsYearFourNssfAtSixPercentOfOneHundredEightThousand() {
+        var result = calculator.calculate(YearMonth.of(2026, 2),
+            new BigDecimal("150000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+            BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, true);
+
+        assertEquals(new BigDecimal("6480.00"), result.nssf());
+        assertEquals(new BigDecimal("6480.00"), result.employerNssf());
+    }
+
+    @Test
     void doesNotApplyResidentPersonalReliefToNonResident() {
         var result = calculator.calculate(YearMonth.of(2026, 2),
             new BigDecimal("50000"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
