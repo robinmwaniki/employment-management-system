@@ -72,6 +72,7 @@ All listed paths are forwarded to the same configured backend destination. The g
 | `/api/notifications/**` | Notifications |
 | `/api/dashboard/**` | Dashboard statistics |
 | `/api/users/**` | User administration |
+| `/api/company-profile` | Company statutory and legal profile |
 | `/api/me/**` | Authenticated employee self-service |
 | `/api/system-logs/**` | System audit logs |
 
