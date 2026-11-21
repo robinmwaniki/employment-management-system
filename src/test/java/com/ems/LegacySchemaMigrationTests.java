@@ -111,6 +111,15 @@ class LegacySchemaMigrationTests {
         assertThat(query("SELECT data_type FROM information_schema.columns "
                 + "WHERE table_name = 'attendance' AND column_name = 'working_hours'"))
                 .isEqualTo("numeric");
+
+        // V7 adds optional employee identifiers without rewriting legacy employee rows.
+        assertThat(query("SELECT kra_pin FROM employees WHERE id = 1")).isNull();
+        assertThat(query("SELECT count(*) FROM information_schema.columns "
+                + "WHERE table_name = 'employees' AND column_name IN ('kra_pin', 'nssf_number', 'sha_number')"))
+                .isEqualTo("3");
+        assertThat(query("SELECT company_name FROM company_profile WHERE id = 1"))
+                .isEqualTo("EMS Workforce");
+        assertThat(query("SELECT count(*) FROM company_profile")).isEqualTo("1");
     }
 
     private void assertNotNullVersionColumn(String table) throws SQLException {
