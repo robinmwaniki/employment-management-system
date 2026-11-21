@@ -20,9 +20,35 @@ Record the verified backend architecture and the safety gates required before re
 | JPA open-in-view | `spring.jpa.open-in-view: true`; configuration comment says templates and mappers still rely on lazy loading. | Do not switch this off until DTO mapping and serialization tests prove service-layer fetch plans are complete. |
 | Documentation | README still describes a combined Thymeleaf + REST backend and lists `templates/`. | Update architecture and setup docs only after cutover is complete. |
 
+## React route inventory verified on frontend branch `Develop`
+
+The React router in `ems_frontend/src/App.tsx` contains these protected routes:
+
+| Workspace | Routes present |
+| --- | --- |
+| Staff | `/dashboard`, `/employees`, `/departments`, `/leave`, `/payroll`, `/announcements`, `/notifications`, `/attendance`, `/performance`, `/reports`, `/company-profile`, `/users`, `/system-logs` |
+| Employee | `/employee/dashboard`, `/employee/profile`, `/employee/leave`, `/employee/attendance`, `/employee/payroll`, `/employee/notifications`, `/employee/change-password` |
+| Public | `/login`; `/` redirects to login; unknown routes redirect to login |
+
+Staff routes are wrapped by a guard allowing ADMIN and HR_MANAGER. Employee routes allow EMPLOYEE, ADMIN and HR_MANAGER. These client-side guards are not a security boundary; backend authorization remains mandatory.
+
+## Backend REST contracts verified
+
+| Contract | Verified behavior |
+| --- | --- |
+| `POST /api/auth/login` | Public JWT login endpoint. |
+| `POST /api/auth/register` | ADMIN-only registration. |
+| `GET /api/auth/me` | Returns authenticated account and linked employee summary. |
+| `POST /api/auth/change-password` | Changes the authenticated account password. |
+| `/api/me/**` | Self-service controller derives employee ID from the authenticated username; profile, photo, leave, attendance, payroll, payslip PDF and notification actions are present. |
+| `/api/reports/**` | Staff report endpoints for employees, payroll, leave, attendance, performance and statutory remittances. |
+| `/api/company-profile` | ADMIN-only company profile read/update. |
+
+The self-service controller explicitly resolves the employee linked to the authenticated principal. Leave creation overwrites the request employee ID with that resolved ID; payslip download verifies payroll ownership before generating the PDF. This is the required pattern to preserve.
+
 ## Required route and workflow parity audit
 
-The following must be checked against actual controller mappings, React routes, API methods, role rules and integration tests before deletion:
+The following must still be checked against all page-controller mappings, all staff API controllers, frontend API modules, role rules and automated integration tests before deletion:
 
 - [ ] Login, token refresh (if present), logout and invalid/expired token behavior.
 - [ ] Admin and HR dashboard data.
@@ -37,6 +63,7 @@ The following must be checked against actual controller mappings, React routes, 
 - [ ] User administration, role assignment and admin password reset.
 - [ ] Company profile and statutory remittance reports/CSV exports.
 - [ ] System logs, report downloads, upload/download authorization and SPA deep links.
+- [ ] Verify React API base URL and CORS configuration point to the current production backend/gateway intentionally.
 
 ## Non-negotiable security gates
 
@@ -53,4 +80,6 @@ The following must be checked against actual controller mappings, React routes, 
 
 The repository confirms that the API and Thymeleaf UI currently use separate security chains. The API chain is already stateless JWT, but the fallback chain still provides session-based form login and page authorization. The JPA open-in-view setting also explicitly retains template-related lazy-loading behavior.
 
-**No production code or database schema has been removed or changed in this phase.** The next phase is a complete controller/template inventory matched to the React route and API client, followed by targeted integration tests. Only then can the web chain and Thymeleaf artifacts be retired safely.
+The React frontend already has distinct staff and employee route groups, and the backend exposes a JWT authentication contract plus self-scoped employee endpoints. However, route presence alone does not prove workflow parity: staff API coverage, page-controller/template inventory, frontend API wiring and negative authorization tests still need verification.
+
+**No production code or database schema has been removed or changed in this phase.** The next phase is a complete controller/template inventory matched to frontend API modules, followed by targeted integration tests. Only then can the web chain and Thymeleaf artifacts be retired safely.
