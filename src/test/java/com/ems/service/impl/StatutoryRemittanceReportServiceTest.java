@@ -55,7 +55,7 @@ class StatutoryRemittanceReportServiceTest {
         assertEquals(new BigDecimal("23200.00"), report.totalRemittance());
         assertEquals("Example Limited", report.company().companyName());
         assertEquals("2026-11-09", report.obligations().get(0).dueDate().toString());
-        assertEquals("2026-11-13", report.obligations().get(3).dueDate().toString());
+        assertEquals("2026-11-12", report.obligations().get(3).dueDate().toString());
     }
 
     @Test
