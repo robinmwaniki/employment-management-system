@@ -34,6 +34,7 @@ import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -195,6 +196,46 @@ class MeAttendanceBearerIntegrationTest {
         assertTrue(pdf.length > 4, "The payslip response should contain a PDF document");
         assertArrayEquals(new byte[]{'%', 'P', 'D', 'F'},
                 Arrays.copyOf(pdf, 4));
+    }
+
+    @Test
+    @Transactional
+    void checkInAndCheckOutAlwaysUseTheAuthenticatedEmployee()
+            throws Exception {
+
+        Department department = createDepartment(
+                "Attendance Check-in Ownership Department", "ACD");
+        Employee authenticatedEmployee = createEmployee(
+                department, "Attendance", "Owner",
+                "attendance-action-owner@example.test", "+254700000107");
+        Employee otherEmployee = createEmployee(
+                department, "Attendance", "Other",
+                "attendance-action-other@example.test", "+254700000108");
+
+        createEmployeeUser(authenticatedEmployee,
+                "attendance-action-owner@example.test");
+        String token = tokenFor("attendance-action-owner@example.test");
+
+        // Even if a caller submits another employee ID, the self-service
+        // endpoint does not accept an employee identifier from the request.
+        mockMvc.perform(post("/api/me/attendance/check-in")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"employeeId\":" + otherEmployee.getId() + "}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.employeeId")
+                        .value(authenticatedEmployee.getId()))
+                .andExpect(jsonPath("$.checkInTime").isNotEmpty());
+
+        mockMvc.perform(post("/api/me/attendance/check-out")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"employeeId\":" + otherEmployee.getId() + "}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.employeeId")
+                        .value(authenticatedEmployee.getId()))
+                .andExpect(jsonPath("$.checkInTime").isNotEmpty())
+                .andExpect(jsonPath("$.checkOutTime").isNotEmpty());
     }
 
     private Department createDepartment(String name, String code) {
