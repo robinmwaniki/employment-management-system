@@ -125,7 +125,7 @@ class DemoReadOnlySecurityTests {
 
     @Test
     void partialDemoSeedRepairsMissingRowsWithoutDuplicatingExistingData() {
-        Employee employee = employeeRepository.findByEmail("amina.kamau@example.test")
+        var employee = employeeRepository.findByEmail("amina.kamau@example.test")
                 .orElseThrow();
         LocalDate today = LocalDate.now(java.time.ZoneId.of("Africa/Nairobi"));
 
