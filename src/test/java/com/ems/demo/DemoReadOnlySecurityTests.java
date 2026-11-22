@@ -18,6 +18,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDate;
 import org.springframework.test.web.servlet.MvcResult;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -119,6 +121,51 @@ class DemoReadOnlySecurityTests {
         org.assertj.core.api.Assertions.assertThat(leaveRepository.count()).isEqualTo(2);
         org.assertj.core.api.Assertions.assertThat(payrollRepository.count()).isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(performanceRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void partialDemoSeedRepairsMissingRowsWithoutDuplicatingExistingData() {
+        Employee employee = employeeRepository.findByEmail("amina.kamau@example.test")
+                .orElseThrow();
+        LocalDate today = LocalDate.now(java.time.ZoneId.of("Africa/Nairobi"));
+
+        announcementRepository.deleteAll();
+        announcementRepository.save(com.ems.entity.Announcement.builder()
+                .title("Unrelated announcement")
+                .message("Existing non-demo data must not suppress demo fixtures.")
+                .publishDate(today)
+                .expiryDate(today.plusDays(30))
+                .build());
+
+        leaveRepository.deleteAll();
+        leaveRepository.save(com.ems.entity.LeaveRequestEntity.builder()
+                .employee(employee)
+                .leaveType(com.ems.entity.LeaveType.ANNUAL)
+                .startDate(today.plusDays(40))
+                .endDate(today.plusDays(41))
+                .reason("Unrelated existing leave")
+                .status(com.ems.entity.LeaveStatus.CANCELLED)
+                .appliedDate(today)
+                .build());
+
+        performanceRepository.deleteAll();
+        performanceRepository.save(com.ems.entity.PerformanceReview.builder()
+                .employee(employee)
+                .reviewDate(today.minusDays(60))
+                .reviewer("Unrelated reviewer")
+                .rating(3)
+                .comments("Existing non-demo review.")
+                .goals("Existing non-demo goal.")
+                .build());
+
+        DefaultApplicationArguments arguments =
+                new DefaultApplicationArguments(new String[0]);
+        demoDataInitializer.run(arguments);
+        demoDataInitializer.run(arguments);
+
+        org.assertj.core.api.Assertions.assertThat(announcementRepository.count()).isEqualTo(3);
+        org.assertj.core.api.Assertions.assertThat(leaveRepository.count()).isEqualTo(3);
+        org.assertj.core.api.Assertions.assertThat(performanceRepository.count()).isEqualTo(2);
     }
 
     @Test
