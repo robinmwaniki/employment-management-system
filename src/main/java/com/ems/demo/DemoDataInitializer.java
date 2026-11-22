@@ -123,22 +123,23 @@ public class DemoDataInitializer implements ApplicationRunner {
     }
 
     private void seedAnnouncements() {
-        if (announcementRepository.count() > 0) {
-            return;
-        }
         LocalDate today = LocalDate.now(NAIROBI);
-        announcementRepository.save(Announcement.builder()
-                .title("Welcome to the EMS demo")
-                .message("This environment contains synthetic sample records. Explore the HR and employee workflows; all changes are disabled.")
-                .publishDate(today.minusDays(2))
-                .expiryDate(today.plusMonths(2))
-                .build());
-        announcementRepository.save(Announcement.builder()
-                .title("November team update")
-                .message("The Operations and Finance teams have completed their monthly review. This is sample announcement content.")
-                .publishDate(today.minusDays(1))
-                .expiryDate(today.plusMonths(1))
-                .build());
+        if (!announcementRepository.existsByTitle("Welcome to the EMS demo")) {
+            announcementRepository.save(Announcement.builder()
+                    .title("Welcome to the EMS demo")
+                    .message("This environment contains synthetic sample records. Explore the HR and employee workflows; all changes are disabled.")
+                    .publishDate(today.minusDays(2))
+                    .expiryDate(today.plusMonths(2))
+                    .build());
+        }
+        if (!announcementRepository.existsByTitle("November team update")) {
+            announcementRepository.save(Announcement.builder()
+                    .title("November team update")
+                    .message("The Operations and Finance teams have completed their monthly review. This is sample announcement content.")
+                    .publishDate(today.minusDays(1))
+                    .expiryDate(today.plusMonths(1))
+                    .build());
+        }
     }
 
     private void seedAttendance(Employee employee) {
@@ -163,28 +164,36 @@ public class DemoDataInitializer implements ApplicationRunner {
     }
 
     private void seedLeave(Employee employee) {
-        if (leaveRepository.count() > 0) {
-            return;
-        }
         LocalDate today = LocalDate.now(NAIROBI);
-        leaveRepository.save(LeaveRequestEntity.builder()
-                .employee(employee)
-                .leaveType(LeaveType.ANNUAL)
-                .startDate(today.plusDays(12))
-                .endDate(today.plusDays(14))
-                .reason("Planned personal time (synthetic demo request)")
-                .status(LeaveStatus.PENDING)
-                .appliedDate(today.minusDays(1))
-                .build());
-        leaveRepository.save(LeaveRequestEntity.builder()
-                .employee(employee)
-                .leaveType(LeaveType.SICK)
-                .startDate(today.minusDays(18))
-                .endDate(today.minusDays(17))
-                .reason("Sample approved leave record")
-                .status(LeaveStatus.APPROVED)
-                .appliedDate(today.minusDays(20))
-                .build());
+        LocalDate annualStart = today.plusDays(12);
+        LocalDate annualEnd = today.plusDays(14);
+        if (!leaveRepository.existsByEmployeeAndStartDateAndEndDate(
+                employee, annualStart, annualEnd)) {
+            leaveRepository.save(LeaveRequestEntity.builder()
+                    .employee(employee)
+                    .leaveType(LeaveType.ANNUAL)
+                    .startDate(annualStart)
+                    .endDate(annualEnd)
+                    .reason("Planned personal time (synthetic demo request)")
+                    .status(LeaveStatus.PENDING)
+                    .appliedDate(today.minusDays(1))
+                    .build());
+        }
+
+        LocalDate sickStart = today.minusDays(18);
+        LocalDate sickEnd = today.minusDays(17);
+        if (!leaveRepository.existsByEmployeeAndStartDateAndEndDate(
+                employee, sickStart, sickEnd)) {
+            leaveRepository.save(LeaveRequestEntity.builder()
+                    .employee(employee)
+                    .leaveType(LeaveType.SICK)
+                    .startDate(sickStart)
+                    .endDate(sickEnd)
+                    .reason("Sample approved leave record")
+                    .status(LeaveStatus.APPROVED)
+                    .appliedDate(today.minusDays(20))
+                    .build());
+        }
     }
 
     private void seedPayroll(Employee employee) {
@@ -225,13 +234,16 @@ public class DemoDataInitializer implements ApplicationRunner {
     }
 
     private void seedPerformance(Employee employee) {
-        if (performanceRepository.count() > 0) {
+        LocalDate reviewDate = LocalDate.now(NAIROBI).minusDays(30);
+        String reviewer = "Demo HR Manager";
+        if (performanceRepository.existsByEmployeeAndReviewDateAndReviewer(
+                employee, reviewDate, reviewer)) {
             return;
         }
         performanceRepository.save(PerformanceReview.builder()
                 .employee(employee)
-                .reviewDate(LocalDate.now(NAIROBI).minusDays(30))
-                .reviewer("Demo HR Manager")
+                .reviewDate(reviewDate)
+                .reviewer(reviewer)
                 .rating(4)
                 .comments("Strong collaboration and consistent delivery in the sample review period.")
                 .goals("Improve cross-team reporting and complete the next skills development milestone.")
