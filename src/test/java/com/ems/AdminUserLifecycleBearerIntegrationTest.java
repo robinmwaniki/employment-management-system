@@ -18,7 +18,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -94,7 +93,7 @@ class AdminUserLifecycleBearerIntegrationTest {
         String token = jwtService.generateToken(
                 userDetailsService.loadUserByUsername(administrator.getUsername()));
 
-        MvcResult created = mockMvc.perform(post("/api/users")
+        mockMvc.perform(post("/api/users")
                         .header(HttpHeaders.AUTHORIZATION, bearer(token))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -108,15 +107,11 @@ class AdminUserLifecycleBearerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.username").value("managed-user@example.test"))
                 .andExpect(jsonPath("$.role").value("ROLE_EMPLOYEE"))
-                .andExpect(jsonPath("$.enabled").value(true))
-                .andReturn();
+                .andExpect(jsonPath("$.enabled").value(true));
 
-        Long managedUserId = com.fasterxml.jackson.databind.json.JsonMapper.builder()
-                .build()
-                .readTree(created.getResponse().getContentAsString())
-                .get("id")
-                .asLong();
-
+        Long managedUserId = userRepository.findByUsername("managed-user@example.test")
+                .orElseThrow()
+                .getId();
         User managedUser = userRepository.findById(managedUserId).orElseThrow();
         assertNotEquals("InitialPassword123!", managedUser.getPassword());
         assertTrue(passwordEncoder.matches("InitialPassword123!", managedUser.getPassword()));
