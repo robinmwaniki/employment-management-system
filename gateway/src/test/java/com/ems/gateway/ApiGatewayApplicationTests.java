@@ -171,7 +171,7 @@ class ApiGatewayApplicationTests {
     void configuresTimeoutRetryAndCircuitBreakerForEveryApiRoute() {
         var routes = routeLocator.getRoutes().collectList().block();
 
-        assertThat(routes).hasSize(17);
+        assertThat(routes).hasSize(18);
         assertThat(routes).allSatisfy(route -> {
             assertThat(route.getMetadata()).containsKey("response-timeout");
             assertThat(route.getFilters()).hasSizeGreaterThanOrEqualTo(3);
@@ -518,6 +518,18 @@ class ApiGatewayApplicationTests {
     /**
      * Confirms that paths outside the declared API surface are not proxied.
      */
+    @Test
+    void forwardsPublicDemoLoginToBackendWithoutBearerToken() {
+        client().post()
+                .uri("/api/demo/login?role=ADMIN")
+                .exchange()
+                .expectStatus().isAccepted()
+                .expectBody(String.class)
+                .isEqualTo("POST /api/demo/login?role=ADMIN|");
+
+        assertThat(BACKEND_REQUEST_COUNT).hasValue(1);
+    }
+
     @Test
     void doesNotForwardUnmatchedPath() {
         client().get()
