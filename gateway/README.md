@@ -62,6 +62,7 @@ All listed paths are forwarded to the same configured backend destination. The g
 | Gateway path | Backend API area |
 | --- | --- |
 | `/api/auth/**` | Login, registration, identity and password changes |
+| `/api/demo/**` | Synthetic demo role-token exchange (demo profile only) |
 | `/api/employees/**` | Employee management and employee photos |
 | `/api/departments/**` | Department management |
 | `/api/attendance/**` | Attendance operations |
@@ -93,7 +94,7 @@ The gateway validates the existing EMS backend JWT format before forwarding prot
 
 Set `JWT_SECRET` to exactly the same value used by the backend. The gateway has no default key and fails startup if the value is missing, invalid or too weak. Do not create a second key for the gateway. Generate a strong shared key for new environments with `openssl rand -base64 48`, then configure the same secret in both services through environment variables. Never commit the value.
 
-Only `POST /api/auth/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. Preflight requests are forwarded so the backend's existing CORS policy can answer them. All other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
+Only `POST /api/auth/login`, `POST /api/demo/login` and CORS `OPTIONS` preflight requests are allowed without a bearer token. The demo token exchange is rate-limited using the same client-IP login bucket. The backend exposes `/api/demo/login` only when its dedicated `demo` profile is active; on the normal profile the route resolves to the backend's ordinary not-found response. Preflight requests are forwarded so the backend's existing CORS policy can answer them. All other routed API requests require a valid bearer token and a signed role claim matching the backend's current route policy:
 
 | Route | Gateway role policy |
 | --- | --- |
@@ -289,7 +290,7 @@ Stop it when finished with `docker stop ems-gateway-redis`. Configure `REDIS_HOS
 
 | Policy | Refill rate | Burst capacity | Identity | Routes |
 | --- | ---: | ---: | --- | --- |
-| Login | 2 tokens/second | 5 | Client IP | `POST /api/auth/login` |
+| Login | 2 tokens/second | 5 | Client IP | `POST /api/auth/login`, `POST /api/demo/login` |
 | Registration | 1 token/second | 2 | Verified user subject | `POST /api/auth/register` |
 | General API | 20 tokens/second | 40 | Verified user subject | Other `/api/**` routes |
 | Reports | 2 tokens/second | 4 | Verified user subject | `/api/reports/**` |
