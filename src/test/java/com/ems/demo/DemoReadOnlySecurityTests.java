@@ -18,6 +18,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import org.springframework.test.web.servlet.MvcResult;
@@ -124,6 +125,7 @@ class DemoReadOnlySecurityTests {
     }
 
     @Test
+    @Transactional
     void partialDemoSeedRepairsMissingRowsWithoutDuplicatingExistingData() {
         var employee = employeeRepository.findByEmail("amina.kamau@example.test")
                 .orElseThrow();
