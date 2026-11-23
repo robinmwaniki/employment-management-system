@@ -10,4 +10,6 @@ public interface AnnouncementRepository
 
     List<Announcement> findAllByOrderByCreatedAtDesc();
 
+    boolean existsByTitle(String title);
+
 }

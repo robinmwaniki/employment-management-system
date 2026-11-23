@@ -14,6 +14,9 @@ public interface LeaveRepository extends JpaRepository<LeaveRequestEntity, Long>
 
     Page<LeaveRequestEntity> findByEmployee(Employee employee, Pageable pageable);
 
+    boolean existsByEmployeeAndStartDateAndEndDate(
+            Employee employee, LocalDate startDate, LocalDate endDate);
+
     Page<LeaveRequestEntity> findByStatus(LeaveStatus status, Pageable pageable);
 
     long countByStatus(LeaveStatus status);

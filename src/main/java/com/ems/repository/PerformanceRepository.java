@@ -11,6 +11,9 @@ public interface PerformanceRepository
 
     Page<PerformanceReview> findAll(Pageable pageable);
 
+    boolean existsByEmployeeAndReviewDateAndReviewer(
+            Employee employee, java.time.LocalDate reviewDate, String reviewer);
+
     Page<PerformanceReview> findByEmployee(
             Employee employee,
             Pageable pageable);
