@@ -99,6 +99,8 @@ class RateLimitGlobalFilterTests {
 
         assertThat(filter.resolvePolicy(exchange(HttpMethod.POST, "/api/auth/login", "203.0.113.10")).name())
                 .isEqualTo("login");
+        assertThat(filter.resolvePolicy(exchange(HttpMethod.POST, "/api/demo/login", "203.0.113.10")).name())
+                .isEqualTo("login");
         assertThat(filter.resolvePolicy(exchange(HttpMethod.POST, "/api/auth/register", "203.0.113.10")).name())
                 .isEqualTo("registration");
         assertThat(filter.resolvePolicy(exchange(HttpMethod.GET, "/api/reports/payroll", "203.0.113.10")).name())

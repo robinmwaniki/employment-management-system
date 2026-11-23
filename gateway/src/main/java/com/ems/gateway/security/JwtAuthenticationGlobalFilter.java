@@ -27,6 +27,7 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
 
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String PUBLIC_LOGIN_PATH = "/api/auth/login";
+    private static final String PUBLIC_DEMO_LOGIN_PATH = "/api/demo/login";
 
     private final JwtTokenValidator tokenValidator;
     private final JwtRouteAuthorizationPolicy authorizationPolicy;
@@ -106,7 +107,8 @@ public class JwtAuthenticationGlobalFilter implements GlobalFilter, Ordered {
 
     private boolean isPublicLogin(ServerWebExchange exchange) {
         return HttpMethod.POST.equals(exchange.getRequest().getMethod())
-                && PUBLIC_LOGIN_PATH.equals(exchange.getRequest().getURI().getPath());
+                && (PUBLIC_LOGIN_PATH.equals(exchange.getRequest().getURI().getPath())
+                || PUBLIC_DEMO_LOGIN_PATH.equals(exchange.getRequest().getURI().getPath()));
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {

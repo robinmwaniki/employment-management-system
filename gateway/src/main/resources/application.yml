@@ -80,6 +80,23 @@ spring:
                       - BAD_GATEWAY
                       - SERVICE_UNAVAILABLE
                       - GATEWAY_TIMEOUT
+            - id: ems-demo-api
+              uri: ${ems.backend.uri}
+              predicates:
+                - Path=/api/demo/**
+              metadata:
+                connect-timeout: ${EMS_GATEWAY_CONNECT_TIMEOUT_MS:1000}
+                response-timeout: ${EMS_GATEWAY_DEMO_RESPONSE_TIMEOUT_MS:3000}
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: emsDemoCircuitBreaker
+                    fallbackUri: forward:/gateway/fallback
+                    statusCodes:
+                      - INTERNAL_SERVER_ERROR
+                      - BAD_GATEWAY
+                      - SERVICE_UNAVAILABLE
+                      - GATEWAY_TIMEOUT
             - id: ems-employees-api
               uri: ${ems.backend.uri}
               predicates:
@@ -392,6 +409,8 @@ resilience4j:
     instances:
       emsAuthCircuitBreaker:
         base-config: default
+      emsDemoCircuitBreaker:
+        base-config: default
       emsEmployeesCircuitBreaker:
         base-config: default
       emsDepartmentsCircuitBreaker:
@@ -431,6 +450,8 @@ resilience4j:
       emsCompanyProfileCircuitBreaker:
         base-config: default
       emsAuthCircuitBreaker:
+        base-config: default
+      emsDemoCircuitBreaker:
         base-config: default
       emsEmployeesCircuitBreaker:
         base-config: default

@@ -174,7 +174,8 @@ public class RateLimitGlobalFilter implements GlobalFilter, Ordered {
         String path = exchange.getRequest().getURI().getPath();
         HttpMethod method = exchange.getRequest().getMethod();
 
-        if (HttpMethod.POST.equals(method) && "/api/auth/login".equals(path)) {
+        if (HttpMethod.POST.equals(method)
+                && ("/api/auth/login".equals(path) || "/api/demo/login".equals(path))) {
             return loginPolicy;
         }
         if (HttpMethod.POST.equals(method) && "/api/auth/register".equals(path)) {
