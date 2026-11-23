@@ -20,9 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Authentication endpoints used by both the web UI and the React frontend.
- */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -78,6 +75,11 @@ public class AuthController {
     public void changePassword(
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new IllegalArgumentException(
+                    "New password and confirmation do not match");
+        }
 
         userService.changePassword(
                 authentication.getName(),
