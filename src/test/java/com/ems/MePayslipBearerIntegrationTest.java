@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -100,6 +101,7 @@ class MePayslipBearerIntegrationTest {
                 .andExpect(content().bytes(PDF_BYTES));
 
         verify(pdfService).generatePayslip(ownPayroll.getId());
+        clearInvocations(pdfService);
 
         mockMvc.perform(get("/api/me/payroll/{payrollId}/payslip", otherPayroll.getId())
                         .header(HttpHeaders.AUTHORIZATION,
