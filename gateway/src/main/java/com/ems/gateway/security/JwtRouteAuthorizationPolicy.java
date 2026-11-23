@@ -28,7 +28,7 @@ public class JwtRouteAuthorizationPolicy {
      * Applies the current backend API policy to a verified JWT.
      *
      * <ul>
-     *   <li>POST /api/auth/login is public.</li>
+     *   <li>POST /api/auth/login and POST /api/demo/login are public.</li>
      *   <li>OPTIONS preflight requests are forwarded to backend CORS handling.</li>
      *   <li>/api/auth/register requires ROLE_ADMIN.</li>
      *   <li>/api/auth/me, /api/auth/change-password and /api/me/** require any known authenticated EMS role.</li>
@@ -82,7 +82,8 @@ public class JwtRouteAuthorizationPolicy {
     private boolean isPublicRequest(ServerWebExchange exchange) {
         return HttpMethod.OPTIONS.equals(exchange.getRequest().getMethod())
                 || (HttpMethod.POST.equals(exchange.getRequest().getMethod())
-                && "/api/auth/login".equals(exchange.getRequest().getURI().getPath()));
+                && ("/api/auth/login".equals(exchange.getRequest().getURI().getPath())
+                || "/api/demo/login".equals(exchange.getRequest().getURI().getPath())));
     }
 
     private Set<String> extractRoles(Claims claims) {
