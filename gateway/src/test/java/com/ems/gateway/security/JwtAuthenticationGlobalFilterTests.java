@@ -58,6 +58,38 @@ class JwtAuthenticationGlobalFilterTests {
 
 
     @Test
+    void permitsUnauthenticatedPostToPublicDemoLoginEndpoint() {
+        ServerWebExchange exchange = MockServerWebExchange.from(
+                MockServerHttpRequest.post("/api/demo/login").build());
+        AtomicBoolean forwarded = new AtomicBoolean();
+
+        filter.filter(exchange, forwardedExchange -> {
+            forwarded.set(true);
+            return Mono.empty();
+        }).block();
+
+        assertThat(forwarded).isTrue();
+        assertThat(exchange.getResponse().getStatusCode()).isNull();
+    }
+
+    @Test
+    void protectsEveryOtherDemoApiRequest() {
+        for (ServerWebExchange exchange : List.of(
+                MockServerWebExchange.from(MockServerHttpRequest.get("/api/demo/login").build()),
+                MockServerWebExchange.from(MockServerHttpRequest.post("/api/demo/other").build()))) {
+            AtomicBoolean forwarded = new AtomicBoolean();
+
+            filter.filter(exchange, ignored -> {
+                forwarded.set(true);
+                return Mono.empty();
+            }).block();
+
+            assertThat(forwarded).isFalse();
+            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @Test
     void forwardsCorsPreflightWithoutBearerToken() {
         ServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.options("/api/employees")
