@@ -97,7 +97,7 @@ class ReportApiBearerIntegrationTest {
                     .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=statutory-remittances-" + MONTH + ".csv"))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                            "\"Company\",\"Acme, Kenya Ltd\"")))
+                            "Company,\"Acme, Kenya Ltd\"")))
                     .andExpect(content().string(org.hamcrest.Matchers.containsString(
                             "42,\"Amina, Wanjiku\",\"A123456789Z\"")));
         }
